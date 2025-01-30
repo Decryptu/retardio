@@ -1,4 +1,3 @@
-// index.js
 const { Client, GatewayIntentBits } = require('discord.js');
 const OpenAI = require('openai');
 const config = require('./config.js');
@@ -27,8 +26,9 @@ function mockText(text) {
 }
 
 // Fonction pour obtenir une réponse d'OpenAI
-async function getAIResponse(prompt, context = '') {
+async function getAIResponse(prompt, channel, context = '') {
     try {
+        if (channel) await channel.sendTyping();
         const completion = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [
@@ -58,6 +58,7 @@ client.on('messageCreate', async message => {
     if (message.mentions.has(client.user)) {
         const response = await getAIResponse(
             personalities.randomTalker.prompt,
+            message.channel,
             message.content.replace(`<@${client.user.id}>`, '').trim()
         );
         if (response) {
@@ -85,6 +86,7 @@ client.on('messageCreate', async message => {
         if (Math.random() < config.triggers.quoiChance) {
             const response = await getAIResponse(
                 personalities.quoiFeur.prompt,
+                message.channel,
                 message.content
             );
             if (response) message.reply(response);
@@ -96,6 +98,7 @@ client.on('messageCreate', async message => {
     if (Math.random() < config.triggers.mockChance) {
         const response = await getAIResponse(
             personalities.mocker.prompt,
+            message.channel,
             message.content
         );
         if (response) message.reply(mockText(response));
@@ -109,6 +112,7 @@ client.on('messageCreate', async message => {
             .join('\n');
         const response = await getAIResponse(
             personalities.randomTalker.prompt,
+            message.channel,
             context
         );
         if (response) message.channel.send(response);
@@ -117,11 +121,15 @@ client.on('messageCreate', async message => {
 
     // Chance de rappel d'eau
     if (Math.random() < config.triggers.waterReminderChance) {
-        const response = await getAIResponse(personalities.waterReminder.prompt);
+        const response = await getAIResponse(
+            personalities.waterReminder.prompt,
+            message.channel
+        );
         if (response) message.channel.send(response);
     }
 });
 
+// Event handler pour quand le bot est prêt
 client.on('ready', () => {
     console.log(`[${new Date().toISOString()}] Bot connecté en tant que ${client.user.tag}`);
     console.log('='.repeat(50));
