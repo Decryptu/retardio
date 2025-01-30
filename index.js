@@ -49,13 +49,22 @@ async function getAIResponse(prompt, context = '') {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
+    // Logger les messages reçus
+    console.log(`[${new Date().toISOString()}] Canal #${message.channel.name} (${message.channelId})`);
+    console.log(`${message.author.username}: ${message.content}`);
+    console.log('-'.repeat(50));
+
     // Mettre à jour l'historique des messages
-    const channelHistory = messageHistory.get(message.channelId) || [];
-    channelHistory.push({
+    let channelHistory = messageHistory.get(message.channelId) || [];
+    channelHistory = [...channelHistory, {
         content: message.content,
         author: message.author.username
-    });
-    if (channelHistory.length > 3) channelHistory.shift();
+    }];
+    
+    // Garder seulement les 3 derniers messages
+    if (channelHistory.length > 3) {
+        channelHistory = channelHistory.slice(-3);
+    }
     messageHistory.set(message.channelId, channelHistory);
 
     // Vérifier le trigger "quoi"
@@ -102,7 +111,8 @@ client.on('messageCreate', async message => {
 });
 
 client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+    console.log(`[${new Date().toISOString()}] Bot connecté en tant que ${client.user.tag}`);
+    console.log('='.repeat(50));
 });
 
 client.login(config.token);
