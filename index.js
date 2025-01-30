@@ -35,7 +35,7 @@ async function getAIResponse(prompt, channel, context = '') {
                 { role: "system", content: prompt },
                 { role: "user", content: context }
             ],
-            max_tokens: 100,
+            max_tokens: 1024,
             temperature: 0.8
         });
         return completion.choices[0].message.content;
