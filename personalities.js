@@ -48,3 +48,5 @@ Exemples:
 - "Les amis, vos cellules font la grève de la soif là! Même mon poisson rouge boit plus que vous 🙀"`
     }
 };
+
+module.exports = personalities;
