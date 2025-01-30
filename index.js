@@ -54,6 +54,18 @@ client.on('messageCreate', async message => {
     console.log(`${message.author.username}: ${message.content}`);
     console.log('-'.repeat(50));
 
+    // Répondre aux mentions directes du bot
+    if (message.mentions.has(client.user)) {
+        const response = await getAIResponse(
+            personalities.randomTalker.prompt,
+            message.content.replace(`<@${client.user.id}>`, '').trim()
+        );
+        if (response) {
+            message.reply(response);
+            return;
+        }
+    }
+
     // Mettre à jour l'historique des messages
     let channelHistory = messageHistory.get(message.channelId) || [];
     channelHistory = [...channelHistory, {
