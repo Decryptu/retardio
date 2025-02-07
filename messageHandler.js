@@ -11,7 +11,7 @@ class MessageHandler {
 		});
 	}
 
-	// Fonction pour alterner les majuscules
+	// Function to alternate uppercase/lowercase
 	mockText(text) {
 		return text
 			.split("")
@@ -19,7 +19,7 @@ class MessageHandler {
 			.join("");
 	}
 
-	// Fonction pour obtenir une réponse d'OpenAI
+	// Function to get OpenAI response
 	async getAIResponse(prompt, channel, context = "") {
 		try {
 			if (channel) await channel.sendTyping();
@@ -60,6 +60,18 @@ class MessageHandler {
 			message.content,
 			message.author.username,
 		);
+
+		// Handle "$p" trigger (100% chance)
+		if (message.content === "$p") {
+			const response = await this.getAIResponse(
+				personalities.swearingCat.prompt,
+				message.channel,
+			);
+			if (response) {
+				message.reply(response);
+				return;
+			}
+		}
 
 		// Handle direct mentions
 		if (message.mentions.has(this.client.user)) {
@@ -130,16 +142,14 @@ class MessageHandler {
 				message.channel,
 			);
 			if (response) message.channel.send(response);
-		}
-		// Inside handleMessage method, after the water reminder condition:
-		else if (
+		} else if (
 			randomValue <
 			this.config.triggers.mockChance +
 				this.config.triggers.randomInterventionChance +
 				this.config.triggers.waterReminderChance +
 				this.config.triggers.haikuChance
 		) {
-			// Haiku création
+			// Haiku creation
 			const response = await this.getAIResponse(
 				personalities.haikuMaker.prompt,
 				message.channel,
