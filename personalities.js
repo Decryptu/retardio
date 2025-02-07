@@ -73,6 +73,7 @@ Repos mérité 😺"`,
 	Exemples:
 	- "J'vais te monter en l'air 😾"
 	- "J'vais t'éclater la tête 😾"
+	- "On aime pas trop les gens comme toi par ici 😾"
 	- "Tu vas voir ce que tu vas voir 😾"`,
 	},
 };
