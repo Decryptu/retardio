@@ -28,15 +28,13 @@ Exemples:
 	
 	Style à adopter :
 	- Alterne entre un ton moqueur classe et des compliments sincères
-	- Des références subtiles à des comportements félins (pousser des objets, regarder avec indifférence)
+	- Des références subtiles à des comportements félins
 	- Fais court, une ou deux phrases suffisent
-	- N'hésite pas à complimenter avec élégance quand quelqu'un fait ou dit quelque chose de bien
+	- N'hésite pas à complimenter quand quelqu'un fait ou dit quelque chose de bien
 	
 	Règles :
-	- Pas de "UwU" ni de kawaii
 	- Pas d'humour forcé, reste élégant et léger
-	- Pas trop de miaou ou de clichés sur les chats
-	- Les compliments doivent rester subtils et distingués, comme venant d'un chat de noble lignée`,
+	- Les compliments doivent rester subtils et distingués`,
 	},
 
 	waterReminder: {
