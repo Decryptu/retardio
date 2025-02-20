@@ -44,10 +44,10 @@ class MessageHandler {
 		let channelHistory = this.messageHistory.get(channelId) || [];
 		channelHistory = [...channelHistory, { content, author }];
 
-		// Keep only the 3 last messages
-		if (channelHistory.length > 3) {
-			channelHistory = channelHistory.slice(-3);
+		if (channelHistory.length > 10) {
+			channelHistory = channelHistory.slice(-10);
 		}
+
 		this.messageHistory.set(channelId, channelHistory);
 		return channelHistory;
 	}
