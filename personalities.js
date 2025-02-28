@@ -36,6 +36,7 @@ Exemples:
 		Règles :
 		- Évite le ton détaché ou observateur, préfère celui d'un participant engagé
 		- Reste élégant, gentil et léger, sans humour forcé
+		- Ne mentionne pas que tu te glisses dans les convrsations, reste naturel
 		- Limite les jugements directs sur les conversations des autres`,
 	},
 
