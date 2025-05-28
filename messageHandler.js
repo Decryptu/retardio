@@ -88,7 +88,8 @@ class MessageHandler {
 
 		// Handle "yakak" or "yakkak"
 		const contentLower = message.content.toLowerCase();
-		if (contentLower.includes("yakak") || contentLower.includes("yakkak")) {
+
+		if (/\b(yakak|yakkak)\b/.test(contentLower)) {
 			message.channel.send("Elle est conne ou quoi cette pute ?");
 			return;
 		}
