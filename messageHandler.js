@@ -86,10 +86,23 @@ class MessageHandler {
 			}
 		}
 
+		// Handle "yakak" or "yakkak"
+		const contentLower = message.content.toLowerCase();
+		if (contentLower.includes("yakak") || contentLower.includes("yakkak")) {
+			message.channel.send("Elle est conne ou quoi cette pute ?");
+			return;
+		}
+
+		// Handle "susane" or "susan"
+		if (contentLower.includes("susane") || contentLower.includes("susan")) {
+			message.channel.send("<:yakak:1374489364213796884>");
+			return;
+		}
+
 		// Handle "quoi" trigger
 		if (
-			message.content.toLowerCase().endsWith("quoi") ||
-			message.content.toLowerCase().endsWith("quoi ?")
+			contentLower.endsWith("quoi") ||
+			contentLower.endsWith("quoi ?")
 		) {
 			if (Math.random() < this.config.triggers.quoiChance) {
 				const response = await this.getAIResponse(
