@@ -3,6 +3,8 @@ dotenv.config();
 
 const config = {
     token: process.env.TOKEN,
+    clientId: process.env.CLIENT_ID,
+    guildId: process.env.GUILD_ID, // Pour les commandes de guilde (dev)
     openaiApiKey: process.env.API_KEY,
     triggers: {
         quoiChance: 0.5, // 70% de chance de répondre à "quoi"
