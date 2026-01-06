@@ -5,12 +5,14 @@ const crypto = require("crypto");
 
 const DRINKS_FILE = path.join(__dirname, "drinks.json");
 
-// Load drinks data
+// Load drinks data (with fallback for missing keys)
 function loadDrinks() {
+	const defaults = { thes: [], infusions: [], cafes: [], sirops: [] };
 	try {
-		return JSON.parse(fs.readFileSync(DRINKS_FILE, "utf8"));
+		const data = JSON.parse(fs.readFileSync(DRINKS_FILE, "utf8"));
+		return { ...defaults, ...data };
 	} catch {
-		return { thes: [], infusions: [], cafes: [], sirops: [] };
+		return defaults;
 	}
 }
 
@@ -136,9 +138,10 @@ async function handleAutocomplete(interaction) {
 
 	// Autocomplete pour sirop dans /aleatoire
 	if (focusedOption.name === "sirop") {
+		const sirops = drinks.sirops || [];
 		const options = [
 			{ name: "🎲 Aléatoire", value: "aleatoire" },
-			...drinks.sirops.map((s) => ({ name: s, value: s })),
+			...sirops.map((s) => ({ name: s, value: s })),
 		];
 		const filtered = options
 			.filter((opt) =>
@@ -255,7 +258,7 @@ async function handleCommand(interaction) {
 	if (commandName === "liste") {
 		const type = interaction.options.getString("type");
 		const drinks = loadDrinks();
-		const list = drinks[type];
+		const list = drinks[type] || [];
 
 		if (list.length === 0) {
 			return interaction.reply({
