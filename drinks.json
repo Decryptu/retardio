@@ -1,0 +1,30 @@
+{
+  "thes": [
+    "Earl Grey",
+    "Sencha",
+    "Matcha",
+    "Darjeeling",
+    "Oolong",
+    "Rooibos",
+    "Jasmin",
+    "Menthe"
+  ],
+  "cafes": [
+    "Espresso",
+    "Cappuccino",
+    "Latte",
+    "Americano",
+    "Macchiato",
+    "Mocha",
+    "Ristretto",
+    "Flat White"
+  ],
+  "sirops": [
+    "Vanille",
+    "Caramel",
+    "Noisette",
+    "Amande",
+    "Cannelle",
+    "Chocolat"
+  ]
+}
