@@ -84,11 +84,12 @@ const commands = [
 					{ name: "Café", value: "cafe" },
 				),
 		)
-		.addBooleanOption((option) =>
+		.addStringOption((option) =>
 			option
 				.setName("sirop")
-				.setDescription("Ajouter un sirop au café ?")
-				.setRequired(false),
+				.setDescription("Ajouter un sirop ? (laisser vide = sans sirop)")
+				.setRequired(false)
+				.setAutocomplete(true),
 		),
 
 	new SlashCommandBuilder()
@@ -107,15 +108,16 @@ const commands = [
 		),
 ];
 
-// Handle autocomplete for /supprimer command
+// Handle autocomplete
 async function handleAutocomplete(interaction) {
 	const focusedOption = interaction.options.getFocused(true);
+	const drinks = loadDrinks();
 
+	// Autocomplete pour /supprimer
 	if (focusedOption.name === "nom") {
 		const type = interaction.options.getString("type");
 		if (!type) return interaction.respond([]);
 
-		const drinks = loadDrinks();
 		const list = drinks[type] || [];
 		const filtered = list
 			.filter((item) =>
@@ -126,6 +128,21 @@ async function handleAutocomplete(interaction) {
 		await interaction.respond(
 			filtered.map((item) => ({ name: item, value: item })),
 		);
+	}
+
+	// Autocomplete pour sirop dans /aleatoire
+	if (focusedOption.name === "sirop") {
+		const options = [
+			{ name: "🎲 Aléatoire", value: "aleatoire" },
+			...drinks.sirops.map((s) => ({ name: s, value: s })),
+		];
+		const filtered = options
+			.filter((opt) =>
+				opt.name.toLowerCase().includes(focusedOption.value.toLowerCase()),
+			)
+			.slice(0, 25);
+
+		await interaction.respond(filtered);
 	}
 }
 
@@ -177,7 +194,7 @@ async function handleCommand(interaction) {
 
 	if (commandName === "aleatoire") {
 		const type = interaction.options.getString("type");
-		const avecSirop = interaction.options.getBoolean("sirop") ?? false;
+		const siropChoice = interaction.options.getString("sirop");
 		const drinks = loadDrinks();
 
 		if (type === "the") {
@@ -200,14 +217,20 @@ async function handleCommand(interaction) {
 				});
 			}
 
-			if (avecSirop) {
-				const sirop = secureRandom(drinks.sirops);
-				if (!sirop) {
-					return interaction.reply(`Tu vas boire un **${cafe}**`);
+			// Si un sirop est sélectionné
+			if (siropChoice) {
+				let sirop;
+				if (siropChoice === "aleatoire") {
+					sirop = secureRandom(drinks.sirops);
+				} else {
+					sirop = siropChoice;
 				}
-				return interaction.reply(
-					`Tu vas boire un **${cafe}** avec du sirop **${sirop}**`,
-				);
+
+				if (sirop) {
+					return interaction.reply(
+						`Tu vas boire un **${cafe}** avec du sirop **${sirop}**`,
+					);
+				}
 			}
 
 			return interaction.reply(`Tu vas boire un **${cafe}**`);
