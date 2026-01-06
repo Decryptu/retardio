@@ -130,3 +130,4 @@ dist
 .pnp.*
 bun.lock
 package-lock.json
+drinks.json
