@@ -10,7 +10,7 @@ function loadDrinks() {
 	try {
 		return JSON.parse(fs.readFileSync(DRINKS_FILE, "utf8"));
 	} catch {
-		return { thes: [], cafes: [], sirops: [] };
+		return { thes: [], infusions: [], cafes: [], sirops: [] };
 	}
 }
 
@@ -30,7 +30,7 @@ function secureRandom(array) {
 const commands = [
 	new SlashCommandBuilder()
 		.setName("ajouter")
-		.setDescription("Ajouter un thé, café ou sirop à la liste")
+		.setDescription("Ajouter un thé, infusion, café ou sirop à la liste")
 		.addStringOption((option) =>
 			option
 				.setName("type")
@@ -38,6 +38,7 @@ const commands = [
 				.setRequired(true)
 				.addChoices(
 					{ name: "Thé", value: "thes" },
+					{ name: "Infusion", value: "infusions" },
 					{ name: "Café", value: "cafes" },
 					{ name: "Sirop", value: "sirops" },
 				),
@@ -51,7 +52,7 @@ const commands = [
 
 	new SlashCommandBuilder()
 		.setName("supprimer")
-		.setDescription("Supprimer un thé, café ou sirop de la liste")
+		.setDescription("Supprimer un thé, infusion, café ou sirop de la liste")
 		.addStringOption((option) =>
 			option
 				.setName("type")
@@ -59,6 +60,7 @@ const commands = [
 				.setRequired(true)
 				.addChoices(
 					{ name: "Thé", value: "thes" },
+					{ name: "Infusion", value: "infusions" },
 					{ name: "Café", value: "cafes" },
 					{ name: "Sirop", value: "sirops" },
 				),
@@ -81,6 +83,7 @@ const commands = [
 				.setRequired(true)
 				.addChoices(
 					{ name: "Thé", value: "the" },
+					{ name: "Infusion", value: "infusion" },
 					{ name: "Café", value: "cafe" },
 				),
 		)
@@ -94,7 +97,7 @@ const commands = [
 
 	new SlashCommandBuilder()
 		.setName("liste")
-		.setDescription("Afficher la liste des thés, cafés ou sirops")
+		.setDescription("Afficher la liste des thés, infusions, cafés ou sirops")
 		.addStringOption((option) =>
 			option
 				.setName("type")
@@ -102,6 +105,7 @@ const commands = [
 				.setRequired(true)
 				.addChoices(
 					{ name: "Thés", value: "thes" },
+					{ name: "Infusions", value: "infusions" },
 					{ name: "Cafés", value: "cafes" },
 					{ name: "Sirops", value: "sirops" },
 				),
@@ -165,7 +169,7 @@ async function handleCommand(interaction) {
 		drinks[type].push(nom);
 		saveDrinks(drinks);
 
-		const typeNames = { thes: "thé", cafes: "café", sirops: "sirop" };
+		const typeNames = { thes: "thé", infusions: "infusion", cafes: "café", sirops: "sirop" };
 		return interaction.reply(`**${nom}** ajouté aux ${typeNames[type]}s !`);
 	}
 
@@ -188,7 +192,7 @@ async function handleCommand(interaction) {
 		drinks[type].splice(index, 1);
 		saveDrinks(drinks);
 
-		const typeNames = { thes: "thé", cafes: "café", sirops: "sirop" };
+		const typeNames = { thes: "thé", infusions: "infusion", cafes: "café", sirops: "sirop" };
 		return interaction.reply(`**${nom}** supprimé des ${typeNames[type]}s !`);
 	}
 
@@ -206,6 +210,17 @@ async function handleCommand(interaction) {
 				});
 			}
 			return interaction.reply(`Tu vas boire un **${the}**`);
+		}
+
+		if (type === "infusion") {
+			const infusion = secureRandom(drinks.infusions);
+			if (!infusion) {
+				return interaction.reply({
+					content: "Aucune infusion dans la liste !",
+					ephemeral: true,
+				});
+			}
+			return interaction.reply(`Tu vas boire une **${infusion}**`);
 		}
 
 		if (type === "cafe") {
@@ -249,7 +264,7 @@ async function handleCommand(interaction) {
 			});
 		}
 
-		const typeNames = { thes: "Thés", cafes: "Cafés", sirops: "Sirops" };
+		const typeNames = { thes: "Thés", infusions: "Infusions", cafes: "Cafés", sirops: "Sirops" };
 		return interaction.reply(
 			`**${typeNames[type]} disponibles :**\n${list.map((item) => `• ${item}`).join("\n")}`,
 		);
