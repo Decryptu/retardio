@@ -17,14 +17,31 @@ const messageHandler = new MessageHandler(client, config);
 // Register slash commands
 async function registerCommands() {
 	const rest = new REST({ version: "10" }).setToken(config.token);
+	const clientId = config.clientId || client.user.id;
+
+	console.log("Enregistrement des commandes slash...");
+	console.log(`Client ID: ${clientId}`);
+
 	try {
-		console.log("Enregistrement des commandes slash...");
-		await rest.put(Routes.applicationCommands(client.user.id), {
-			body: commands.map((cmd) => cmd.toJSON()),
-		});
-		console.log("Commandes slash enregistrées !");
+		const commandsData = commands.map((cmd) => cmd.toJSON());
+
+		// Si GUILD_ID est défini, utiliser les commandes de guilde (instantané)
+		if (config.guildId) {
+			console.log(`Mode guilde: ${config.guildId}`);
+			await rest.put(Routes.applicationGuildCommands(clientId, config.guildId), {
+				body: commandsData,
+			});
+		} else {
+			// Sinon, commandes globales (peut prendre 1h)
+			console.log("Mode global (peut prendre jusqu'à 1h pour apparaître)");
+			await rest.put(Routes.applicationCommands(clientId), {
+				body: commandsData,
+			});
+		}
+		console.log(`${commandsData.length} commandes slash enregistrées !`);
 	} catch (error) {
-		console.error("Erreur lors de l'enregistrement des commandes:", error);
+		console.error("Erreur lors de l'enregistrement des commandes:");
+		console.error(error.stack || error);
 	}
 }
 
