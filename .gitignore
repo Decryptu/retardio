@@ -131,3 +131,4 @@ dist
 bun.lock
 package-lock.json
 drinks.json
+birthdays.json

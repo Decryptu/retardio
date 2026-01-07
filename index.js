@@ -2,6 +2,15 @@ const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
 const config = require("./config.js");
 const MessageHandler = require("./messageHandler.js");
 const { commands, handleCommand, handleAutocomplete } = require("./commandHandler.js");
+const {
+	birthdayCommands,
+	handleBirthdayCommand,
+	handleBirthdayAutocomplete,
+	startBirthdayCheck,
+} = require("./birthdayHandler.js");
+
+// Combine all commands
+const allCommands = [...commands, ...birthdayCommands];
 
 const client = new Client({
 	intents: [
@@ -23,7 +32,7 @@ async function registerCommands() {
 	console.log(`Client ID: ${clientId}`);
 
 	try {
-		const commandsData = commands.map((cmd) => cmd.toJSON());
+		const commandsData = allCommands.map((cmd) => cmd.toJSON());
 
 		// Si GUILD_ID est défini, utiliser les commandes de guilde (instantané)
 		if (config.guildId) {
@@ -47,10 +56,21 @@ async function registerCommands() {
 
 // Event handler for interactions (slash commands)
 client.on("interactionCreate", async (interaction) => {
+	const cmdName = interaction.commandName;
+	const isBirthdayCmd = cmdName?.startsWith("anniversaire");
+
 	if (interaction.isAutocomplete()) {
-		await handleAutocomplete(interaction);
+		if (isBirthdayCmd) {
+			await handleBirthdayAutocomplete(interaction);
+		} else {
+			await handleAutocomplete(interaction);
+		}
 	} else if (interaction.isChatInputCommand()) {
-		await handleCommand(interaction);
+		if (isBirthdayCmd) {
+			await handleBirthdayCommand(interaction);
+		} else {
+			await handleCommand(interaction);
+		}
 	}
 });
 
@@ -75,6 +95,14 @@ client.on("ready", async () => {
 		`[${new Date().toISOString()}] Bot connecté en tant que ${client.user.tag}`,
 	);
 	await registerCommands();
+
+	// Démarrer la vérification des anniversaires
+	if (config.birthdayChannelId) {
+		startBirthdayCheck(client, config.birthdayChannelId);
+	} else {
+		console.log("BIRTHDAY_CHANNEL_ID non configuré - anniversaires désactivés");
+	}
+
 	console.log("=".repeat(50));
 });
 
