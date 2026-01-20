@@ -248,7 +248,9 @@ async function generateCollectionImage(userId, boosterId) {
     }
 
     // Numéro de la carte en petit
-    ctx.fillStyle = hasCard ? '#000000' : '#666666';
+    // - cartes possédées : noir
+    // - cartes non possédées : gris foncé
+    ctx.fillStyle = hasCard ? '#000000' : '#444444';
     ctx.font = `9px ${PIXEL_FONT}`;
     ctx.textAlign = 'center';
     ctx.fillText(`#${card.id}`, x + cardDisplayWidth / 2, y + cardDisplayHeight - 16);
