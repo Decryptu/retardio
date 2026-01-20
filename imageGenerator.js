@@ -251,7 +251,7 @@ async function generateCollectionImage(userId, boosterId) {
     ctx.fillStyle = hasCard ? '#000000' : '#666666';
     ctx.font = `9px ${PIXEL_FONT}`;
     ctx.textAlign = 'center';
-    ctx.fillText(`#${card.id}`, x + cardDisplayWidth / 2, y + cardDisplayHeight - 8);
+    ctx.fillText(`#${card.id}`, x + cardDisplayWidth / 2, y + cardDisplayHeight - 16);
   }
 
   return canvas.toBuffer('image/png');
