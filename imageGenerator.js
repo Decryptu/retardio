@@ -248,10 +248,10 @@ async function generateCollectionImage(userId, boosterId) {
     }
 
     // Numéro de la carte en petit
-    ctx.fillStyle = hasCard ? '#FFFFFF' : '#666666';
+    ctx.fillStyle = hasCard ? '#000000' : '#666666';
     ctx.font = `9px ${PIXEL_FONT}`;
     ctx.textAlign = 'center';
-    ctx.fillText(`#${card.id}`, x + cardDisplayWidth / 2, y + cardDisplayHeight - 5);
+    ctx.fillText(`#${card.id}`, x + cardDisplayWidth / 2, y + cardDisplayHeight - 8);
   }
 
   return canvas.toBuffer('image/png');
