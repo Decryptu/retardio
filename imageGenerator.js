@@ -11,20 +11,20 @@ const CARD_HEIGHT = 363;
 const BOOSTER_WIDTH = 280;
 const BOOSTER_HEIGHT = 420;
 
-// Charger la police GameBoy si disponible
-const FONT_PATH = path.join(ASSETS_DIR, 'fonts', 'GameBoy.ttf');
+// Charger la police PixelOperator8-Bold si disponible
+const FONT_PATH = path.join(ASSETS_DIR, 'fonts', 'PixelOperator8-Bold.ttf');
 let PIXEL_FONT = 'Arial'; // Fallback
 
 if (fs.existsSync(FONT_PATH)) {
   try {
-    registerFont(FONT_PATH, { family: 'GameBoy' });
-    PIXEL_FONT = 'GameBoy';
-    console.log('✅ Police GameBoy.ttf chargée avec succès');
+    registerFont(FONT_PATH, { family: 'PixelOperator8Bold' });
+    PIXEL_FONT = 'PixelOperator8Bold';
+    console.log('✅ Police PixelOperator8-Bold.ttf chargée avec succès');
   } catch (error) {
-    console.warn('⚠️  Impossible de charger GameBoy.ttf, utilisation d\'Arial');
+    console.warn('⚠️  Impossible de charger PixelOperator8-Bold.ttf, utilisation d\'Arial');
   }
 } else {
-  console.warn('⚠️  GameBoy.ttf non trouvée dans assets/fonts/, utilisation d\'Arial');
+  console.warn('⚠️  PixelOperator8-Bold.ttf non trouvée dans assets/fonts/, utilisation d\'Arial');
 }
 
 /**
