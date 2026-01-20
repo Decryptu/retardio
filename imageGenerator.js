@@ -138,7 +138,7 @@ async function generateCollectionImage(userId, boosterId) {
     throw new Error(`Booster ${boosterId} introuvable ou vide`);
   }
 
-  // Grille 10x5 pour 50 cartes
+  // Grille 10 colonnes, supporte jusqu'à 60 cartes (10x6)
   const columns = 10;
   const rows = Math.ceil(allCards.length / columns);
   const cardDisplayWidth = 120;

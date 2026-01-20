@@ -37,11 +37,11 @@ Affiche la collection de cartes.
 - `booster` (optionnel): Numéro du booster à afficher (défaut: 1)
 
 **Affichage:**
-- Grille 10x5 avec toutes les cartes du booster
+- Grille 10 colonnes (adaptatif : 10x5 pour 50 cartes, 10x6 pour 60 cartes max)
 - Cartes possédées: image de face avec bordure colorée
 - Cartes manquantes: dos de carte en transparence
 - Quantité affichée si vous avez des doublons
-- Statistiques: X/50 cartes (pourcentage)
+- Statistiques: X/Y cartes (pourcentage)
 
 ### `/echange @utilisateur`
 Initie un échange de cartes avec un autre joueur.
@@ -78,13 +78,16 @@ retardio/
 │
 └── assets/
     ├── cards/
-    │   ├── card_1.png à card_50.png
-    │   ├── card_back.png      # Dos de carte (pour cartes non possédées)
+    │   ├── card_1.png à card_X.png  # Jusqu'à 60 cartes max par booster
+    │   ├── card_back.png            # Dos de carte (pour cartes non possédées)
     │   └── README.md
     ├── boosters/
-    │   ├── booster_1.png
+    │   ├── booster_1.png à booster_X.png
     │   └── README.md
-    └── backgrounds/           # Optionnel
+    ├── fonts/
+    │   ├── GameBoy.ttf              # Police pixel art (recommandée)
+    │   └── README.md
+    └── backgrounds/                 # Optionnel
         ├── collection_bg.png
         ├── opening_bg.png
         └── README.md
@@ -99,23 +102,25 @@ retardio/
 ### Pour remplacer les images:
 
 1. **Cartes** (`assets/cards/`)
-   - Créez 50 images PNG (**300x363px**)
-   - Nommez-les: `card_1.png`, `card_2.png`, ..., `card_50.png`
+   - Créez vos images PNG (**300x363px**)
+   - Nommez-les: `card_1.png`, `card_2.png`, etc.
+   - **Maximum:** 60 cartes par booster
    - Créez le dos: `card_back.png` (même dimensions: 300x363px)
    - Remplacez les placeholders
 
 2. **Boosters** (`assets/boosters/`)
-   - Créez l'image du booster: `booster_1.png` (**280x420px**)
-   - Remplacez le placeholder
+   - Créez l'image du booster: `booster_X.png` (**280x420px**)
+   - Vous pouvez avoir plusieurs boosters (booster_1.png, booster_2.png, etc.)
+   - Remplacez les placeholders
 
 3. **Police Pixel Art** (`assets/fonts/`)
-   - Placez votre fichier `GameBoy.ttf` dans ce dossier
+   - Placez votre fichier `GameBoy.ttf` dans ce dossier ✅ (déjà fait)
    - La police sera automatiquement chargée au démarrage
    - Utilisée pour tous les textes sur les images générées
    - Si absente, le bot utilisera Arial en fallback
 
 4. **Backgrounds** (optionnel)
-   - `collection_bg.png` (1370x945px)
+   - `collection_bg.png` (1370x1100px pour 60 cartes max)
    - `opening_bg.png` (1600x543px)
 
 Consultez les README dans chaque dossier `assets/` pour plus de détails.

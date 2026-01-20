@@ -6,10 +6,11 @@ Ces images sont **optionnelles** mais améliorent le rendu visuel.
 
 ### collection_bg.png
 - **Largeur:** 1370px
-- **Hauteur:** 945px
+- **Hauteur:** 1100px (pour 60 cartes max en 10x6)
 - **Format:** PNG ou JPG
-- **Usage:** Fond pour l'image de collection (grille de cartes 10x5)
+- **Usage:** Fond pour l'image de collection (grille de cartes)
 - **Design:** Texture, dégradé, ou pattern discret pour ne pas écraser les cartes
+- **Note:** La hauteur s'adapte automatiquement au nombre de cartes (50 cartes = ~1000px, 60 cartes = ~1100px)
 
 ### opening_bg.png
 - **Largeur:** 1600px

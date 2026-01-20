@@ -11,7 +11,9 @@
 ### Nommage des fichiers
 
 Les cartes doivent être nommées avec leur ID :
-- `card_1.png` à `card_50.png` (pour le premier booster)
+- Format: `card_X.png` où X est l'ID de la carte (1, 2, 3, ...)
+- **Maximum par booster:** 60 cartes
+- **Exemple:** `card_1.png` à `card_60.png` pour un booster de 60 cartes
 
 ### Fichier spécial
 
@@ -36,10 +38,11 @@ Les cartes doivent être nommées avec leur ID :
 ## Remplacement
 
 Pour remplacer les placeholders :
-1. Préparez vos 50 cartes + le dos
-2. Renommez-les selon la convention (card_X.png)
+1. Préparez vos cartes (jusqu'à 60 max par booster) + le dos de carte
+2. Renommez-les selon la convention (card_1.png, card_2.png, ...)
 3. Remplacez les fichiers dans ce dossier
-4. Redémarrez le bot
+4. Mettez à jour `data/cards.json` et `data/boosters.json` avec les infos des cartes
+5. Redémarrez le bot
 
 ---
 
