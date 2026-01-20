@@ -21,7 +21,9 @@ function selectRarity(rarities) {
   const rand = Math.random(); // On peut utiliser Math.random() pour la sélection de rareté
   let cumulative = 0;
 
-  const rarityKeys = ['legendary', 'epic', 'rare', 'uncommon', 'common']; // Ordre décroissant
+  // Ordre de priorité pour les raretés (du plus rare au plus commun)
+  const rarityOrder = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
+  const rarityKeys = rarityOrder.filter(key => rarities[key]); // Ne garder que celles qui existent
 
   for (const rarityKey of rarityKeys) {
     const rarity = rarities[rarityKey];
@@ -31,7 +33,8 @@ function selectRarity(rarities) {
     }
   }
 
-  return 'common'; // Fallback
+  // Fallback sur la première rareté disponible
+  return rarityKeys[rarityKeys.length - 1] || 'common';
 }
 
 /**

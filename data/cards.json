@@ -49,11 +49,11 @@
   "48": { "id": 48, "name": "Carte 48", "rarity": "common", "boosterPackId": 1 },
   "49": { "id": 49, "name": "Carte 49", "rarity": "uncommon", "boosterPackId": 1 },
   "50": { "id": 50, "name": "Carte 50", "rarity": "rare", "boosterPackId": 1 },
-  "51": { "id": 50, "name": "Carte 50", "rarity": "uncommon", "boosterPackId": 1 },
-  "52": { "id": 50, "name": "Carte 50", "rarity": "legendary", "boosterPackId": 1 },
-  "53": { "id": 50, "name": "Carte 50", "rarity": "common", "boosterPackId": 1 },
-  "54": { "id": 50, "name": "Carte 50", "rarity": "uncommon", "boosterPackId": 1 },
-  "55": { "id": 50, "name": "Carte 50", "rarity": "rare", "boosterPackId": 1 },
-  "56": { "id": 50, "name": "Carte 50", "rarity": "uncommon", "boosterPackId": 1 },
-  "57": { "id": 50, "name": "Carte 50", "rarity": "rare", "boosterPackId": 1 }
+  "51": { "id": 51, "name": "Carte 51", "rarity": "uncommon", "boosterPackId": 1 },
+  "52": { "id": 52, "name": "Carte 52", "rarity": "legendary", "boosterPackId": 1 },
+  "53": { "id": 53, "name": "Carte 53", "rarity": "common", "boosterPackId": 1 },
+  "54": { "id": 54, "name": "Carte 54", "rarity": "uncommon", "boosterPackId": 1 },
+  "55": { "id": 55, "name": "Carte 55", "rarity": "rare", "boosterPackId": 1 },
+  "56": { "id": 56, "name": "Carte 56", "rarity": "uncommon", "boosterPackId": 1 },
+  "57": { "id": 57, "name": "Carte 57", "rarity": "rare", "boosterPackId": 1 }
 }
