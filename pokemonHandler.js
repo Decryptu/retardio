@@ -56,13 +56,13 @@ async function handleBoosterCommand(interaction) {
 
   try {
     // Tirer 5 cartes du booster 1
-    const cardIds = drawBoosterPack(1);
+    const { cards: cardIds, isGodPack } = drawBoosterPack(1);
 
     // Ajouter les cartes à l'utilisateur
     addCardsToUser(userId, cardIds);
 
     // Générer l'image
-    const imageBuffer = await generateBoosterOpeningImage(cardIds);
+    const imageBuffer = await generateBoosterOpeningImage(cardIds, isGodPack);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'booster.png' });
 
     // Préparer la description des cartes
@@ -72,11 +72,11 @@ async function handleBoosterCommand(interaction) {
     }).join('\n');
 
     const embed = new EmbedBuilder()
-      .setColor('#FFD700')
-      .setTitle('🎉 Booster Ouvert !')
-      .setDescription(`Vous avez reçu les cartes suivantes :\n\n${cardDescriptions}`)
+      .setColor(isGodPack ? '#FF00FF' : '#FFD700')
+      .setTitle(isGodPack ? '✨🌟 GOD PACK ! 🌟✨' : '🎉 Booster Ouvert !')
+      .setDescription(`${isGodPack ? '**INCROYABLE ! Toutes les cartes sont au moins Rare !**\n\n' : ''}Vous avez reçu les cartes suivantes :\n\n${cardDescriptions}`)
       .setImage('attachment://booster.png')
-      .setFooter({ text: 'Revenez demain pour un nouveau booster !' });
+      .setFooter({ text: isGodPack ? 'Félicitations pour ce GOD PACK légendaire ! 🎊' : 'Revenez demain pour un nouveau booster !' });
 
     await interaction.editReply({
       embeds: [embed],

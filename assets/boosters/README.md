@@ -3,9 +3,10 @@
 ## Spécifications
 
 ### Dimensions
-- **Largeur:** 300px (ou plus si design détaillé)
-- **Hauteur:** 420px (même ratio que les cartes)
+- **Largeur:** 280px
+- **Hauteur:** 420px
 - **Format:** PNG avec transparence (recommandé)
+- **Ratio:** 2:3
 
 ### Nommage des fichiers
 

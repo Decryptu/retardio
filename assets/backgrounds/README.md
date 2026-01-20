@@ -5,15 +5,15 @@
 Ces images sont **optionnelles** mais améliorent le rendu visuel.
 
 ### collection_bg.png
-- **Largeur:** 1400px
-- **Hauteur:** 1000px
+- **Largeur:** 1370px
+- **Hauteur:** 945px
 - **Format:** PNG ou JPG
-- **Usage:** Fond pour l'image de collection (grille de cartes)
+- **Usage:** Fond pour l'image de collection (grille de cartes 10x5)
 - **Design:** Texture, dégradé, ou pattern discret pour ne pas écraser les cartes
 
 ### opening_bg.png
-- **Largeur:** 1200px
-- **Hauteur:** 400px
+- **Largeur:** 1600px
+- **Hauteur:** 543px
 - **Format:** PNG ou JPG
 - **Usage:** Fond pour l'affichage des 5 cartes tirées
 - **Design:** Fond dynamique, effet de "révélation", etc.

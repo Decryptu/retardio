@@ -23,6 +23,12 @@ Ouvre votre booster quotidien gratuit (5 cartes).
 - 🟪 **Épique** (4%) - Cartes 48-49
 - 🟠 **Légendaire** (1%) - Carte 50
 
+**✨ GOD PACK - Probabilité 1/256:**
+- Chance ultra rare d'obtenir un **God Pack**
+- Toutes les 5 cartes sont au moins **Rare** ou mieux
+- Fond violet spécial et message de félicitations
+- Les God Packs utilisent un tirage pondéré parmi Rare/Épique/Légendaire uniquement
+
 ### `/collection [utilisateur] [booster]`
 Affiche la collection de cartes.
 
@@ -93,18 +99,24 @@ retardio/
 ### Pour remplacer les images:
 
 1. **Cartes** (`assets/cards/`)
-   - Créez 50 images PNG (300x420px)
+   - Créez 50 images PNG (**300x363px**)
    - Nommez-les: `card_1.png`, `card_2.png`, ..., `card_50.png`
-   - Créez le dos: `card_back.png` (même dimensions)
+   - Créez le dos: `card_back.png` (même dimensions: 300x363px)
    - Remplacez les placeholders
 
 2. **Boosters** (`assets/boosters/`)
-   - Créez l'image du booster: `booster_1.png` (300x420px)
+   - Créez l'image du booster: `booster_1.png` (**280x420px**)
    - Remplacez le placeholder
 
-3. **Backgrounds** (optionnel)
-   - `collection_bg.png` (1400x1000px)
-   - `opening_bg.png` (1200x400px)
+3. **Police Pixel Art** (`assets/fonts/`)
+   - Placez votre fichier `GameBoy.ttf` dans ce dossier
+   - La police sera automatiquement chargée au démarrage
+   - Utilisée pour tous les textes sur les images générées
+   - Si absente, le bot utilisera Arial en fallback
+
+4. **Backgrounds** (optionnel)
+   - `collection_bg.png` (1370x945px)
+   - `opening_bg.png` (1600x543px)
 
 Consultez les README dans chaque dossier `assets/` pour plus de détails.
 
@@ -115,7 +127,17 @@ Consultez les README dans chaque dossier `assets/` pour plus de détails.
 ### Système de tirage aléatoire
 - Utilise `crypto.randomInt()` pour un aléatoire cryptographiquement sécurisé
 - Probabilités configurables dans `data/boosters.json`
-- Garantie de rareté minimum par pack
+- Garantie de rareté minimum par pack (Peu commun ou mieux)
+- **God Pack:** 1/256 chance - Toutes les cartes sont au moins Rare
+- Les God Packs ont un fond violet spécial et un message unique
+
+### Génération d'images
+- Utilise **node-canvas** pour générer les images à la volée
+- Police pixel art **GameBoy.ttf** chargée automatiquement depuis `assets/fonts/`
+- Fallback sur Arial si la police n'est pas trouvée
+- Dimensions des cartes: 300x363px
+- Dimensions des boosters: 280x420px
+- God Packs ont un fond violet dégradé spécial
 
 ### Stockage des données
 - **JSON local** (pas de base de données externe)

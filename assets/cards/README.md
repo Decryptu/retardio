@@ -4,9 +4,9 @@
 
 ### Dimensions
 - **Largeur:** 300px
-- **Hauteur:** 420px
+- **Hauteur:** 363px
 - **Format:** PNG avec transparence (recommandé)
-- **Ratio:** Standard carte à jouer (1:1.4)
+- **Ratio:** 1:1.21
 
 ### Nommage des fichiers
 
@@ -16,7 +16,7 @@ Les cartes doivent être nommées avec leur ID :
 ### Fichier spécial
 
 - `card_back.png` : **Dos de carte** utilisé pour les cartes non possédées dans la collection
-  - Même dimensions : 300x420px
+  - Même dimensions : 300x363px
   - Design uniforme pour toutes les cartes non découvertes
 
 ## Répartition des raretés (Booster 1)

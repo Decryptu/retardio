@@ -78,7 +78,7 @@ function getCardRarity(cardId) {
 /**
  * Tire 5 cartes aléatoires d'un booster avec garantie de rareté
  * @param {number} boosterId - ID du booster
- * @returns {number[]} Tableau de 5 IDs de cartes
+ * @returns {Object} { cards: number[], isGodPack: boolean }
  */
 function drawBoosterPack(boosterId) {
   const booster = boosters[boosterId];
@@ -89,52 +89,84 @@ function drawBoosterPack(boosterId) {
   const drawnCards = [];
   const rarities = booster.rarities;
   const cardsPerPack = booster.cardsPerPack || 5;
-  const minRarity = booster.guarantees?.minRarity || 'uncommon';
+  let minRarity = booster.guarantees?.minRarity || 'uncommon';
 
-  // Tirer les cartes normalement
+  // God Pack: 1/256 chance que toutes les cartes soient au moins Rare
+  const isGodPack = secureRandomInt(0, 256) === 0;
+  if (isGodPack) {
+    minRarity = 'rare'; // Toutes les cartes seront au moins Rare
+    console.log('🌟 GOD PACK ACTIVATED! 🌟');
+  }
+
+  // Tirer les cartes
   for (let i = 0; i < cardsPerPack; i++) {
-    const rarityKey = selectRarity(rarities);
+    let rarityKey;
+
+    if (isGodPack) {
+      // Pour God Pack, tirer uniquement parmi Rare/Epic/Legendary
+      const godRarities = Object.keys(rarities).filter(key =>
+        isRarityAtLeast(key, 'rare')
+      );
+      const totalProb = godRarities.reduce((sum, key) => sum + rarities[key].probability, 0);
+      const rand = Math.random();
+      let cumulative = 0;
+
+      for (const key of godRarities) {
+        cumulative += rarities[key].probability / totalProb;
+        if (rand < cumulative) {
+          rarityKey = key;
+          break;
+        }
+      }
+      if (!rarityKey) rarityKey = 'rare'; // Fallback
+    } else {
+      // Tirage normal
+      rarityKey = selectRarity(rarities);
+    }
+
     const cardId = drawCardFromRarity(rarities, rarityKey);
     drawnCards.push(cardId);
   }
 
-  // Vérifier la garantie de rareté
-  const hasGuaranteedRarity = drawnCards.some(cardId => {
-    const rarity = getCardRarity(cardId);
-    return isRarityAtLeast(rarity, minRarity);
-  });
+  // Vérifier la garantie de rareté (sauf si God Pack, déjà garanti)
+  if (!isGodPack) {
+    const hasGuaranteedRarity = drawnCards.some(cardId => {
+      const rarity = getCardRarity(cardId);
+      return isRarityAtLeast(rarity, minRarity);
+    });
 
-  // Si pas de carte garantie, remplacer la dernière carte par une carte garantie
-  if (!hasGuaranteedRarity) {
-    const guaranteedRarities = Object.keys(rarities).filter(key =>
-      isRarityAtLeast(key, minRarity)
-    );
+    // Si pas de carte garantie, remplacer la dernière carte par une carte garantie
+    if (!hasGuaranteedRarity) {
+      const guaranteedRarities = Object.keys(rarities).filter(key =>
+        isRarityAtLeast(key, minRarity)
+      );
 
-    // Calculer la somme des probabilités pour normalisation
-    const totalProb = guaranteedRarities.reduce((sum, key) => {
-      return sum + rarities[key].probability;
-    }, 0);
+      // Calculer la somme des probabilités pour normalisation
+      const totalProb = guaranteedRarities.reduce((sum, key) => {
+        return sum + rarities[key].probability;
+      }, 0);
 
-    // Sélectionner une rareté garantie aléatoirement (pondérée, normalisée)
-    let guaranteedRarity = minRarity;
-    const rand = Math.random();
-    let cumulative = 0;
+      // Sélectionner une rareté garantie aléatoirement (pondérée, normalisée)
+      let guaranteedRarity = minRarity;
+      const rand = Math.random();
+      let cumulative = 0;
 
-    for (const rarityKey of guaranteedRarities) {
-      const rarity = rarities[rarityKey];
-      cumulative += rarity.probability / totalProb; // Normaliser
-      if (rand < cumulative) {
-        guaranteedRarity = rarityKey;
-        break;
+      for (const rarityKey of guaranteedRarities) {
+        const rarity = rarities[rarityKey];
+        cumulative += rarity.probability / totalProb; // Normaliser
+        if (rand < cumulative) {
+          guaranteedRarity = rarityKey;
+          break;
+        }
       }
-    }
 
-    // Remplacer la dernière carte
-    const guaranteedCard = drawCardFromRarity(rarities, guaranteedRarity);
-    drawnCards[drawnCards.length - 1] = guaranteedCard;
+      // Remplacer la dernière carte
+      const guaranteedCard = drawCardFromRarity(rarities, guaranteedRarity);
+      drawnCards[drawnCards.length - 1] = guaranteedCard;
+    }
   }
 
-  return drawnCards;
+  return { cards: drawnCards, isGodPack };
 }
 
 /**

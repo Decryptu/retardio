@@ -14,8 +14,9 @@ console.log('🧪 Test du système Pokémon Booster\n');
 // Test 1: Tirage de cartes
 console.log('Test 1: Tirage d\'un booster...');
 try {
-  const cards = drawBoosterPack(1);
+  const { cards, isGodPack } = drawBoosterPack(1);
   console.log(`✅ Booster tiré: ${cards.length} cartes`);
+  console.log(`   God Pack: ${isGodPack ? 'OUI 🌟' : 'Non'}`);
   console.log(`   Cartes: ${cards.join(', ')}`);
 
   // Vérifier les raretés
@@ -25,12 +26,28 @@ try {
   });
   console.log(`   Raretés: ${rarities.join(', ')}`);
 
-  // Vérifier la garantie (au moins 1 peu commun ou mieux)
-  const hasUncommonOrBetter = cards.some(id => {
+  // Vérifier la garantie (au moins 1 peu commun ou mieux, ou Rare+ si God Pack)
+  const minRarity = isGodPack ? 'Rare' : 'Peu commun';
+  const requiredRarities = isGodPack
+    ? ['Rare', 'Épique', 'Légendaire']
+    : ['Peu commun', 'Rare', 'Épique', 'Légendaire'];
+
+  const hasGuarantee = cards.some(id => {
     const info = getCardInfo(id);
-    return ['Peu commun', 'Rare', 'Épique', 'Légendaire'].includes(info.rarityName);
+    return requiredRarities.includes(info.rarityName);
   });
-  if (hasUncommonOrBetter) {
+
+  if (isGodPack) {
+    const allRareOrBetter = cards.every(id => {
+      const info = getCardInfo(id);
+      return ['Rare', 'Épique', 'Légendaire'].includes(info.rarityName);
+    });
+    if (allRareOrBetter) {
+      console.log('   ✅ God Pack valide (toutes les cartes sont Rare+)');
+    } else {
+      console.log('   ❌ ERREUR: God Pack invalide !');
+    }
+  } else if (hasGuarantee) {
     console.log('   ✅ Garantie respectée (au moins 1 Peu commun+)');
   } else {
     console.log('   ❌ ERREUR: Garantie non respectée !');
@@ -82,7 +99,7 @@ console.log('Test 3: Génération d\'images...');
   try {
     // Test image d'ouverture
     const testCards = [1, 5, 10, 30, 50];
-    const openingImage = await generateBoosterOpeningImage(testCards);
+    const openingImage = await generateBoosterOpeningImage(testCards, false);
     console.log(`✅ Image d'ouverture générée: ${openingImage.length} bytes`);
 
     // Sauvegarder pour vérification visuelle (optionnel)
