@@ -1,0 +1,344 @@
+{
+  "1": {
+    "id": 1,
+    "name": "Carte 1",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "2": {
+    "id": 2,
+    "name": "Carte 2",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "3": {
+    "id": 3,
+    "name": "Carte 3",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "4": {
+    "id": 4,
+    "name": "Carte 4",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "5": {
+    "id": 5,
+    "name": "Carte 5",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "6": {
+    "id": 6,
+    "name": "Carte 6",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "7": {
+    "id": 7,
+    "name": "Carte 7",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "8": {
+    "id": 8,
+    "name": "Carte 8",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "9": {
+    "id": 9,
+    "name": "Carte 9",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "10": {
+    "id": 10,
+    "name": "Carte 10",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "11": {
+    "id": 11,
+    "name": "Carte 11",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "12": {
+    "id": 12,
+    "name": "Carte 12",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "13": {
+    "id": 13,
+    "name": "Carte 13",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "14": {
+    "id": 14,
+    "name": "Carte 14",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "15": {
+    "id": 15,
+    "name": "Carte 15",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "16": {
+    "id": 16,
+    "name": "Carte 16",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "17": {
+    "id": 17,
+    "name": "Carte 17",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "18": {
+    "id": 18,
+    "name": "Carte 18",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "19": {
+    "id": 19,
+    "name": "Carte 19",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "20": {
+    "id": 20,
+    "name": "Carte 20",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "21": {
+    "id": 21,
+    "name": "Carte 21",
+    "rarity": "rare",
+    "boosterPackId": 1
+  },
+  "22": {
+    "id": 22,
+    "name": "Carte 22",
+    "rarity": "rare",
+    "boosterPackId": 1
+  },
+  "23": {
+    "id": 23,
+    "name": "Carte 23",
+    "rarity": "legendary",
+    "boosterPackId": 1
+  },
+  "24": {
+    "id": 24,
+    "name": "Carte 24",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "25": {
+    "id": 25,
+    "name": "Carte 25",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "26": {
+    "id": 26,
+    "name": "Carte 26",
+    "rarity": "rare",
+    "boosterPackId": 1
+  },
+  "27": {
+    "id": 27,
+    "name": "Carte 27",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "28": {
+    "id": 28,
+    "name": "Carte 28",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "29": {
+    "id": 29,
+    "name": "Carte 29",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "30": {
+    "id": 30,
+    "name": "Carte 30",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "31": {
+    "id": 31,
+    "name": "Carte 31",
+    "rarity": "rare",
+    "boosterPackId": 1
+  },
+  "32": {
+    "id": 32,
+    "name": "Carte 32",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "33": {
+    "id": 33,
+    "name": "Carte 33",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "34": {
+    "id": 34,
+    "name": "Carte 34",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "35": {
+    "id": 35,
+    "name": "Carte 35",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "36": {
+    "id": 36,
+    "name": "Carte 36",
+    "rarity": "rare",
+    "boosterPackId": 1
+  },
+  "37": {
+    "id": 37,
+    "name": "Carte 37",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "38": {
+    "id": 38,
+    "name": "Carte 38",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "39": {
+    "id": 39,
+    "name": "Carte 39",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "40": {
+    "id": 40,
+    "name": "Carte 40",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "41": {
+    "id": 41,
+    "name": "Carte 41",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "42": {
+    "id": 42,
+    "name": "Carte 42",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "43": {
+    "id": 43,
+    "name": "Carte 43",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "44": {
+    "id": 44,
+    "name": "Carte 44",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "45": {
+    "id": 45,
+    "name": "Carte 45",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "46": {
+    "id": 46,
+    "name": "Carte 46",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "47": {
+    "id": 47,
+    "name": "Carte 47",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "48": {
+    "id": 48,
+    "name": "Carte 48",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "49": {
+    "id": 49,
+    "name": "Carte 49",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "50": {
+    "id": 50,
+    "name": "Carte 50",
+    "rarity": "rare",
+    "boosterPackId": 1
+  },
+  "51": {
+    "id": 51,
+    "name": "Carte 51",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "52": {
+    "id": 52,
+    "name": "Carte 52",
+    "rarity": "legendary",
+    "boosterPackId": 1
+  },
+  "53": {
+    "id": 53,
+    "name": "Carte 53",
+    "rarity": "common",
+    "boosterPackId": 1
+  },
+  "54": {
+    "id": 54,
+    "name": "Carte 54",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "55": {
+    "id": 55,
+    "name": "Carte 55",
+    "rarity": "rare",
+    "boosterPackId": 1
+  },
+  "56": {
+    "id": 56,
+    "name": "Carte 56",
+    "rarity": "uncommon",
+    "boosterPackId": 1
+  },
+  "57": {
+    "id": 57,
+    "name": "Carte 57",
+    "rarity": "rare",
+    "boosterPackId": 1
+  }
+}

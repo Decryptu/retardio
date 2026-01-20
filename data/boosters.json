@@ -1,0 +1,11 @@
+{
+  "1": {
+    "id": 1,
+    "name": "Édition Première",
+    "totalCards": 57,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    }
+  }
+}
