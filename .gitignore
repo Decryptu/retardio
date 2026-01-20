@@ -132,3 +132,6 @@ bun.lock
 package-lock.json
 drinks.json
 birthdays.json
+
+# Pokémon Booster - User data
+data/db/

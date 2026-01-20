@@ -8,9 +8,14 @@ const {
 	handleBirthdayAutocomplete,
 	startBirthdayCheck,
 } = require("./birthdayHandler.js");
+const {
+	pokemonCommands,
+	handlePokemonCommand,
+	handlePokemonInteraction,
+} = require("./pokemonHandler.js");
 
 // Combine all commands
-const allCommands = [...commands, ...birthdayCommands];
+const allCommands = [...commands, ...birthdayCommands, ...pokemonCommands];
 
 const client = new Client({
 	intents: [
@@ -58,6 +63,7 @@ async function registerCommands() {
 client.on("interactionCreate", async (interaction) => {
 	const cmdName = interaction.commandName;
 	const isBirthdayCmd = cmdName?.startsWith("anniversaire");
+	const isPokemonCmd = ["booster", "collection", "echange"].includes(cmdName);
 
 	if (interaction.isAutocomplete()) {
 		if (isBirthdayCmd) {
@@ -68,9 +74,14 @@ client.on("interactionCreate", async (interaction) => {
 	} else if (interaction.isChatInputCommand()) {
 		if (isBirthdayCmd) {
 			await handleBirthdayCommand(interaction);
+		} else if (isPokemonCmd) {
+			await handlePokemonCommand(interaction);
 		} else {
 			await handleCommand(interaction);
 		}
+	} else if (interaction.isStringSelectMenu() || interaction.isButton()) {
+		// Gérer les interactions Pokémon (menus et boutons)
+		await handlePokemonInteraction(interaction);
 	}
 });
 

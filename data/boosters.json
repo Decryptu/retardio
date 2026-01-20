@@ -1,0 +1,43 @@
+{
+  "1": {
+    "id": 1,
+    "name": "Édition Première",
+    "totalCards": 50,
+    "cardsPerPack": 5,
+    "rarities": {
+      "common": {
+        "name": "Commun",
+        "cardIds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+        "color": "#CCCCCC",
+        "probability": 0.60
+      },
+      "uncommon": {
+        "name": "Peu commun",
+        "cardIds": [31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
+        "color": "#1EFF00",
+        "probability": 0.25
+      },
+      "rare": {
+        "name": "Rare",
+        "cardIds": [43, 44, 45, 46, 47],
+        "color": "#0070DD",
+        "probability": 0.10
+      },
+      "epic": {
+        "name": "Épique",
+        "cardIds": [48, 49],
+        "color": "#A335EE",
+        "probability": 0.04
+      },
+      "legendary": {
+        "name": "Légendaire",
+        "cardIds": [50],
+        "color": "#FF8000",
+        "probability": 0.01
+      }
+    },
+    "guarantees": {
+      "minRarity": "uncommon"
+    }
+  }
+}
