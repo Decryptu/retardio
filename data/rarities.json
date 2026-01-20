@@ -1,0 +1,22 @@
+{
+  "common": {
+    "name": "Commun",
+    "color": "#CCCCCC",
+    "probability": 0.54
+  },
+  "uncommon": {
+    "name": "Peu commun",
+    "color": "#1EFF00",
+    "probability": 0.28
+  },
+  "rare": {
+    "name": "Rare",
+    "color": "#0070DD",
+    "probability": 0.14
+  },
+  "legendary": {
+    "name": "Légendaire",
+    "color": "#FF8000",
+    "probability": 0.04
+  }
+}

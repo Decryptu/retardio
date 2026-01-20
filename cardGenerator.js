@@ -1,6 +1,39 @@
 const crypto = require('crypto');
 const boosters = require('./data/boosters.json');
 const cards = require('./data/cards.json');
+const rarities = require('./data/rarities.json');
+const godpackConfig = require('./data/godpack.json');
+
+/**
+ * Cache des cardIds groupés par booster et rareté
+ * Structure: { boosterId: { rarityKey: [cardIds...] } }
+ */
+const cardIdsCache = {};
+
+/**
+ * Construit le cache des cardIds au démarrage
+ */
+function buildCardIdsCache() {
+  Object.values(cards).forEach(card => {
+    const boosterId = card.boosterPackId;
+    const rarity = card.rarity;
+
+    if (!cardIdsCache[boosterId]) {
+      cardIdsCache[boosterId] = {};
+    }
+
+    if (!cardIdsCache[boosterId][rarity]) {
+      cardIdsCache[boosterId][rarity] = [];
+    }
+
+    cardIdsCache[boosterId][rarity].push(card.id);
+  });
+
+  console.log('✅ Cache des cardIds construit:', JSON.stringify(cardIdsCache, null, 2));
+}
+
+// Construire le cache au chargement du module
+buildCardIdsCache();
 
 /**
  * Génère un nombre aléatoire cryptographiquement sécurisé entre min (inclus) et max (exclus)
@@ -14,19 +47,21 @@ function secureRandomInt(min, max) {
 
 /**
  * Sélectionne une rareté basée sur les probabilités
- * @param {Object} rarities - Configuration des raretés du booster
+ * @param {number} boosterId - ID du booster
  * @returns {string} Nom de la rareté tirée
  */
-function selectRarity(rarities) {
+function selectRarity(boosterId) {
   const rand = Math.random(); // On peut utiliser Math.random() pour la sélection de rareté
   let cumulative = 0;
 
   // Ordre de priorité pour les raretés (du plus rare au plus commun)
   const rarityOrder = ['legendary', 'epic', 'rare', 'uncommon', 'common'];
-  const rarityKeys = rarityOrder.filter(key => rarities[key]); // Ne garder que celles qui existent
+  // Ne garder que les raretés qui existent dans ce booster
+  const rarityKeys = rarityOrder.filter(key => cardIdsCache[boosterId]?.[key]);
 
   for (const rarityKey of rarityKeys) {
     const rarity = rarities[rarityKey];
+    if (!rarity) continue;
     cumulative += rarity.probability;
     if (rand < cumulative) {
       return rarityKey;
@@ -39,13 +74,15 @@ function selectRarity(rarities) {
 
 /**
  * Tire une carte aléatoire d'une rareté donnée
- * @param {Object} rarities - Configuration des raretés
+ * @param {number} boosterId - ID du booster
  * @param {string} rarityKey - Clé de la rareté
  * @returns {number} ID de la carte tirée
  */
-function drawCardFromRarity(rarities, rarityKey) {
-  const rarity = rarities[rarityKey];
-  const cardIds = rarity.cardIds;
+function drawCardFromRarity(boosterId, rarityKey) {
+  const cardIds = cardIdsCache[boosterId]?.[rarityKey];
+  if (!cardIds || cardIds.length === 0) {
+    throw new Error(`Aucune carte de rareté ${rarityKey} trouvée dans le booster ${boosterId}`);
+  }
   const randomIndex = secureRandomInt(0, cardIds.length);
   return cardIds[randomIndex];
 }
@@ -90,14 +127,14 @@ function drawBoosterPack(boosterId) {
   }
 
   const drawnCards = [];
-  const rarities = booster.rarities;
   const cardsPerPack = booster.cardsPerPack || 5;
   let minRarity = booster.guarantees?.minRarity || 'uncommon';
 
-  // God Pack: 1/256 chance que toutes les cartes soient au moins Rare
-  const isGodPack = secureRandomInt(0, 256) === 0;
+  // God Pack: utiliser la configuration de godpack.json
+  const godPackProbability = godpackConfig.probability;
+  const isGodPack = Math.random() < godPackProbability;
   if (isGodPack) {
-    minRarity = 'rare'; // Toutes les cartes seront au moins Rare
+    minRarity = godpackConfig.minRarity; // Toutes les cartes seront au moins Rare
     console.log('🌟 GOD PACK ACTIVATED! 🌟');
   }
 
@@ -106,28 +143,31 @@ function drawBoosterPack(boosterId) {
     let rarityKey;
 
     if (isGodPack) {
-      // Pour God Pack, tirer uniquement parmi Rare/Epic/Legendary
-      const godRarities = Object.keys(rarities).filter(key =>
-        isRarityAtLeast(key, 'rare')
+      // Pour God Pack, tirer uniquement parmi les raretés qui respectent minRarity
+      const availableRarities = Object.keys(cardIdsCache[boosterId] || {});
+      const godRarities = availableRarities.filter(key =>
+        isRarityAtLeast(key, godpackConfig.minRarity)
       );
-      const totalProb = godRarities.reduce((sum, key) => sum + rarities[key].probability, 0);
+      const totalProb = godRarities.reduce((sum, key) => {
+        return sum + (rarities[key]?.probability || 0);
+      }, 0);
       const rand = Math.random();
       let cumulative = 0;
 
       for (const key of godRarities) {
-        cumulative += rarities[key].probability / totalProb;
+        cumulative += (rarities[key]?.probability || 0) / totalProb;
         if (rand < cumulative) {
           rarityKey = key;
           break;
         }
       }
-      if (!rarityKey) rarityKey = 'rare'; // Fallback
+      if (!rarityKey) rarityKey = godpackConfig.minRarity; // Fallback
     } else {
       // Tirage normal
-      rarityKey = selectRarity(rarities);
+      rarityKey = selectRarity(boosterId);
     }
 
-    const cardId = drawCardFromRarity(rarities, rarityKey);
+    const cardId = drawCardFromRarity(boosterId, rarityKey);
     drawnCards.push(cardId);
   }
 
@@ -140,13 +180,14 @@ function drawBoosterPack(boosterId) {
 
     // Si pas de carte garantie, remplacer la dernière carte par une carte garantie
     if (!hasGuaranteedRarity) {
-      const guaranteedRarities = Object.keys(rarities).filter(key =>
+      const availableRarities = Object.keys(cardIdsCache[boosterId] || {});
+      const guaranteedRarities = availableRarities.filter(key =>
         isRarityAtLeast(key, minRarity)
       );
 
       // Calculer la somme des probabilités pour normalisation
       const totalProb = guaranteedRarities.reduce((sum, key) => {
-        return sum + rarities[key].probability;
+        return sum + (rarities[key]?.probability || 0);
       }, 0);
 
       // Sélectionner une rareté garantie aléatoirement (pondérée, normalisée)
@@ -155,8 +196,9 @@ function drawBoosterPack(boosterId) {
       let cumulative = 0;
 
       for (const rarityKey of guaranteedRarities) {
-        const rarity = rarities[rarityKey];
-        cumulative += rarity.probability / totalProb; // Normaliser
+        const rarityData = rarities[rarityKey];
+        if (!rarityData) continue;
+        cumulative += rarityData.probability / totalProb; // Normaliser
         if (rand < cumulative) {
           guaranteedRarity = rarityKey;
           break;
@@ -164,7 +206,7 @@ function drawBoosterPack(boosterId) {
       }
 
       // Remplacer la dernière carte
-      const guaranteedCard = drawCardFromRarity(rarities, guaranteedRarity);
+      const guaranteedCard = drawCardFromRarity(boosterId, guaranteedRarity);
       drawnCards[drawnCards.length - 1] = guaranteedCard;
     }
   }
@@ -183,8 +225,7 @@ function getCardInfo(cardId) {
     return null;
   }
 
-  const booster = boosters[card.boosterPackId];
-  const rarityData = booster.rarities[card.rarity];
+  const rarityData = rarities[card.rarity];
 
   return {
     ...card,
