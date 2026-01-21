@@ -8,8 +8,6 @@ const boosters = require('./data/boosters.json');
 const ASSETS_DIR = path.join(__dirname, 'assets');
 const CARD_WIDTH = 300;
 const CARD_HEIGHT = 363;
-const BOOSTER_WIDTH = 280;
-const BOOSTER_HEIGHT = 420;
 
 // Charger la police PixelOperator8-Bold si disponible
 const FONT_PATH = path.join(ASSETS_DIR, 'fonts', 'PixelOperator8-Bold.ttf');
@@ -55,7 +53,7 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
       ctx.fillStyle = 'rgba(129, 0, 127, 0.3)';
       ctx.fillRect(0, 0, totalWidth, totalHeight);
     }
-  } catch (error) {
+  } catch {
     console.warn('⚠️  Impossible de charger opening_bg.png, utilisation du dégradé par défaut');
     // Fallback sur le dégradé
     const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
@@ -174,7 +172,7 @@ async function generateCollectionImage(userId, boosterId) {
     const bgImage = await loadImage(bgPath);
     // Dessiner l'image de fond en la redimensionnant pour remplir le canvas
     ctx.drawImage(bgImage, 0, 0, totalWidth, totalHeight);
-  } catch (error) {
+  } catch {
     console.warn('⚠️  Impossible de charger collection_bg.png, utilisation du dégradé par défaut');
     // Fallback sur le dégradé
     const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
@@ -190,14 +188,23 @@ async function generateCollectionImage(userId, boosterId) {
     return card !== undefined;
   }).length;
 
+  // Ajouter une ombre noire sharp (pas floue)
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
   ctx.fillStyle = '#FFFFFF';
   ctx.font = `bold 36px ${PIXEL_FONT}`;
   ctx.textAlign = 'center';
-  ctx.fillText(`Collection - ${booster.name}`, totalWidth / 2, 55);
+  ctx.fillText(`Collection - ${booster.name}`, totalWidth / 2, 65);
 
   ctx.font = `22px ${PIXEL_FONT}`;
   const percentage = booster.totalCards > 0 ? Math.round((owned / booster.totalCards) * 100) : 0;
-  ctx.fillText(`${owned}/${booster.totalCards} (${percentage}%)`, totalWidth / 2, 90);
+  ctx.fillText(`${owned}/${booster.totalCards} (${percentage}%)`, totalWidth / 2, 100);
+
+  // Retirer l'ombre pour le reste
+  ctx.shadowColor = 'transparent';
 
   // Charger l'image du dos de carte
   const cardBackPath = path.join(ASSETS_DIR, 'cards', 'card_back.png');
