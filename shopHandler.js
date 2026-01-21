@@ -31,6 +31,23 @@ const shopCommands = [
 ];
 
 /**
+ * Vérifie que l'utilisateur qui interagit est le propriétaire de l'interaction
+ * @param {Interaction} interaction - L'interaction Discord
+ * @param {string} ownerId - L'ID du propriétaire attendu
+ * @returns {boolean} true si autorisé
+ */
+async function verifyInteractionOwner(interaction, ownerId) {
+  if (interaction.user.id !== ownerId) {
+    await interaction.reply({
+      content: '❌ Cette interaction ne vous appartient pas. Utilisez `/boutique` pour ouvrir votre propre boutique.',
+      ephemeral: true
+    });
+    return false;
+  }
+  return true;
+}
+
+/**
  * Obtient les boosters achetables (non-promo)
  */
 function getPurchasableBoosters() {
@@ -62,7 +79,7 @@ async function handleShopCommand(interaction) {
     .setFooter({ text: 'Gagnez des Poké Dollars en discutant sur le serveur !' });
 
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId('shop_category_select')
+    .setCustomId(`shop_category_select_${userId}`)
     .setPlaceholder('Choisir une catégorie...')
     .addOptions([
       {
@@ -138,9 +155,8 @@ async function handleInventoryCommand(interaction) {
 /**
  * Affiche les boosters disponibles à l'achat
  */
-async function showBoostersShop(interaction) {
-  const userId = interaction.user.id;
-  const userMoney = getMoney(userId);
+async function showBoostersShop(interaction, ownerId) {
+  const userMoney = getMoney(ownerId);
   const purchasableBoosters = getPurchasableBoosters();
 
   if (purchasableBoosters.length === 0) {
@@ -170,12 +186,12 @@ async function showBoostersShop(interaction) {
   });
 
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId('shop_booster_select')
+    .setCustomId(`shop_booster_select_${ownerId}`)
     .setPlaceholder('Choisir un booster à acheter...')
     .addOptions(boosterOptions);
 
   const backButton = new ButtonBuilder()
-    .setCustomId('shop_back_main')
+    .setCustomId(`shop_back_main_${ownerId}`)
     .setLabel('Retour')
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('⬅️');
@@ -192,9 +208,8 @@ async function showBoostersShop(interaction) {
 /**
  * Affiche les cartes promo disponibles à l'achat
  */
-async function showCardsShop(interaction) {
-  const userId = interaction.user.id;
-  const userMoney = getMoney(userId);
+async function showCardsShop(interaction, ownerId) {
+  const userMoney = getMoney(ownerId);
   const promoCards = getPurchasableCards();
 
   if (promoCards.length === 0) {
@@ -208,7 +223,7 @@ async function showCardsShop(interaction) {
   // Vérifier si c'est l'anniversaire de l'utilisateur
   const { day: todayDay, month: todayMonth } = getParisDayMonth();
   const birthdaysList = loadBirthdays();
-  const userBirthday = birthdaysList.find(b => b.userId === userId);
+  const userBirthday = birthdaysList.find(b => b.userId === ownerId);
   const isBirthday = userBirthday && userBirthday.day === todayDay && userBirthday.month === todayMonth;
 
   const embed = new EmbedBuilder()
@@ -221,7 +236,7 @@ async function showCardsShop(interaction) {
     );
 
   const cardOptions = promoCards.map(card => {
-    const alreadyOwned = hasLimitedCard(userId, card.id);
+    const alreadyOwned = hasLimitedCard(ownerId, card.id);
     const requiresBirthday = card.requiresBirthday;
     const canClaim = requiresBirthday ? isBirthday : true;
     const price = requiresBirthday && isBirthday ? 0 : card.price;
@@ -253,12 +268,12 @@ async function showCardsShop(interaction) {
   });
 
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId('shop_card_select')
+    .setCustomId(`shop_card_select_${ownerId}`)
     .setPlaceholder('Choisir une carte à acheter...')
     .addOptions(cardOptions);
 
   const backButton = new ButtonBuilder()
-    .setCustomId('shop_back_main')
+    .setCustomId(`shop_back_main_${ownerId}`)
     .setLabel('Retour')
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('⬅️');
@@ -275,9 +290,8 @@ async function showCardsShop(interaction) {
 /**
  * Affiche la confirmation d'achat d'un booster avec image
  */
-async function showBoosterPurchaseConfirm(interaction, boosterId) {
-  const userId = interaction.user.id;
-  const userMoney = getMoney(userId);
+async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
+  const userMoney = getMoney(ownerId);
   const booster = boosters[boosterId];
 
   if (!booster || booster.isPromo) {
@@ -318,13 +332,13 @@ async function showBoosterPurchaseConfirm(interaction, boosterId) {
   }
 
   const confirmButton = new ButtonBuilder()
-    .setCustomId(`shop_confirm_booster_${boosterId}`)
+    .setCustomId(`shop_confirm_booster_${boosterId}_${ownerId}`)
     .setLabel('Acheter')
     .setStyle(ButtonStyle.Success)
     .setEmoji('💰');
 
   const cancelButton = new ButtonBuilder()
-    .setCustomId('shop_category_boosters')
+    .setCustomId(`shop_category_boosters_${ownerId}`)
     .setLabel('Annuler')
     .setStyle(ButtonStyle.Secondary);
 
@@ -340,9 +354,8 @@ async function showBoosterPurchaseConfirm(interaction, boosterId) {
 /**
  * Affiche la confirmation d'achat d'une carte promo avec image
  */
-async function showCardPurchaseConfirm(interaction, cardId) {
-  const userId = interaction.user.id;
-  const userMoney = getMoney(userId);
+async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
+  const userMoney = getMoney(ownerId);
   const card = cards[cardId];
 
   if (!card || !card.isPromo) {
@@ -354,7 +367,7 @@ async function showCardPurchaseConfirm(interaction, cardId) {
   }
 
   // Vérifier si déjà possédée
-  if (card.limitedPerUser && hasLimitedCard(userId, cardId)) {
+  if (card.limitedPerUser && hasLimitedCard(ownerId, cardId)) {
     return interaction.update({
       content: '❌ Vous possédez déjà cette carte ! (Limitée à 1 par personne)',
       embeds: [],
@@ -365,7 +378,7 @@ async function showCardPurchaseConfirm(interaction, cardId) {
   // Vérifier l'anniversaire si requis
   const { day: todayDay, month: todayMonth } = getParisDayMonth();
   const birthdaysList = loadBirthdays();
-  const userBirthday = birthdaysList.find(b => b.userId === userId);
+  const userBirthday = birthdaysList.find(b => b.userId === ownerId);
   const isBirthday = userBirthday && userBirthday.day === todayDay && userBirthday.month === todayMonth;
 
   if (card.requiresBirthday && !isBirthday) {
@@ -410,13 +423,13 @@ async function showCardPurchaseConfirm(interaction, cardId) {
   }
 
   const confirmButton = new ButtonBuilder()
-    .setCustomId(`shop_confirm_card_${cardId}`)
+    .setCustomId(`shop_confirm_card_${cardId}_${ownerId}`)
     .setLabel(price === 0 ? 'Réclamer' : 'Acheter')
     .setStyle(ButtonStyle.Success)
     .setEmoji(price === 0 ? '🎁' : '💰');
 
   const cancelButton = new ButtonBuilder()
-    .setCustomId('shop_category_cards')
+    .setCustomId(`shop_category_cards_${ownerId}`)
     .setLabel('Annuler')
     .setStyle(ButtonStyle.Secondary);
 
@@ -432,9 +445,8 @@ async function showCardPurchaseConfirm(interaction, cardId) {
 /**
  * Effectue l'achat d'un booster
  */
-async function purchaseBooster(interaction, boosterId) {
-  const userId = interaction.user.id;
-  const userMoney = getMoney(userId);
+async function purchaseBooster(interaction, boosterId, ownerId) {
+  const userMoney = getMoney(ownerId);
   const booster = boosters[boosterId];
 
   if (!booster || booster.isPromo) {
@@ -454,7 +466,7 @@ async function purchaseBooster(interaction, boosterId) {
   }
 
   // Effectuer la transaction
-  const success = removeMoney(userId, booster.price);
+  const success = removeMoney(ownerId, booster.price);
   if (!success) {
     return interaction.update({
       content: '❌ Erreur lors de la transaction.',
@@ -463,7 +475,7 @@ async function purchaseBooster(interaction, boosterId) {
     });
   }
 
-  addBoosterToInventory(userId, boosterId);
+  addBoosterToInventory(ownerId, boosterId);
 
   const embed = new EmbedBuilder()
     .setColor('#2ECC71')
@@ -471,12 +483,12 @@ async function purchaseBooster(interaction, boosterId) {
     .setDescription(
       `Vous avez acheté **${booster.name}** !\n\n` +
       `**Coût:** ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
-      `**Nouveau solde:** ${getMoney(userId).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
+      `**Nouveau solde:** ${getMoney(ownerId).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
       `Le booster a été ajouté à votre inventaire.\nUtilisez \`/booster\` pour l'ouvrir !`
     );
 
   const continueButton = new ButtonBuilder()
-    .setCustomId('shop_back_main')
+    .setCustomId(`shop_back_main_${ownerId}`)
     .setLabel('Continuer les achats')
     .setStyle(ButtonStyle.Primary);
 
@@ -492,9 +504,8 @@ async function purchaseBooster(interaction, boosterId) {
 /**
  * Effectue l'achat d'une carte promo
  */
-async function purchaseCard(interaction, cardId) {
-  const userId = interaction.user.id;
-  const userMoney = getMoney(userId);
+async function purchaseCard(interaction, cardId, ownerId) {
+  const userMoney = getMoney(ownerId);
   const card = cards[cardId];
 
   if (!card || !card.isPromo) {
@@ -506,7 +517,7 @@ async function purchaseCard(interaction, cardId) {
   }
 
   // Re-vérifier toutes les conditions
-  if (card.limitedPerUser && hasLimitedCard(userId, cardId)) {
+  if (card.limitedPerUser && hasLimitedCard(ownerId, cardId)) {
     return interaction.update({
       content: '❌ Vous possédez déjà cette carte !',
       embeds: [],
@@ -516,7 +527,7 @@ async function purchaseCard(interaction, cardId) {
 
   const { day: todayDay, month: todayMonth } = getParisDayMonth();
   const birthdaysList = loadBirthdays();
-  const userBirthday = birthdaysList.find(b => b.userId === userId);
+  const userBirthday = birthdaysList.find(b => b.userId === ownerId);
   const isBirthday = userBirthday && userBirthday.day === todayDay && userBirthday.month === todayMonth;
 
   if (card.requiresBirthday && !isBirthday) {
@@ -539,7 +550,7 @@ async function purchaseCard(interaction, cardId) {
 
   // Effectuer la transaction
   if (price > 0) {
-    const success = removeMoney(userId, price);
+    const success = removeMoney(ownerId, price);
     if (!success) {
       return interaction.update({
         content: '❌ Erreur lors de la transaction.',
@@ -549,7 +560,7 @@ async function purchaseCard(interaction, cardId) {
     }
   }
 
-  addCardToUser(userId, cardId);
+  addCardToUser(ownerId, cardId);
 
   const rarityData = rarities[card.rarity];
   const priceText = price === 0 ? 'Cadeau d\'anniversaire' : `${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`;
@@ -560,16 +571,59 @@ async function purchaseCard(interaction, cardId) {
     .setDescription(
       `Vous avez obtenu **${card.name}** !\n\n` +
       `**Coût:** ${priceText}\n` +
-      `**Nouveau solde:** ${getMoney(userId).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
+      `**Nouveau solde:** ${getMoney(ownerId).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
       `La carte a été ajoutée à votre collection.\nUtilisez \`/collection\` pour la voir !`
     );
 
   const continueButton = new ButtonBuilder()
-    .setCustomId('shop_back_main')
+    .setCustomId(`shop_back_main_${ownerId}`)
     .setLabel('Continuer les achats')
     .setStyle(ButtonStyle.Primary);
 
   const row = new ActionRowBuilder().addComponents(continueButton);
+
+  await interaction.update({
+    embeds: [embed],
+    components: [row],
+    files: []
+  });
+}
+
+/**
+ * Affiche le menu principal de la boutique
+ */
+async function showMainShop(interaction, ownerId) {
+  const userMoney = getMoney(ownerId);
+
+  const embed = new EmbedBuilder()
+    .setColor('#FFD700')
+    .setTitle('Boutique Pokémon')
+    .setDescription(
+      `Bienvenue dans la boutique !\n\n` +
+      `**Votre solde:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
+      `Sélectionnez une catégorie ci-dessous pour voir les produits disponibles.`
+    )
+    .setFooter({ text: 'Gagnez des Poké Dollars en discutant sur le serveur !' });
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`shop_category_select_${ownerId}`)
+    .setPlaceholder('Choisir une catégorie...')
+    .addOptions([
+      {
+        label: 'Boosters',
+        description: 'Acheter des packs de boosters',
+        value: 'boosters',
+        emoji: '📦'
+      },
+      {
+        label: 'Cartes Promo',
+        description: 'Acheter des cartes promotionnelles exclusives',
+        value: 'cards',
+        emoji: '✨'
+      }
+    ]);
+
+  const row = new ActionRowBuilder().addComponents(selectMenu);
 
   await interaction.update({
     embeds: [embed],
@@ -594,77 +648,58 @@ async function handleShopCommands(interaction) {
 }
 
 /**
+ * Extrait l'ID du propriétaire depuis un customId
+ * Format attendu: shop_action_..._ownerId
+ */
+function extractOwnerId(customId) {
+  const parts = customId.split('_');
+  return parts[parts.length - 1];
+}
+
+/**
  * Gère les interactions shop (menus, boutons)
  */
 async function handleShopInteraction(interaction) {
   const customId = interaction.customId;
+  const ownerId = extractOwnerId(customId);
+
+  // Vérifier que l'utilisateur est le propriétaire de l'interaction
+  if (!await verifyInteractionOwner(interaction, ownerId)) {
+    return;
+  }
 
   if (interaction.isStringSelectMenu()) {
-    if (customId === 'shop_category_select') {
+    if (customId.startsWith('shop_category_select_')) {
       const selected = interaction.values[0];
       if (selected === 'boosters') {
-        await showBoostersShop(interaction);
+        await showBoostersShop(interaction, ownerId);
       } else if (selected === 'cards') {
-        await showCardsShop(interaction);
+        await showCardsShop(interaction, ownerId);
       }
-    } else if (customId === 'shop_booster_select') {
+    } else if (customId.startsWith('shop_booster_select_')) {
       const boosterId = interaction.values[0].replace('buy_booster_', '');
-      await showBoosterPurchaseConfirm(interaction, boosterId);
-    } else if (customId === 'shop_card_select') {
+      await showBoosterPurchaseConfirm(interaction, boosterId, ownerId);
+    } else if (customId.startsWith('shop_card_select_')) {
       const cardId = interaction.values[0].replace('buy_card_', '');
-      await showCardPurchaseConfirm(interaction, cardId);
+      await showCardPurchaseConfirm(interaction, cardId, ownerId);
     }
   } else if (interaction.isButton()) {
-    if (customId === 'shop_back_main') {
-      // Retour au menu principal
-      const userId = interaction.user.id;
-      const userMoney = getMoney(userId);
-
-      const embed = new EmbedBuilder()
-        .setColor('#FFD700')
-        .setTitle('Boutique Pokémon')
-        .setDescription(
-          `Bienvenue dans la boutique !\n\n` +
-          `**Votre solde:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
-          `Sélectionnez une catégorie ci-dessous pour voir les produits disponibles.`
-        )
-        .setFooter({ text: 'Gagnez des Poké Dollars en discutant sur le serveur !' });
-
-      const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId('shop_category_select')
-        .setPlaceholder('Choisir une catégorie...')
-        .addOptions([
-          {
-            label: 'Boosters',
-            description: 'Acheter des packs de boosters',
-            value: 'boosters',
-            emoji: '📦'
-          },
-          {
-            label: 'Cartes Promo',
-            description: 'Acheter des cartes promotionnelles exclusives',
-            value: 'cards',
-            emoji: '✨'
-          }
-        ]);
-
-      const row = new ActionRowBuilder().addComponents(selectMenu);
-
-      await interaction.update({
-        embeds: [embed],
-        components: [row],
-        files: []
-      });
-    } else if (customId === 'shop_category_boosters') {
-      await showBoostersShop(interaction);
-    } else if (customId === 'shop_category_cards') {
-      await showCardsShop(interaction);
-    } else if (customId.startsWith('shop_confirm_booster_')) {
-      const boosterId = customId.replace('shop_confirm_booster_', '');
-      await purchaseBooster(interaction, boosterId);
-    } else if (customId.startsWith('shop_confirm_card_')) {
-      const cardId = customId.replace('shop_confirm_card_', '');
-      await purchaseCard(interaction, cardId);
+    if (customId.startsWith('shop_back_main_')) {
+      await showMainShop(interaction, ownerId);
+    } else if (customId.startsWith('shop_category_boosters_')) {
+      await showBoostersShop(interaction, ownerId);
+    } else if (customId.startsWith('shop_category_cards_')) {
+      await showCardsShop(interaction, ownerId);
+    } else if (customId.includes('_confirm_booster_')) {
+      // Format: shop_confirm_booster_boosterId_ownerId
+      const parts = customId.split('_');
+      const boosterId = parts[3];
+      await purchaseBooster(interaction, boosterId, ownerId);
+    } else if (customId.includes('_confirm_card_')) {
+      // Format: shop_confirm_card_cardId_ownerId
+      const parts = customId.split('_');
+      const cardId = parts[3];
+      await purchaseCard(interaction, cardId, ownerId);
     }
   }
 }
