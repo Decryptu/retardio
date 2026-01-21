@@ -281,7 +281,7 @@ async function generateCollectionImage(userId, boosterId) {
     // Numéro de la carte en petit
     // - cartes possédées : noir
     // - cartes non possédées : gris foncé
-    ctx.fillStyle = hasCard ? '#000000' : '#444444';
+    ctx.fillStyle = hasCard ? '#000000' : '#000000';
     ctx.font = `9px ${PIXEL_FONT}`;
     ctx.textAlign = 'center';
     ctx.fillText(`#${card.id}`, x + cardDisplayWidth / 2, y + cardDisplayHeight - 16);
