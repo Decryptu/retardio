@@ -93,6 +93,12 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
       // Dessiner le nom et la rareté en bas
       const textY = y + CARD_HEIGHT + 35;
 
+      // Ajouter une ombre noire sharp (pas floue)
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+
       // Nom de la carte
       ctx.fillStyle = '#FFFFFF';
       ctx.font = `bold 16px ${PIXEL_FONT}`;
@@ -103,6 +109,9 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
       ctx.fillStyle = cardInfo.rarityColor;
       ctx.font = `14px ${PIXEL_FONT}`;
       ctx.fillText(cardInfo.rarityName, x + CARD_WIDTH / 2, textY + 22);
+
+      // Retirer l'ombre
+      ctx.shadowColor = 'transparent';
 
     } catch (error) {
       console.error(`Erreur lors du chargement de la carte ${cardId}:`, error);
@@ -117,7 +126,12 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
     }
   }
 
-  // Titre en bas
+  // Titre en bas avec ombre
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
   if (isGodPack) {
     ctx.fillStyle = '#FFD700';
     ctx.font = `bold 32px ${PIXEL_FONT}`;
@@ -132,6 +146,9 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
     ctx.textAlign = 'center';
     ctx.fillText('Nouveau Booster Ouvert !', totalWidth / 2, totalHeight - 40);
   }
+
+  // Retirer l'ombre
+  ctx.shadowColor = 'transparent';
 
   return canvas.toBuffer('image/png');
 }
