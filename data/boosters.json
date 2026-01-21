@@ -9,6 +9,16 @@
     },
     "price": 500
   },
+  "2": {
+    "id": 2,
+    "name": "Trio Légendaire",
+    "totalCards": 57,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
   "promo_1": {
     "id": "promo_1",
     "name": "Collection Promo",
