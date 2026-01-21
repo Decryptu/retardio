@@ -7,7 +7,7 @@ const boosters = require('./data/boosters.json');
 // ⚙️ CONFIGURATION ADMIN - Whitelist des IDs Discord autorisés
 // Pour trouver ton ID Discord: active le Mode développeur dans Discord > Clique droit sur ton nom > Copier l'ID
 const ADMIN_WHITELIST = [
-  '123456789012345678', // ⬅️ Remplacer par ton ID Discord ici
+  '98891713610797056', // ⬅️ Remplacer par ton ID Discord ici
   // Ajoute d'autres IDs admin ici si nécessaire
 ];
 
