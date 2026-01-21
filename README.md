@@ -5,9 +5,11 @@ Bot Discord multifonction avec gestion de boissons, anniversaires et système de
 ## Fonctionnalités
 
 ### 🍵 Gestion de Boissons
+
 Gestion de listes de thés, infusions, cafés et sirops avec sélection aléatoire.
 
 **Commandes:**
+
 - `/ajouter <type> <nom>` - Ajouter une boisson à la liste
 - `/supprimer <type> <nom>` - Supprimer une boisson de la liste
 - `/aleatoire <type> [sirop]` - Choisir une boisson au hasard (avec option sirop)
@@ -18,29 +20,35 @@ Gestion de listes de thés, infusions, cafés et sirops avec sélection aléatoi
 **Stockage:** `data/boissons.json`
 
 ### 🎂 Anniversaires
+
 Système de rappel d'anniversaires avec vérification quotidienne automatique.
 
 **Commandes:**
+
 - `/anniversaire_ajouter <jour> <mois> [membre|nom]` - Ajouter un anniversaire
 - `/anniversaire_supprimer <nom>` - Supprimer un anniversaire
 - `/anniversaire_liste` - Afficher tous les anniversaires enregistrés
 
 **Fonctionnalités:**
+
 - Vérification quotidienne à minuit (timezone Paris)
 - Mention automatique dans le canal configuré
 - Support membres Discord et noms personnalisés
 - Stockage: `data/anniversaires.json`
 
 ### 🎴 Pokémon Boosters
+
 Système de collection de cartes avec boosters quotidiens, échanges et God Packs.
 
 **Commandes:**
+
 - `/booster` - Ouvrir son booster quotidien (reset minuit Paris)
 - `/collection [utilisateur] [booster]` - Voir une collection avec menu de sélection
 - `/echange <utilisateur>` - Échanger des cartes via menu interactif
 - `/giftbooster <utilisateur>` - [ADMIN] Offrir un booster (reset cooldown)
 
 **Caractéristiques:**
+
 - 5 cartes par booster avec garantie Peu commun minimum
 - God Pack: 1/256 chance (toutes cartes Rare+)
 - Raretés: Commun (54%), Peu commun (28%), Rare (14%), Légendaire (4%)
@@ -49,6 +57,7 @@ Système de collection de cartes avec boosters quotidiens, échanges et God Pack
 - Admin whitelist configurable dans `pokemonHandler.js` ligne 10
 
 **Stockage:**
+
 - Configuration: `data/boosters.json`, `data/rarities.json`, `data/godpack.json`
 - Cartes: `data/cards.json`
 - Utilisateurs: `data/db/{userId}.json` (1 fichier par utilisateur)
@@ -57,6 +66,7 @@ Système de collection de cartes avec boosters quotidiens, échanges et God Pack
 ## Configuration
 
 **Fichiers requis:**
+
 - `config.js` - Token Discord, IDs client/guild, canal anniversaires
 - `data/boissons.json` - Listes de boissons
 - `data/anniversaires.json` - Anniversaires enregistrés
@@ -66,6 +76,7 @@ Système de collection de cartes avec boosters quotidiens, échanges et God Pack
 - `data/godpack.json` - Configuration God Pack
 
 **Variables d'environnement:**
+
 - `DISCORD_TOKEN` - Token du bot
 - `CLIENT_ID` - ID de l'application Discord
 - `GUILD_ID` - (Optionnel) ID du serveur pour commandes instantanées
@@ -74,18 +85,19 @@ Système de collection de cartes avec boosters quotidiens, échanges et God Pack
 ## Installation
 
 ```bash
-npm install
+bun install
 node index.js
 ```
 
 **Dépendances principales:**
+
 - discord.js - Framework Discord
 - canvas - Génération d'images
 - crypto - Nombres aléatoires sécurisés
 
 ## Structure
 
-```
+```tree
 /
 ├── index.js                    # Point d'entrée
 ├── commandHandler.js           # Commandes boissons
