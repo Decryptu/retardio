@@ -323,7 +323,7 @@ async function handleGiftBoosterCommand(interaction) {
  * Gère les interactions des menus de sélection d'échange
  */
 async function handleTradeSelectMenu(interaction) {
-  const [action, type, tradeId] = interaction.customId.split('_');
+  const [, type, tradeId] = interaction.customId.split('_');
 
   const trade = activeTrades.get(tradeId);
   if (!trade) {
@@ -416,7 +416,7 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
  * Gère les boutons de confirmation d'échange
  */
 async function handleTradeButton(interaction) {
-  const [action, decision, tradeId] = interaction.customId.split('_');
+  const [, decision, tradeId] = interaction.customId.split('_');
 
   const trade = activeTrades.get(tradeId);
   if (!trade) {
@@ -522,7 +522,7 @@ async function handlePokemonCommand(interaction) {
  * Gère le menu de sélection de booster dans /collection
  */
 async function handleCollectionSelectMenu(interaction) {
-  const [action, type, targetUserId] = interaction.customId.split('_');
+  const [, , targetUserId] = interaction.customId.split('_');
   const selectedBoosterId = parseInt(interaction.values[0]);
 
   // Vérifier que le booster existe
