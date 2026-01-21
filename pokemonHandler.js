@@ -66,6 +66,20 @@ function getOpenableBoosters() {
 }
 
 /**
+ * Vérifie que l'utilisateur qui interagit est le propriétaire
+ */
+async function verifyOwner(interaction, ownerId) {
+  if (interaction.user.id !== ownerId) {
+    await interaction.reply({
+      content: '❌ Cette interaction ne vous appartient pas.',
+      ephemeral: true
+    });
+    return false;
+  }
+  return true;
+}
+
+/**
  * Gère la commande /booster - Affiche la sélection de boosters
  */
 async function handleBoosterCommand(interaction) {
@@ -138,7 +152,7 @@ async function handleBoosterCommand(interaction) {
   const limitedOptions = boosterOptions.slice(0, 25);
 
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId('booster_select_open')
+    .setCustomId(`booster_select_open_${userId}`)
     .setPlaceholder('Choisir un booster à ouvrir...')
     .addOptions(limitedOptions);
 
@@ -153,10 +167,9 @@ async function handleBoosterCommand(interaction) {
 /**
  * Affiche la prévisualisation d'un booster avant ouverture
  */
-async function showBoosterPreview(interaction, boosterId) {
-  const userId = interaction.user.id;
-  const canOpen = canOpenBooster(userId);
-  const inventory = getBoosterInventory(userId);
+async function showBoosterPreview(interaction, boosterId, ownerId) {
+  const canOpen = canOpenBooster(ownerId);
+  const inventory = getBoosterInventory(ownerId);
   const booster = boosters[boosterId];
 
   if (!booster || booster.isPromo) {
@@ -200,13 +213,13 @@ async function showBoosterPreview(interaction, boosterId) {
   }
 
   const confirmButton = new ButtonBuilder()
-    .setCustomId(`booster_confirm_open_${boosterId}`)
+    .setCustomId(`booster_confirm_open_${boosterId}_${ownerId}`)
     .setLabel('Ouvrir le booster !')
     .setStyle(ButtonStyle.Success)
     .setEmoji('🎴');
 
   const backButton = new ButtonBuilder()
-    .setCustomId('booster_back_select')
+    .setCustomId(`booster_back_select_${ownerId}`)
     .setLabel('Retour')
     .setStyle(ButtonStyle.Secondary);
 
@@ -222,10 +235,9 @@ async function showBoosterPreview(interaction, boosterId) {
 /**
  * Ouvre effectivement un booster
  */
-async function openBooster(interaction, boosterId) {
-  const userId = interaction.user.id;
-  const canOpen = canOpenBooster(userId);
-  const inventory = getBoosterInventory(userId);
+async function openBooster(interaction, boosterId, ownerId) {
+  const canOpen = canOpenBooster(ownerId);
+  const inventory = getBoosterInventory(ownerId);
   const booster = boosters[boosterId];
 
   if (!booster || booster.isPromo) {
@@ -253,7 +265,7 @@ async function openBooster(interaction, boosterId) {
   try {
     // Consommer le booster
     if (useInventory) {
-      const removed = removeBoosterFromInventory(userId, boosterId);
+      const removed = removeBoosterFromInventory(ownerId, boosterId);
       if (!removed) {
         return interaction.editReply({
           content: '❌ Erreur lors de la consommation du booster.',
@@ -268,17 +280,17 @@ async function openBooster(interaction, boosterId) {
 
     // Ajouter les cartes à l'utilisateur (ceci met aussi à jour lastBoosterOpen si c'est le quotidien)
     if (useDaily) {
-      addCardsToUser(userId, cardIds);
+      addCardsToUser(ownerId, cardIds);
     } else {
       // Pour l'inventaire, on ajoute les cartes sans mettre à jour le cooldown
-      const userData = loadUserData(userId);
+      const userData = loadUserData(ownerId);
       cardIds.forEach(cardId => {
         const id = String(cardId);
         userData.cards[id] = (userData.cards[id] || 0) + 1;
       });
       userData.stats.totalCards += cardIds.length;
       userData.stats.totalBoosters += 1;
-      saveUserData(userId, userData);
+      saveUserData(ownerId, userData);
     }
 
     // Générer l'image
@@ -835,7 +847,15 @@ async function handleCollectionSelectMenu(interaction) {
  */
 async function handleBoosterSelectMenu(interaction) {
   const boosterId = interaction.values[0].replace('open_booster_', '');
-  await showBoosterPreview(interaction, boosterId);
+  // Extraire l'ownerId du customId: booster_select_open_ownerId
+  const parts = interaction.customId.split('_');
+  const ownerId = parts[parts.length - 1];
+
+  if (!await verifyOwner(interaction, ownerId)) {
+    return;
+  }
+
+  await showBoosterPreview(interaction, boosterId, ownerId);
 }
 
 /**
@@ -843,16 +863,22 @@ async function handleBoosterSelectMenu(interaction) {
  */
 async function handleBoosterButton(interaction) {
   const customId = interaction.customId;
+  const parts = customId.split('_');
+  const ownerId = parts[parts.length - 1];
 
-  if (customId.startsWith('booster_confirm_open_')) {
-    const boosterId = customId.replace('booster_confirm_open_', '');
-    await openBooster(interaction, boosterId);
-  } else if (customId === 'booster_back_select') {
+  if (!await verifyOwner(interaction, ownerId)) {
+    return;
+  }
+
+  if (customId.includes('_confirm_open_')) {
+    // Format: booster_confirm_open_boosterId_ownerId
+    const boosterId = parts[3];
+    await openBooster(interaction, boosterId, ownerId);
+  } else if (customId.startsWith('booster_back_select_')) {
     // Retour à la sélection de booster
-    const userId = interaction.user.id;
-    const canOpen = canOpenBooster(userId);
-    const inventory = getBoosterInventory(userId);
-    const userMoney = getMoney(userId);
+    const canOpen = canOpenBooster(ownerId);
+    const inventory = getBoosterInventory(ownerId);
+    const userMoney = getMoney(ownerId);
 
     const openableBoosters = getOpenableBoosters();
 
@@ -912,7 +938,7 @@ async function handleBoosterButton(interaction) {
     const limitedOptions = boosterOptions.slice(0, 25);
 
     const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId('booster_select_open')
+      .setCustomId(`booster_select_open_${ownerId}`)
       .setPlaceholder('Choisir un booster à ouvrir...')
       .addOptions(limitedOptions);
 
@@ -935,7 +961,7 @@ async function handlePokemonInteraction(interaction) {
       await handleTradeSelectMenu(interaction);
     } else if (interaction.customId.startsWith('collection_select_')) {
       await handleCollectionSelectMenu(interaction);
-    } else if (interaction.customId === 'booster_select_open') {
+    } else if (interaction.customId.startsWith('booster_select_open_')) {
       await handleBoosterSelectMenu(interaction);
     }
   } else if (interaction.isButton()) {
