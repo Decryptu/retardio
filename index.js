@@ -13,9 +13,14 @@ const {
 	handlePokemonCommand,
 	handlePokemonInteraction,
 } = require("./pokemonHandler.js");
+const {
+	shopCommands,
+	handleShopCommands,
+	handleShopInteraction,
+} = require("./shopHandler.js");
 
 // Combine all commands
-const allCommands = [...commands, ...birthdayCommands, ...pokemonCommands];
+const allCommands = [...commands, ...birthdayCommands, ...pokemonCommands, ...shopCommands];
 
 const client = new Client({
 	intents: [
@@ -63,7 +68,8 @@ async function registerCommands() {
 client.on("interactionCreate", async (interaction) => {
 	const cmdName = interaction.commandName;
 	const isBirthdayCmd = cmdName?.startsWith("anniversaire");
-	const isPokemonCmd = ["booster", "collection", "echange"].includes(cmdName);
+	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster"].includes(cmdName);
+	const isShopCmd = ["boutique", "solde", "inventaire"].includes(cmdName);
 
 	if (interaction.isAutocomplete()) {
 		if (isBirthdayCmd) {
@@ -76,12 +82,21 @@ client.on("interactionCreate", async (interaction) => {
 			await handleBirthdayCommand(interaction);
 		} else if (isPokemonCmd) {
 			await handlePokemonCommand(interaction);
+		} else if (isShopCmd) {
+			await handleShopCommands(interaction);
 		} else {
 			await handleCommand(interaction);
 		}
 	} else if (interaction.isStringSelectMenu() || interaction.isButton()) {
-		// Gérer les interactions Pokémon (menus et boutons)
-		await handlePokemonInteraction(interaction);
+		// Vérifier le customId pour router vers le bon handler
+		const customId = interaction.customId;
+
+		if (customId?.startsWith("shop_")) {
+			await handleShopInteraction(interaction);
+		} else {
+			// Gérer les interactions Pokémon (menus et boutons)
+			await handlePokemonInteraction(interaction);
+		}
 	}
 });
 

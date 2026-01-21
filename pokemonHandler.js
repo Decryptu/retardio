@@ -1,8 +1,13 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
 const { drawBoosterPack, getCardInfo } = require('./cardGenerator');
-const { canOpenBooster, addCardsToUser, loadUserData, removeCardFromUser, saveUserData, getBoosterCompletion } = require('./userManager');
+const { canOpenBooster, addCardsToUser, loadUserData, removeCardFromUser, saveUserData, getBoosterCompletion, getBoosterInventory, removeBoosterFromInventory, getMoney } = require('./userManager');
 const { generateBoosterOpeningImage, generateCollectionImage } = require('./imageGenerator');
 const boosters = require('./data/boosters.json');
+const path = require('path');
+const fs = require('fs');
+
+const ASSETS_DIR = path.join(__dirname, 'assets');
+const CURRENCY_SYMBOL = 'Ꝑ';
 
 // ⚙️ CONFIGURATION ADMIN - Whitelist des IDs Discord autorisés
 // Pour trouver ton ID Discord: active le Mode développeur dans Discord > Clique droit sur ton nom > Copier l'ID
@@ -15,7 +20,7 @@ const ADMIN_WHITELIST = [
 const pokemonCommands = [
   new SlashCommandBuilder()
     .setName('booster')
-    .setDescription('Ouvrir votre booster quotidien gratuit'),
+    .setDescription('Ouvrir un booster de cartes Pokémon'),
 
   new SlashCommandBuilder()
     .setName('collection')
@@ -25,11 +30,10 @@ const pokemonCommands = [
         .setDescription('Utilisateur dont vous voulez voir la collection (par défaut: vous)')
         .setRequired(false)
     )
-    .addIntegerOption(option =>
+    .addStringOption(option =>
       option.setName('booster')
-        .setDescription('Numéro du booster à afficher (par défaut: 1)')
+        .setDescription('ID du booster à afficher')
         .setRequired(false)
-        .setMinValue(1)
     ),
 
   new SlashCommandBuilder()
@@ -55,27 +59,227 @@ const pokemonCommands = [
 const activeTrades = new Map();
 
 /**
- * Gère la commande /booster
+ * Obtient les boosters ouvrables (non-promo)
+ */
+function getOpenableBoosters() {
+  return Object.values(boosters).filter(b => !b.isPromo && b.cardsPerPack > 0);
+}
+
+/**
+ * Gère la commande /booster - Affiche la sélection de boosters
  */
 async function handleBoosterCommand(interaction) {
   const userId = interaction.user.id;
+  const canOpen = canOpenBooster(userId);
+  const inventory = getBoosterInventory(userId);
+  const userMoney = getMoney(userId);
 
-  // Vérifier si l'utilisateur peut ouvrir un booster
-  if (!canOpenBooster(userId)) {
-    return interaction.reply({
-      content: '❌ Vous avez déjà ouvert votre booster aujourd\'hui ! Revenez demain à minuit.',
-      ephemeral: true
+  const openableBoosters = getOpenableBoosters();
+
+  // Construire la description
+  let description = `**Votre solde:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n`;
+
+  if (canOpen) {
+    description += '🎁 **Booster quotidien disponible !**\nChoisissez un booster à ouvrir gratuitement.\n\n';
+  } else {
+    description += '⏰ Booster quotidien déjà ouvert aujourd\'hui.\n\n';
+  }
+
+  // Afficher l'inventaire si non vide
+  const inventoryLines = [];
+  for (const [boosterId, quantity] of Object.entries(inventory)) {
+    if (quantity > 0 && boosters[boosterId] && !boosters[boosterId].isPromo) {
+      inventoryLines.push(`• **${boosters[boosterId].name}** x${quantity}`);
+    }
+  }
+
+  if (inventoryLines.length > 0) {
+    description += `📦 **Boosters en inventaire:**\n${inventoryLines.join('\n')}\n\n`;
+  }
+
+  description += 'Sélectionnez un booster ci-dessous pour l\'ouvrir.';
+
+  const embed = new EmbedBuilder()
+    .setColor('#FFD700')
+    .setTitle('Ouvrir un Booster')
+    .setDescription(description);
+
+  // Créer les options du menu
+  const boosterOptions = [];
+
+  for (const booster of openableBoosters) {
+    const inInventory = inventory[String(booster.id)] || 0;
+    const canOpenThis = canOpen || inInventory > 0;
+
+    let label = booster.name;
+    let descText = `${booster.totalCards} cartes`;
+    let emoji = '📦';
+
+    if (canOpen) {
+      descText += ' • Quotidien gratuit';
+      emoji = '🎁';
+    } else if (inInventory > 0) {
+      descText += ` • ${inInventory} en stock`;
+      emoji = '📦';
+    } else {
+      descText += ' • Aucun disponible';
+      emoji = '🔒';
+    }
+
+    boosterOptions.push({
+      label: label,
+      description: descText,
+      value: `open_booster_${booster.id}`,
+      emoji: emoji
     });
   }
 
-  await interaction.deferReply();
+  // Limiter à 25 options maximum pour Discord
+  const limitedOptions = boosterOptions.slice(0, 25);
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId('booster_select_open')
+    .setPlaceholder('Choisir un booster à ouvrir...')
+    .addOptions(limitedOptions);
+
+  const row = new ActionRowBuilder().addComponents(selectMenu);
+
+  await interaction.reply({
+    embeds: [embed],
+    components: [row]
+  });
+}
+
+/**
+ * Affiche la prévisualisation d'un booster avant ouverture
+ */
+async function showBoosterPreview(interaction, boosterId) {
+  const userId = interaction.user.id;
+  const canOpen = canOpenBooster(userId);
+  const inventory = getBoosterInventory(userId);
+  const booster = boosters[boosterId];
+
+  if (!booster || booster.isPromo) {
+    return interaction.update({
+      content: '❌ Ce booster n\'est pas disponible.',
+      embeds: [],
+      components: []
+    });
+  }
+
+  const inInventory = inventory[String(boosterId)] || 0;
+  const canOpenThis = canOpen || inInventory > 0;
+
+  if (!canOpenThis) {
+    return interaction.update({
+      content: '❌ Vous n\'avez pas de booster disponible ! Achetez-en dans la `/boutique` ou attendez minuit pour votre booster quotidien.',
+      embeds: [],
+      components: []
+    });
+  }
+
+  // Charger l'image du booster
+  const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
+  let files = [];
+
+  const embed = new EmbedBuilder()
+    .setColor('#FFD700')
+    .setTitle(booster.name)
+    .setDescription(
+      `**Cartes par pack:** ${booster.cardsPerPack}\n` +
+      `**Total de cartes:** ${booster.totalCards}\n` +
+      `**Garantie:** ${booster.guarantees?.minRarity || 'Aucune'}\n\n` +
+      (canOpen ? '🎁 Utilise ton **booster quotidien gratuit**' : `📦 Utilise un booster de ton **inventaire** (${inInventory} restant${inInventory > 1 ? 's' : ''})`) +
+      '\n\nConfirmer l\'ouverture ?'
+    );
+
+  if (fs.existsSync(boosterImagePath)) {
+    const attachment = new AttachmentBuilder(boosterImagePath, { name: 'booster.png' });
+    files.push(attachment);
+    embed.setThumbnail('attachment://booster.png');
+  }
+
+  const confirmButton = new ButtonBuilder()
+    .setCustomId(`booster_confirm_open_${boosterId}`)
+    .setLabel('Ouvrir le booster !')
+    .setStyle(ButtonStyle.Success)
+    .setEmoji('🎴');
+
+  const backButton = new ButtonBuilder()
+    .setCustomId('booster_back_select')
+    .setLabel('Retour')
+    .setStyle(ButtonStyle.Secondary);
+
+  const row = new ActionRowBuilder().addComponents(confirmButton, backButton);
+
+  await interaction.update({
+    embeds: [embed],
+    components: [row],
+    files: files
+  });
+}
+
+/**
+ * Ouvre effectivement un booster
+ */
+async function openBooster(interaction, boosterId) {
+  const userId = interaction.user.id;
+  const canOpen = canOpenBooster(userId);
+  const inventory = getBoosterInventory(userId);
+  const booster = boosters[boosterId];
+
+  if (!booster || booster.isPromo) {
+    return interaction.update({
+      content: '❌ Ce booster n\'est pas disponible.',
+      embeds: [],
+      components: []
+    });
+  }
+
+  const inInventory = inventory[String(boosterId)] || 0;
+  const useDaily = canOpen;
+  const useInventory = !canOpen && inInventory > 0;
+
+  if (!useDaily && !useInventory) {
+    return interaction.update({
+      content: '❌ Vous n\'avez pas de booster disponible !',
+      embeds: [],
+      components: []
+    });
+  }
+
+  await interaction.deferUpdate();
 
   try {
-    // Tirer 5 cartes du booster 1
-    const { cards: cardIds, isGodPack } = drawBoosterPack(1);
+    // Consommer le booster
+    if (useInventory) {
+      const removed = removeBoosterFromInventory(userId, boosterId);
+      if (!removed) {
+        return interaction.editReply({
+          content: '❌ Erreur lors de la consommation du booster.',
+          embeds: [],
+          components: []
+        });
+      }
+    }
 
-    // Ajouter les cartes à l'utilisateur
-    addCardsToUser(userId, cardIds);
+    // Tirer les cartes
+    const { cards: cardIds, isGodPack } = drawBoosterPack(boosterId);
+
+    // Ajouter les cartes à l'utilisateur (ceci met aussi à jour lastBoosterOpen si c'est le quotidien)
+    if (useDaily) {
+      addCardsToUser(userId, cardIds);
+    } else {
+      // Pour l'inventaire, on ajoute les cartes sans mettre à jour le cooldown
+      const userData = loadUserData(userId);
+      cardIds.forEach(cardId => {
+        const id = String(cardId);
+        userData.cards[id] = (userData.cards[id] || 0) + 1;
+      });
+      userData.stats.totalCards += cardIds.length;
+      userData.stats.totalBoosters += 1;
+      saveUserData(userId, userData);
+    }
 
     // Générer l'image
     const imageBuffer = await generateBoosterOpeningImage(cardIds, isGodPack);
@@ -87,23 +291,31 @@ async function handleBoosterCommand(interaction) {
       return `**${cardInfo.name}** - ${cardInfo.rarityName}`;
     }).join('\n');
 
+    const sourceText = useDaily ? 'Booster quotidien' : 'Booster de l\'inventaire';
+
     const embed = new EmbedBuilder()
       .setColor(isGodPack ? '#FF00FF' : '#FFD700')
-      .setTitle(isGodPack ? '✨🌟 GOD PACK ! 🌟✨' : 'Booster Ouvert !')
-      .setDescription(`${isGodPack ? '**INCROYABLE ! Toutes les cartes sont au moins Rare !**\n\n' : ''}Vous avez reçu les cartes suivantes :\n\n${cardDescriptions}`)
+      .setTitle(isGodPack ? '✨🌟 GOD PACK ! 🌟✨' : `${booster.name} Ouvert !`)
+      .setDescription(
+        `${isGodPack ? '**INCROYABLE ! Toutes les cartes sont au moins Rare !**\n\n' : ''}` +
+        `*${sourceText}*\n\n` +
+        `Vous avez reçu les cartes suivantes :\n\n${cardDescriptions}`
+      )
       .setImage('attachment://booster.png')
-      .setFooter({ text: isGodPack ? 'Félicitations pour ce GOD PACK légendaire !' : 'Revenez demain pour un nouveau booster !' });
+      .setFooter({ text: isGodPack ? 'Félicitations pour ce GOD PACK légendaire !' : (useDaily ? 'Revenez demain pour un nouveau booster gratuit !' : 'Achetez plus de boosters dans la /boutique !') });
 
     await interaction.editReply({
       embeds: [embed],
-      files: [attachment]
+      files: [attachment],
+      components: []
     });
 
   } catch (error) {
     console.error('Erreur lors de l\'ouverture du booster:', error);
     await interaction.editReply({
       content: '❌ Une erreur est survenue lors de l\'ouverture du booster.',
-      ephemeral: true
+      embeds: [],
+      components: []
     });
   }
 }
@@ -113,15 +325,20 @@ async function handleBoosterCommand(interaction) {
  */
 async function handleCollectionCommand(interaction) {
   const targetUser = interaction.options.getUser('utilisateur') || interaction.user;
-  const boosterId = interaction.options.getInteger('booster') || 1;
+  const boosterIdOption = interaction.options.getString('booster');
+  let boosterId = boosterIdOption || '1';
   const userId = targetUser.id;
 
   // Vérifier que le booster existe
   if (!boosters[boosterId]) {
-    return interaction.reply({
-      content: `❌ Le booster ${boosterId} n'existe pas.`,
-      ephemeral: true
-    });
+    // Essayer de trouver un booster par défaut
+    boosterId = Object.keys(boosters)[0] || '1';
+    if (!boosters[boosterId]) {
+      return interaction.reply({
+        content: '❌ Aucun booster disponible.',
+        ephemeral: true
+      });
+    }
   }
 
   await interaction.deferReply();
@@ -135,30 +352,45 @@ async function handleCollectionCommand(interaction) {
     const { owned, total } = getBoosterCompletion(userId, boosterId);
     const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
 
+    // Charger l'image du booster pour le thumbnail
+    const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
+    let files = [attachment];
+
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle(`Collection de ${targetUser.username}`)
       .setDescription(`**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
       .setImage('attachment://collection.png');
 
-    // Créer le menu de sélection de booster
+    // Ajouter l'image du booster en thumbnail si disponible
+    if (fs.existsSync(boosterImagePath)) {
+      const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
+      files.push(boosterAttachment);
+      embed.setThumbnail('attachment://booster_thumb.png');
+    }
+
+    // Créer le menu de sélection de booster (tous les boosters, y compris promo)
     const boosterOptions = Object.values(boosters).map(booster => ({
       label: booster.name,
-      description: `${booster.totalCards} cartes disponibles`,
+      description: `${booster.totalCards} cartes${booster.isPromo ? ' (Promo)' : ''}`,
       value: String(booster.id),
-      default: booster.id === boosterId
+      default: String(booster.id) === String(boosterId),
+      emoji: booster.isPromo ? '✨' : '📦'
     }));
+
+    // Limiter à 25 options
+    const limitedOptions = boosterOptions.slice(0, 25);
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId(`collection_select_${targetUser.id}`)
       .setPlaceholder('Changer de booster')
-      .addOptions(boosterOptions);
+      .addOptions(limitedOptions);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
 
     await interaction.editReply({
       embeds: [embed],
-      files: [attachment],
+      files: files,
       components: [row]
     });
 
@@ -216,21 +448,21 @@ async function handleTradeCommand(interaction) {
 
   // Créer les menus de sélection
   const initiatorOptions = initiatorCards.slice(0, 25).map(cardId => {
-    const cardInfo = getCardInfo(parseInt(cardId));
+    const cardInfo = getCardInfo(cardId);
     const quantity = initiatorData.cards[cardId];
     return {
-      label: `${cardInfo.name} (x${quantity})`,
-      description: `${cardInfo.rarityName}`,
+      label: `${cardInfo?.name || `Carte ${cardId}`} (x${quantity})`,
+      description: `${cardInfo?.rarityName || 'Inconnue'}`,
       value: cardId
     };
   });
 
   const targetOptions = targetCards.slice(0, 25).map(cardId => {
-    const cardInfo = getCardInfo(parseInt(cardId));
+    const cardInfo = getCardInfo(cardId);
     const quantity = targetData.cards[cardId];
     return {
-      label: `${cardInfo.name} (x${quantity})`,
-      description: `${cardInfo.rarityName}`,
+      label: `${cardInfo?.name || `Carte ${cardId}`} (x${quantity})`,
+      description: `${cardInfo?.rarityName || 'Inconnue'}`,
       value: cardId
     };
   });
@@ -291,8 +523,8 @@ async function handleGiftBoosterCommand(interaction) {
     // Charger les données de l'utilisateur
     const userData = loadUserData(targetUser.id);
 
-    // Reset le cooldown (retirer lastBoosterOpened)
-    delete userData.lastBoosterOpened;
+    // Reset le cooldown (retirer lastBoosterOpen)
+    delete userData.lastBoosterOpen;
     saveUserData(targetUser.id, userData);
 
     // Envoyer la confirmation
@@ -353,8 +585,10 @@ async function handleTradeSelectMenu(interaction) {
   if (trade.giveCardId && trade.receiveCardId) {
     await showTradeConfirmation(interaction, trade, tradeId);
   } else {
-    const giveCardName = trade.giveCardId ? getCardInfo(parseInt(trade.giveCardId)).name : '❓ Non sélectionnée';
-    const receiveCardName = trade.receiveCardId ? getCardInfo(parseInt(trade.receiveCardId)).name : '❓ Non sélectionnée';
+    const giveCardInfo = trade.giveCardId ? getCardInfo(trade.giveCardId) : null;
+    const receiveCardInfo = trade.receiveCardId ? getCardInfo(trade.receiveCardId) : null;
+    const giveCardName = giveCardInfo?.name || '❓ Non sélectionnée';
+    const receiveCardName = receiveCardInfo?.name || '❓ Non sélectionnée';
 
     await interaction.update({
       content: `📋 **Échange en cours**\n\n` +
@@ -372,8 +606,8 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
   const initiator = await interaction.client.users.fetch(trade.initiatorId);
   const target = await interaction.client.users.fetch(trade.targetId);
 
-  const giveCard = getCardInfo(parseInt(trade.giveCardId));
-  const receiveCard = getCardInfo(parseInt(trade.receiveCardId));
+  const giveCard = getCardInfo(trade.giveCardId);
+  const receiveCard = getCardInfo(trade.receiveCardId);
 
   const confirmButton = new ButtonBuilder()
     .setCustomId(`trade_confirm_${tradeId}`)
@@ -392,8 +626,8 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
     .setTitle('🔄 Confirmation d\'échange')
     .setDescription(
       `**${initiator.username}** propose un échange à **${target}**\n\n` +
-      `${initiator.username} donne: **${giveCard.name}** (${giveCard.rarityName})\n` +
-      `${target.username} donne: **${receiveCard.name}** (${receiveCard.rarityName})\n\n` +
+      `${initiator.username} donne: **${giveCard?.name || 'Carte inconnue'}** (${giveCard?.rarityName || 'Inconnue'})\n` +
+      `${target.username} donne: **${receiveCard?.name || 'Carte inconnue'}** (${receiveCard?.rarityName || 'Inconnue'})\n\n` +
       `${target}, acceptez-vous cet échange ?`
     )
     .setFooter({ text: 'L\'échange expire dans 5 minutes' });
@@ -450,13 +684,13 @@ async function handleTradeButton(interaction) {
     const target = await interaction.client.users.fetch(trade.targetId);
 
     // Retirer les cartes et les ajouter aux autres utilisateurs
-    const success1 = removeCardFromUser(trade.initiatorId, parseInt(trade.giveCardId));
-    const success2 = removeCardFromUser(trade.targetId, parseInt(trade.receiveCardId));
+    const success1 = removeCardFromUser(trade.initiatorId, trade.giveCardId);
+    const success2 = removeCardFromUser(trade.targetId, trade.receiveCardId);
 
     if (!success1 || !success2) {
       // Rollback si l'un a échoué
-      if (success1) addCardsToUser(trade.initiatorId, [parseInt(trade.giveCardId)]);
-      if (success2) addCardsToUser(trade.targetId, [parseInt(trade.receiveCardId)]);
+      if (success1) addCardsToUser(trade.initiatorId, [trade.giveCardId]);
+      if (success2) addCardsToUser(trade.targetId, [trade.receiveCardId]);
 
       await interaction.update({
         content: '❌ Erreur: Une des parties ne possède plus la carte proposée.',
@@ -468,20 +702,20 @@ async function handleTradeButton(interaction) {
     }
 
     // Ajouter les cartes
-    addCardsToUser(trade.initiatorId, [parseInt(trade.receiveCardId)]);
-    addCardsToUser(trade.targetId, [parseInt(trade.giveCardId)]);
+    addCardsToUser(trade.initiatorId, [trade.receiveCardId]);
+    addCardsToUser(trade.targetId, [trade.giveCardId]);
 
     activeTrades.delete(tradeId);
 
-    const giveCard = getCardInfo(parseInt(trade.giveCardId));
-    const receiveCard = getCardInfo(parseInt(trade.receiveCardId));
+    const giveCard = getCardInfo(trade.giveCardId);
+    const receiveCard = getCardInfo(trade.receiveCardId);
 
     const embed = new EmbedBuilder()
       .setColor('#00FF00')
       .setTitle('✅ Échange réussi !')
       .setDescription(
-        `${initiator} a reçu **${receiveCard.name}**\n` +
-        `${target} a reçu **${giveCard.name}**`
+        `${initiator} a reçu **${receiveCard?.name || 'Carte'}**\n` +
+        `${target} a reçu **${giveCard?.name || 'Carte'}**`
       );
 
     await interaction.update({
@@ -523,7 +757,7 @@ async function handlePokemonCommand(interaction) {
  */
 async function handleCollectionSelectMenu(interaction) {
   const [, , targetUserId] = interaction.customId.split('_');
-  const selectedBoosterId = parseInt(interaction.values[0]);
+  const selectedBoosterId = interaction.values[0];
 
   // Vérifier que le booster existe
   if (!boosters[selectedBoosterId]) {
@@ -546,30 +780,44 @@ async function handleCollectionSelectMenu(interaction) {
     const { owned, total } = getBoosterCompletion(targetUserId, selectedBoosterId);
     const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
 
+    // Charger l'image du booster pour le thumbnail
+    const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${selectedBoosterId}.png`);
+    let files = [attachment];
+
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle(`📚 Collection de ${targetUser.username}`)
       .setDescription(`**${boosters[selectedBoosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
       .setImage('attachment://collection.png');
 
+    // Ajouter l'image du booster en thumbnail si disponible
+    if (fs.existsSync(boosterImagePath)) {
+      const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
+      files.push(boosterAttachment);
+      embed.setThumbnail('attachment://booster_thumb.png');
+    }
+
     // Recréer le menu avec la nouvelle sélection
     const boosterOptions = Object.values(boosters).map(booster => ({
       label: booster.name,
-      description: `${booster.totalCards} cartes disponibles`,
+      description: `${booster.totalCards} cartes${booster.isPromo ? ' (Promo)' : ''}`,
       value: String(booster.id),
-      default: booster.id === selectedBoosterId
+      default: String(booster.id) === String(selectedBoosterId),
+      emoji: booster.isPromo ? '✨' : '📦'
     }));
+
+    const limitedOptions = boosterOptions.slice(0, 25);
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId(`collection_select_${targetUserId}`)
       .setPlaceholder('Changer de booster')
-      .addOptions(boosterOptions);
+      .addOptions(limitedOptions);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
 
     await interaction.editReply({
       embeds: [embed],
-      files: [attachment],
+      files: files,
       components: [row]
     });
 
@@ -583,6 +831,102 @@ async function handleCollectionSelectMenu(interaction) {
 }
 
 /**
+ * Gère la sélection de booster à ouvrir
+ */
+async function handleBoosterSelectMenu(interaction) {
+  const boosterId = interaction.values[0].replace('open_booster_', '');
+  await showBoosterPreview(interaction, boosterId);
+}
+
+/**
+ * Gère les boutons du booster
+ */
+async function handleBoosterButton(interaction) {
+  const customId = interaction.customId;
+
+  if (customId.startsWith('booster_confirm_open_')) {
+    const boosterId = customId.replace('booster_confirm_open_', '');
+    await openBooster(interaction, boosterId);
+  } else if (customId === 'booster_back_select') {
+    // Retour à la sélection de booster
+    const userId = interaction.user.id;
+    const canOpen = canOpenBooster(userId);
+    const inventory = getBoosterInventory(userId);
+    const userMoney = getMoney(userId);
+
+    const openableBoosters = getOpenableBoosters();
+
+    let description = `**Votre solde:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n`;
+
+    if (canOpen) {
+      description += '🎁 **Booster quotidien disponible !**\nChoisissez un booster à ouvrir gratuitement.\n\n';
+    } else {
+      description += '⏰ Booster quotidien déjà ouvert aujourd\'hui.\n\n';
+    }
+
+    const inventoryLines = [];
+    for (const [boosterId, quantity] of Object.entries(inventory)) {
+      if (quantity > 0 && boosters[boosterId] && !boosters[boosterId].isPromo) {
+        inventoryLines.push(`• **${boosters[boosterId].name}** x${quantity}`);
+      }
+    }
+
+    if (inventoryLines.length > 0) {
+      description += `📦 **Boosters en inventaire:**\n${inventoryLines.join('\n')}\n\n`;
+    }
+
+    description += 'Sélectionnez un booster ci-dessous pour l\'ouvrir.';
+
+    const embed = new EmbedBuilder()
+      .setColor('#FFD700')
+      .setTitle('Ouvrir un Booster')
+      .setDescription(description);
+
+    const boosterOptions = [];
+
+    for (const booster of openableBoosters) {
+      const inInventory = inventory[String(booster.id)] || 0;
+
+      let descText = `${booster.totalCards} cartes`;
+      let emoji = '📦';
+
+      if (canOpen) {
+        descText += ' • Quotidien gratuit';
+        emoji = '🎁';
+      } else if (inInventory > 0) {
+        descText += ` • ${inInventory} en stock`;
+        emoji = '📦';
+      } else {
+        descText += ' • Aucun disponible';
+        emoji = '🔒';
+      }
+
+      boosterOptions.push({
+        label: booster.name,
+        description: descText,
+        value: `open_booster_${booster.id}`,
+        emoji: emoji
+      });
+    }
+
+    const limitedOptions = boosterOptions.slice(0, 25);
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId('booster_select_open')
+      .setPlaceholder('Choisir un booster à ouvrir...')
+      .addOptions(limitedOptions);
+
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    await interaction.update({
+      embeds: [embed],
+      components: [row],
+      files: []
+    });
+  }
+}
+
+/**
  * Gère les interactions (menus, boutons)
  */
 async function handlePokemonInteraction(interaction) {
@@ -591,10 +935,14 @@ async function handlePokemonInteraction(interaction) {
       await handleTradeSelectMenu(interaction);
     } else if (interaction.customId.startsWith('collection_select_')) {
       await handleCollectionSelectMenu(interaction);
+    } else if (interaction.customId === 'booster_select_open') {
+      await handleBoosterSelectMenu(interaction);
     }
   } else if (interaction.isButton()) {
     if (interaction.customId.startsWith('trade_')) {
       await handleTradeButton(interaction);
+    } else if (interaction.customId.startsWith('booster_')) {
+      await handleBoosterButton(interaction);
     }
   }
 }

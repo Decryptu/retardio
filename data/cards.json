@@ -340,5 +340,24 @@
     "name": "Métamorph",
     "rarity": "rare",
     "boosterPackId": 1
+  },
+  "promo_1": {
+    "id": "promo_1",
+    "name": "Mew Promo",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 2500,
+    "limitedPerUser": 1
+  },
+  "promo_2": {
+    "id": "promo_2",
+    "name": "Pikachu Anniversaire",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 0,
+    "limitedPerUser": 1,
+    "requiresBirthday": true
   }
 }

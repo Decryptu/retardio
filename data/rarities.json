@@ -18,5 +18,10 @@
     "name": "Légendaire",
     "color": "#FF8000",
     "probability": 0.04
+  },
+  "promo": {
+    "name": "Promo",
+    "color": "#FF69B4",
+    "probability": 0
   }
 }

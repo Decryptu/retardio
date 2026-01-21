@@ -6,6 +6,15 @@
     "cardsPerPack": 5,
     "guarantees": {
       "minRarity": "uncommon"
-    }
+    },
+    "price": 500
+  },
+  "promo_1": {
+    "id": "promo_1",
+    "name": "Collection Promo",
+    "totalCards": 2,
+    "cardsPerPack": 0,
+    "isPromo": true,
+    "guarantees": {}
   }
 }

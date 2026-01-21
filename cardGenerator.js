@@ -236,20 +236,28 @@ function getCardInfo(cardId) {
 
 /**
  * Obtient toutes les cartes d'un booster
- * @param {number} boosterId - ID du booster
+ * @param {number|string} boosterId - ID du booster
  * @returns {Object[]} Tableau d'informations de cartes
  */
 function getAllCardsFromBooster(boosterId) {
   const allCards = [];
 
   Object.values(cards).forEach(card => {
-    if (card.boosterPackId === boosterId) {
+    // Comparer en tant que strings pour supporter les IDs numériques et string
+    if (String(card.boosterPackId) === String(boosterId)) {
       allCards.push(getCardInfo(card.id));
     }
   });
 
-  // Trier par ID
-  allCards.sort((a, b) => a.id - b.id);
+  // Trier par ID (gère les IDs string comme "promo_1")
+  allCards.sort((a, b) => {
+    const aNum = parseInt(a.id);
+    const bNum = parseInt(b.id);
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      return aNum - bNum;
+    }
+    return String(a.id).localeCompare(String(b.id));
+  });
 
   return allCards;
 }

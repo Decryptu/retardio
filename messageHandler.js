@@ -1,5 +1,6 @@
 const OpenAI = require("openai");
 const personalities = require("./personalities.js");
+const { processMessageReward } = require("./userManager.js");
 
 class MessageHandler {
 	constructor(client, config) {
@@ -60,6 +61,11 @@ class MessageHandler {
 			message.content,
 			message.author.username,
 		);
+
+		// Traiter les récompenses en Poké Dollars (silencieux)
+		if (!message.author.bot) {
+			processMessageReward(message.author.id, message.content);
+		}
 
 		// Handle "$p" trigger (100% chance)
 		if (message.content === "$p") {
