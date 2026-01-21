@@ -8,6 +8,43 @@ const boosters = require('./data/boosters.json');
 const ASSETS_DIR = path.join(__dirname, 'assets');
 const CARD_WIDTH = 300;
 const CARD_HEIGHT = 363;
+const BORDER_RADIUS = 4; // Small border radius for card frames
+const GLOW_BLUR = 20; // Blur amount for glow effect
+
+// Rarities that get the glow effect (uncommon and above)
+const GLOW_RARITIES = ['uncommon', 'rare', 'epic', 'legendary', 'promo'];
+
+/**
+ * Draw a rounded rectangle stroke
+ */
+function strokeRoundedRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  ctx.stroke();
+}
+
+/**
+ * Draw glow effect behind a card
+ */
+function drawCardGlow(ctx, x, y, width, height, color) {
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = GLOW_BLUR;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, width, height);
+  ctx.restore();
+}
 
 // Charger la police PixelOperator8-Bold si disponible
 const FONT_PATH = path.join(ASSETS_DIR, 'fonts', 'PixelOperator8-Bold.ttf');
@@ -82,13 +119,18 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
     try {
       const cardImage = await loadImage(cardImagePath);
 
-      // Dessiner un cadre coloré selon la rareté
-      ctx.strokeStyle = cardInfo.rarityColor;
-      ctx.lineWidth = 4;
-      ctx.strokeRect(x - 2, y - 2, CARD_WIDTH + 4, CARD_HEIGHT + 4);
+      // Draw glow effect for uncommon+ cards
+      if (GLOW_RARITIES.includes(cardInfo.rarity)) {
+        drawCardGlow(ctx, x, y, CARD_WIDTH, CARD_HEIGHT, cardInfo.rarityColor);
+      }
 
       // Dessiner la carte
       ctx.drawImage(cardImage, x, y, CARD_WIDTH, CARD_HEIGHT);
+
+      // Dessiner un cadre coloré selon la rareté (avec border radius)
+      ctx.strokeStyle = cardInfo.rarityColor;
+      ctx.lineWidth = 4;
+      strokeRoundedRect(ctx, x - 2, y - 2, CARD_WIDTH + 4, CARD_HEIGHT + 4, BORDER_RADIUS);
 
       // Dessiner le nom et la rareté en bas
       const textY = y + CARD_HEIGHT + 35;
@@ -248,12 +290,18 @@ async function generateCollectionImage(userId, boosterId) {
       const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${card.id}.png`);
       try {
         const cardImage = await loadImage(cardImagePath);
+
+        // Draw glow effect for uncommon+ cards
+        if (GLOW_RARITIES.includes(card.rarity)) {
+          drawCardGlow(ctx, x, y, cardDisplayWidth, cardDisplayHeight, card.rarityColor);
+        }
+
         ctx.drawImage(cardImage, x, y, cardDisplayWidth, cardDisplayHeight);
 
-        // Bordure colorée
+        // Bordure colorée (avec border radius)
         ctx.strokeStyle = card.rarityColor;
         ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, cardDisplayWidth, cardDisplayHeight);
+        strokeRoundedRect(ctx, x, y, cardDisplayWidth, cardDisplayHeight, BORDER_RADIUS);
 
         // Afficher la quantité si > 1
         const quantity = userData.cards[String(card.id)];
@@ -280,10 +328,10 @@ async function generateCollectionImage(userId, boosterId) {
         ctx.drawImage(cardBackImage, x, y, cardDisplayWidth, cardDisplayHeight);
         ctx.restore();
 
-        // Bordure grise
+        // Bordure grise (avec border radius)
         ctx.strokeStyle = '#555555';
         ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, cardDisplayWidth, cardDisplayHeight);
+        strokeRoundedRect(ctx, x, y, cardDisplayWidth, cardDisplayHeight, BORDER_RADIUS);
       } else {
         // Placeholder si pas de dos de carte
         ctx.fillStyle = '#333333';
