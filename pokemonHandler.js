@@ -4,6 +4,13 @@ const { canOpenBooster, addCardsToUser, loadUserData, removeCardFromUser, saveUs
 const { generateBoosterOpeningImage, generateCollectionImage } = require('./imageGenerator');
 const boosters = require('./data/boosters.json');
 
+// ⚙️ CONFIGURATION ADMIN - Whitelist des IDs Discord autorisés
+// Pour trouver ton ID Discord: active le Mode développeur dans Discord > Clique droit sur ton nom > Copier l'ID
+const ADMIN_WHITELIST = [
+  '123456789012345678', // ⬅️ Remplacer par ton ID Discord ici
+  // Ajoute d'autres IDs admin ici si nécessaire
+];
+
 // Commandes slash
 const pokemonCommands = [
   new SlashCommandBuilder()
@@ -31,6 +38,15 @@ const pokemonCommands = [
     .addUserOption(option =>
       option.setName('utilisateur')
         .setDescription('Utilisateur avec qui échanger')
+        .setRequired(true)
+    ),
+
+  new SlashCommandBuilder()
+    .setName('giftbooster')
+    .setDescription('[ADMIN] Offrir un booster à un utilisateur')
+    .addUserOption(option =>
+      option.setName('utilisateur')
+        .setDescription('Utilisateur à qui offrir un booster')
         .setRequired(true)
     )
 ];
@@ -68,7 +84,7 @@ async function handleBoosterCommand(interaction) {
     // Préparer la description des cartes
     const cardDescriptions = cardIds.map(cardId => {
       const cardInfo = getCardInfo(cardId);
-      return `**Carte ${cardId}** - ${cardInfo.rarityName}`;
+      return `**${cardInfo.name}** - ${cardInfo.rarityName}`;
     }).join('\n');
 
     const embed = new EmbedBuilder()
@@ -125,9 +141,25 @@ async function handleCollectionCommand(interaction) {
       .setDescription(`**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
       .setImage('attachment://collection.png');
 
+    // Créer le menu de sélection de booster
+    const boosterOptions = Object.values(boosters).map(booster => ({
+      label: booster.name,
+      description: `${booster.totalCards} cartes disponibles`,
+      value: String(booster.id),
+      default: booster.id === boosterId
+    }));
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`collection_select_${targetUser.id}`)
+      .setPlaceholder('Changer de booster')
+      .addOptions(boosterOptions);
+
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
     await interaction.editReply({
       embeds: [embed],
-      files: [attachment]
+      files: [attachment],
+      components: [row]
     });
 
   } catch (error) {
@@ -187,7 +219,7 @@ async function handleTradeCommand(interaction) {
     const cardInfo = getCardInfo(parseInt(cardId));
     const quantity = initiatorData.cards[cardId];
     return {
-      label: `Carte ${cardId} (x${quantity})`,
+      label: `${cardInfo.name} (x${quantity})`,
       description: `${cardInfo.rarityName}`,
       value: cardId
     };
@@ -197,7 +229,7 @@ async function handleTradeCommand(interaction) {
     const cardInfo = getCardInfo(parseInt(cardId));
     const quantity = targetData.cards[cardId];
     return {
-      label: `Carte ${cardId} (x${quantity})`,
+      label: `${cardInfo.name} (x${quantity})`,
       description: `${cardInfo.rarityName}`,
       value: cardId
     };
@@ -230,6 +262,61 @@ async function handleTradeCommand(interaction) {
     components: [row1, row2],
     ephemeral: false
   });
+}
+
+/**
+ * Gère la commande /giftbooster (ADMIN uniquement)
+ */
+async function handleGiftBoosterCommand(interaction) {
+  const adminId = interaction.user.id;
+  const targetUser = interaction.options.getUser('utilisateur');
+
+  // Vérifier si l'utilisateur est admin
+  if (!ADMIN_WHITELIST.includes(adminId)) {
+    return interaction.reply({
+      content: '❌ Vous n\'avez pas la permission d\'utiliser cette commande.',
+      ephemeral: true
+    });
+  }
+
+  // Vérifier que ce n'est pas un bot
+  if (targetUser.bot) {
+    return interaction.reply({
+      content: '❌ Vous ne pouvez pas offrir un booster à un bot.',
+      ephemeral: true
+    });
+  }
+
+  try {
+    // Charger les données de l'utilisateur
+    const userData = loadUserData(targetUser.id);
+
+    // Reset le cooldown (retirer lastBoosterOpened)
+    delete userData.lastBoosterOpened;
+    saveUserData(targetUser.id, userData);
+
+    // Envoyer la confirmation
+    const embed = new EmbedBuilder()
+      .setColor('#FFD700')
+      .setTitle('🎁 Booster Offert !')
+      .setDescription(
+        `${targetUser} a reçu un booster gratuit !\n\n` +
+        `Tu peux maintenant utiliser \`/booster\` pour l'ouvrir ! 🎉`
+      )
+      .setFooter({ text: `Offert par ${interaction.user.username}` });
+
+    await interaction.reply({
+      content: `${targetUser}`,
+      embeds: [embed]
+    });
+
+  } catch (error) {
+    console.error('Erreur lors du gift de booster:', error);
+    await interaction.reply({
+      content: '❌ Une erreur est survenue lors de l\'attribution du booster.',
+      ephemeral: true
+    });
+  }
 }
 
 /**
@@ -266,10 +353,13 @@ async function handleTradeSelectMenu(interaction) {
   if (trade.giveCardId && trade.receiveCardId) {
     await showTradeConfirmation(interaction, trade, tradeId);
   } else {
+    const giveCardName = trade.giveCardId ? getCardInfo(parseInt(trade.giveCardId)).name : '❓ Non sélectionnée';
+    const receiveCardName = trade.receiveCardId ? getCardInfo(parseInt(trade.receiveCardId)).name : '❓ Non sélectionnée';
+
     await interaction.update({
       content: `📋 **Échange en cours**\n\n` +
-        `Vous donnez: ${trade.giveCardId ? `Carte ${trade.giveCardId}` : '❓ Non sélectionnée'}\n` +
-        `Vous recevez: ${trade.receiveCardId ? `Carte ${trade.receiveCardId}` : '❓ Non sélectionnée'}`,
+        `Vous donnez: ${giveCardName}\n` +
+        `Vous recevez: ${receiveCardName}`,
       components: interaction.message.components
     });
   }
@@ -302,8 +392,8 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
     .setTitle('🔄 Confirmation d\'échange')
     .setDescription(
       `**${initiator.username}** propose un échange à **${target}**\n\n` +
-      `${initiator.username} donne: **Carte ${trade.giveCardId}** (${giveCard.rarityName})\n` +
-      `${target.username} donne: **Carte ${trade.receiveCardId}** (${receiveCard.rarityName})\n\n` +
+      `${initiator.username} donne: **${giveCard.name}** (${giveCard.rarityName})\n` +
+      `${target.username} donne: **${receiveCard.name}** (${receiveCard.rarityName})\n\n` +
       `${target}, acceptez-vous cet échange ?`
     )
     .setFooter({ text: 'L\'échange expire dans 5 minutes' });
@@ -383,12 +473,15 @@ async function handleTradeButton(interaction) {
 
     activeTrades.delete(tradeId);
 
+    const giveCard = getCardInfo(parseInt(trade.giveCardId));
+    const receiveCard = getCardInfo(parseInt(trade.receiveCardId));
+
     const embed = new EmbedBuilder()
       .setColor('#00FF00')
       .setTitle('✅ Échange réussi !')
       .setDescription(
-        `${initiator} a reçu la **Carte ${trade.receiveCardId}**\n` +
-        `${target} a reçu la **Carte ${trade.giveCardId}**`
+        `${initiator} a reçu **${receiveCard.name}**\n` +
+        `${target} a reçu **${giveCard.name}**`
       );
 
     await interaction.update({
@@ -420,6 +513,72 @@ async function handlePokemonCommand(interaction) {
     await handleCollectionCommand(interaction);
   } else if (commandName === 'echange') {
     await handleTradeCommand(interaction);
+  } else if (commandName === 'giftbooster') {
+    await handleGiftBoosterCommand(interaction);
+  }
+}
+
+/**
+ * Gère le menu de sélection de booster dans /collection
+ */
+async function handleCollectionSelectMenu(interaction) {
+  const [action, type, targetUserId] = interaction.customId.split('_');
+  const selectedBoosterId = parseInt(interaction.values[0]);
+
+  // Vérifier que le booster existe
+  if (!boosters[selectedBoosterId]) {
+    return interaction.reply({
+      content: '❌ Ce booster n\'existe pas.',
+      ephemeral: true
+    });
+  }
+
+  await interaction.deferUpdate();
+
+  try {
+    const targetUser = await interaction.client.users.fetch(targetUserId);
+
+    // Générer l'image de la nouvelle collection
+    const imageBuffer = await generateCollectionImage(targetUserId, selectedBoosterId);
+    const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
+
+    // Récupérer les stats
+    const { owned, total } = getBoosterCompletion(targetUserId, selectedBoosterId);
+    const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
+
+    const embed = new EmbedBuilder()
+      .setColor('#0099ff')
+      .setTitle(`📚 Collection de ${targetUser.username}`)
+      .setDescription(`**${boosters[selectedBoosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
+      .setImage('attachment://collection.png');
+
+    // Recréer le menu avec la nouvelle sélection
+    const boosterOptions = Object.values(boosters).map(booster => ({
+      label: booster.name,
+      description: `${booster.totalCards} cartes disponibles`,
+      value: String(booster.id),
+      default: booster.id === selectedBoosterId
+    }));
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`collection_select_${targetUserId}`)
+      .setPlaceholder('Changer de booster')
+      .addOptions(boosterOptions);
+
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    await interaction.editReply({
+      embeds: [embed],
+      files: [attachment],
+      components: [row]
+    });
+
+  } catch (error) {
+    console.error('Erreur lors du changement de booster:', error);
+    await interaction.followUp({
+      content: '❌ Une erreur est survenue lors du changement de booster.',
+      ephemeral: true
+    });
   }
 }
 
@@ -430,6 +589,8 @@ async function handlePokemonInteraction(interaction) {
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId.startsWith('trade_')) {
       await handleTradeSelectMenu(interaction);
+    } else if (interaction.customId.startsWith('collection_select_')) {
+      await handleCollectionSelectMenu(interaction);
     }
   } else if (interaction.isButton()) {
     if (interaction.customId.startsWith('trade_')) {

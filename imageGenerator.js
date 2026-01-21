@@ -43,18 +43,33 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
   const canvas = createCanvas(totalWidth, totalHeight);
   const ctx = canvas.getContext('2d');
 
-  // Fond dégradé (différent pour God Pack)
-  const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
-  if (isGodPack) {
-    gradient.addColorStop(0, '#4a0e4e');
-    gradient.addColorStop(0.5, '#81007f');
-    gradient.addColorStop(1, '#4a0e4e');
-  } else {
-    gradient.addColorStop(0, '#1a1a2e');
-    gradient.addColorStop(1, '#16213e');
+  // Charger le fond personnalisé
+  const bgPath = path.join(ASSETS_DIR, 'backgrounds', 'opening_bg.png');
+  try {
+    const bgImage = await loadImage(bgPath);
+    // Dessiner l'image de fond en la redimensionnant pour remplir le canvas
+    ctx.drawImage(bgImage, 0, 0, totalWidth, totalHeight);
+
+    // Ajouter une overlay légère pour God Pack
+    if (isGodPack) {
+      ctx.fillStyle = 'rgba(129, 0, 127, 0.3)';
+      ctx.fillRect(0, 0, totalWidth, totalHeight);
+    }
+  } catch (error) {
+    console.warn('⚠️  Impossible de charger opening_bg.png, utilisation du dégradé par défaut');
+    // Fallback sur le dégradé
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    if (isGodPack) {
+      gradient.addColorStop(0, '#4a0e4e');
+      gradient.addColorStop(0.5, '#81007f');
+      gradient.addColorStop(1, '#4a0e4e');
+    } else {
+      gradient.addColorStop(0, '#1a1a2e');
+      gradient.addColorStop(1, '#16213e');
+    }
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
   }
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, totalWidth, totalHeight);
 
   // Charger et dessiner chaque carte
   for (let i = 0; i < cardIds.length; i++) {
@@ -84,7 +99,7 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
       ctx.fillStyle = '#FFFFFF';
       ctx.font = `bold 16px ${PIXEL_FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText(`Carte ${cardId}`, x + CARD_WIDTH / 2, textY);
+      ctx.fillText(cardInfo.name, x + CARD_WIDTH / 2, textY);
 
       // Rareté
       ctx.fillStyle = cardInfo.rarityColor;
@@ -153,12 +168,21 @@ async function generateCollectionImage(userId, boosterId) {
   const canvas = createCanvas(totalWidth, totalHeight);
   const ctx = canvas.getContext('2d');
 
-  // Fond
-  const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
-  gradient.addColorStop(0, '#0f3460');
-  gradient.addColorStop(1, '#16213e');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, totalWidth, totalHeight);
+  // Charger le fond personnalisé
+  const bgPath = path.join(ASSETS_DIR, 'backgrounds', 'collection_bg.png');
+  try {
+    const bgImage = await loadImage(bgPath);
+    // Dessiner l'image de fond en la redimensionnant pour remplir le canvas
+    ctx.drawImage(bgImage, 0, 0, totalWidth, totalHeight);
+  } catch (error) {
+    console.warn('⚠️  Impossible de charger collection_bg.png, utilisation du dégradé par défaut');
+    // Fallback sur le dégradé
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#0f3460');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
 
   // Titre
   const owned = Object.keys(userData.cards).filter(cardId => {
@@ -169,11 +193,11 @@ async function generateCollectionImage(userId, boosterId) {
   ctx.fillStyle = '#FFFFFF';
   ctx.font = `bold 36px ${PIXEL_FONT}`;
   ctx.textAlign = 'center';
-  ctx.fillText(`Collection - ${booster.name}`, totalWidth / 2, 45);
+  ctx.fillText(`Collection - ${booster.name}`, totalWidth / 2, 55);
 
   ctx.font = `22px ${PIXEL_FONT}`;
   const percentage = booster.totalCards > 0 ? Math.round((owned / booster.totalCards) * 100) : 0;
-  ctx.fillText(`${owned}/${booster.totalCards} (${percentage}%)`, totalWidth / 2, 80);
+  ctx.fillText(`${owned}/${booster.totalCards} (${percentage}%)`, totalWidth / 2, 90);
 
   // Charger l'image du dos de carte
   const cardBackPath = path.join(ASSETS_DIR, 'cards', 'card_back.png');
