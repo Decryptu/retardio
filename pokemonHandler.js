@@ -89,10 +89,10 @@ async function handleBoosterCommand(interaction) {
 
     const embed = new EmbedBuilder()
       .setColor(isGodPack ? '#FF00FF' : '#FFD700')
-      .setTitle(isGodPack ? '✨🌟 GOD PACK ! 🌟✨' : '🎉 Booster Ouvert !')
+      .setTitle(isGodPack ? '✨🌟 GOD PACK ! 🌟✨' : 'Booster Ouvert !')
       .setDescription(`${isGodPack ? '**INCROYABLE ! Toutes les cartes sont au moins Rare !**\n\n' : ''}Vous avez reçu les cartes suivantes :\n\n${cardDescriptions}`)
       .setImage('attachment://booster.png')
-      .setFooter({ text: isGodPack ? 'Félicitations pour ce GOD PACK légendaire ! 🎊' : 'Revenez demain pour un nouveau booster !' });
+      .setFooter({ text: isGodPack ? 'Félicitations pour ce GOD PACK légendaire !' : 'Revenez demain pour un nouveau booster !' });
 
     await interaction.editReply({
       embeds: [embed],
@@ -137,7 +137,7 @@ async function handleCollectionCommand(interaction) {
 
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
-      .setTitle(`📚 Collection de ${targetUser.username}`)
+      .setTitle(`Collection de ${targetUser.username}`)
       .setDescription(`**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
       .setImage('attachment://collection.png');
 
