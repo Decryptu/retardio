@@ -38,23 +38,27 @@ Système de rappel d'anniversaires avec vérification quotidienne automatique.
 
 ### 🎴 Pokémon Boosters
 
-Système de collection de cartes avec boosters quotidiens, échanges et God Packs.
+Système de collection de cartes avec boosters quotidiens, échanges, boutique et God Packs.
 
 **Commandes:**
 
-- `/booster` - Ouvrir son booster quotidien (reset minuit Paris)
+- `/booster` - Ouvrir un booster (quotidien gratuit ou depuis l'inventaire)
 - `/collection [utilisateur] [booster]` - Voir une collection avec menu de sélection
 - `/echange <utilisateur>` - Échanger des cartes via menu interactif
+- `/boutique` - Acheter des boosters et cartes promo
+- `/solde [utilisateur]` - Voir son solde de Poké Dollars (Ꝑ)
+- `/inventaire` - Voir ses boosters en stock
 - `/giftbooster <utilisateur>` - [ADMIN] Offrir un booster (reset cooldown)
 
 **Caractéristiques:**
 
 - 5 cartes par booster avec garantie Peu commun minimum
 - God Pack: 1/256 chance (toutes cartes Rare+)
-- Raretés: Commun (54%), Peu commun (28%), Rare (14%), Légendaire (4%)
+- Raretés: Commun (54%), Peu commun (28%), Rare (14%), Légendaire (4%), Promo
+- Économie: Gagnez des Ꝑ en discutant (5-15 Ꝑ/message, anti-spam)
+- Cartes Promo exclusives (achat en boutique, certaines limitées)
 - Images générées avec police pixel (PixelOperator8-Bold.ttf)
-- Fonds personnalisés: `opening_bg.png`, `collection_bg.png`
-- Admin whitelist configurable dans `pokemonHandler.js` ligne 10
+- Admin whitelist configurable dans `pokemonHandler.js` ligne 14
 
 **Stockage:**
 
@@ -103,10 +107,11 @@ node index.js
 ├── commandHandler.js           # Commandes boissons
 ├── birthdayHandler.js          # Système anniversaires
 ├── pokemonHandler.js           # Système Pokémon
+├── shopHandler.js              # Boutique et économie
 ├── cardGenerator.js            # Génération de cartes
 ├── imageGenerator.js           # Création d'images
-├── userManager.js              # Gestion utilisateurs
-├── messageHandler.js           # Traitement messages
+├── userManager.js              # Gestion utilisateurs et économie
+├── messageHandler.js           # Traitement messages + récompenses
 ├── config.js                   # Configuration
 ├── data/
 │   ├── boissons.json
@@ -115,9 +120,10 @@ node index.js
 │   ├── boosters.json
 │   ├── rarities.json
 │   ├── godpack.json
-│   └── db/                     # Données utilisateurs
+│   └── db/                     # Données utilisateurs (cartes, argent, inventaire)
 └── assets/
     ├── cards/                  # Images cartes (300x363px)
+    ├── boosters/               # Images boosters
     ├── backgrounds/            # Fonds (opening: 1600x543, collection: 1370x1100)
     └── fonts/                  # PixelOperator8-Bold.ttf
 ```
@@ -133,10 +139,14 @@ node index.js
 
 ## Personnalisation
 
-**Admin Pokémon:** Modifier `ADMIN_WHITELIST` dans `pokemonHandler.js` (ligne 10)
+**Admin Pokémon:** Modifier `ADMIN_WHITELIST` dans `pokemonHandler.js` (ligne 14)
+
+**Économie:** Ajuster `ECONOMY_CONFIG` dans `userManager.js` (récompenses, cooldown, anti-spam)
 
 **Probabilités God Pack:** Éditer `data/godpack.json`
 
 **Raretés:** Ajuster probabilités dans `data/rarities.json`
 
 **Cartes:** Ajouter dans `data/cards.json` + images dans `assets/cards/`
+
+**Boosters:** Ajouter dans `data/boosters.json` + image dans `assets/boosters/`
