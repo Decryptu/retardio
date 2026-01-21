@@ -203,8 +203,8 @@ async function handleBirthdayCommand(interaction) {
 		];
 
 		const list = birthdays.map((b) => {
-			const mention = b.userId ? `<@${b.userId}>` : b.name;
-			return `• **${b.day} ${monthNames[b.month - 1]}** - ${mention}`;
+			const displayName = b.name || b.userId;
+			return `• **${b.day} ${monthNames[b.month - 1]}** - \`${displayName}\``;
 		});
 
 		return interaction.reply(`**Anniversaires :**\n${list.join("\n")}`);
