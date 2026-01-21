@@ -261,4 +261,6 @@ module.exports = {
 	handleBirthdayAutocomplete,
 	startBirthdayCheck,
 	checkBirthdays,
+	loadBirthdays,
+	getParisDayMonth,
 };
