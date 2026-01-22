@@ -87,7 +87,7 @@ async function handleCollectionCommand(interaction) {
       const cardOptions = ownedCards.slice(0, 25).map(card => ({
         label: card.name,
         description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
-        value: `${card.id}_${boosterId}`,
+        value: `${card.id}::${boosterId}`,
         emoji: '🃏'
       }));
 
@@ -221,7 +221,7 @@ async function handleCollectionSelectMenu(interaction) {
  */
 async function handleCardDetailSelectMenu(interaction) {
   const [, , targetUserId] = interaction.customId.split('_');
-  const [cardId, boosterId] = interaction.values[0].split('_');
+  const [cardId, boosterId] = interaction.values[0].split('::');
 
   await interaction.deferUpdate();
 
@@ -337,7 +337,7 @@ async function handleCollectionBackButton(interaction) {
       const cardOptions = ownedCards.slice(0, 25).map(card => ({
         label: card.name,
         description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
-        value: `${card.id}_${boosterId}`,
+        value: `${card.id}::${boosterId}`,
         emoji: '🃏'
       }));
 
