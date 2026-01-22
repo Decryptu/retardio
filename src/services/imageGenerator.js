@@ -3,9 +3,9 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { getCardInfo, getAllCardsFromBooster } = require('./cardGenerator').default;
 const { loadUserData } = require('./userManager');
-const boosters = require('./data/boosters.json');
+const boosters = require('../../data/boosters.json');
 
-const ASSETS_DIR = path.join(__dirname, 'assets');
+const ASSETS_DIR = path.join(__dirname, '../../assets');
 const CARD_WIDTH = 300;
 const CARD_HEIGHT = 363;
 const BORDER_RADIUS = 8; // Small border radius for card frames

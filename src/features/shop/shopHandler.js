@@ -1,13 +1,13 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { getMoney, removeMoney, addBoosterToInventory, addCardToUser, hasLimitedCard, loadUserData } = require('./userManager');
-const { loadBirthdays, getParisDayMonth } = require('./birthdayHandler');
-const boosters = require('./data/boosters.json');
-const cards = require('./data/cards.json');
-const rarities = require('./data/rarities.json');
+const { getMoney, removeMoney, addBoosterToInventory, addCardToUser, hasLimitedCard, loadUserData } = require('../../services/userManager');
+const { loadBirthdays, getParisDayMonth } = require('../birthday/birthdayHandler');
+const boosters = require('../../../data/boosters.json');
+const cards = require('../../../data/cards.json');
+const rarities = require('../../../data/rarities.json');
 const path = require('node:path');
 const fs = require('node:fs');
 
-const ASSETS_DIR = path.join(__dirname, 'assets');
+const ASSETS_DIR = path.join(__dirname, '../../../assets');
 const CURRENCY_SYMBOL = 'Ꝑ';
 
 // Commandes slash

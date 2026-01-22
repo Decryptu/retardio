@@ -1,23 +1,23 @@
 const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
-const config = require("./config.js");
-const MessageHandler = require("./messageHandler.js");
-const { commands, handleCommand, handleAutocomplete } = require("./commandHandler.js");
+const config = require("./src/config");
+const MessageHandler = require("./src/handlers/messageHandler.js");
+const { commands, handleCommand, handleAutocomplete } = require("./src/handlers/commandHandler.js");
 const {
 	birthdayCommands,
 	handleBirthdayCommand,
 	handleBirthdayAutocomplete,
 	startBirthdayCheck,
-} = require("./birthdayHandler.js");
+} = require("./src/features/birthday/birthdayHandler.js");
 const {
 	pokemonCommands,
 	handlePokemonCommand,
 	handlePokemonInteraction,
-} = require("./pokemonHandler.js");
+} = require("./src/features/pokemon");
 const {
 	shopCommands,
 	handleShopCommands,
 	handleShopInteraction,
-} = require("./shopHandler.js");
+} = require("./src/features/shop/shopHandler.js");
 
 // Combine all commands
 const allCommands = [...commands, ...birthdayCommands, ...pokemonCommands, ...shopCommands];

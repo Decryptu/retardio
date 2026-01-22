@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require("discord.js");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const BIRTHDAYS_FILE = path.join(__dirname, "birthdays.json");
+const BIRTHDAYS_FILE = path.join(__dirname, "../../../birthdays.json");
 
 // Load birthdays data
 function loadBirthdays() {

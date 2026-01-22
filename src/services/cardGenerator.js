@@ -1,8 +1,8 @@
 const crypto = require('node:crypto');
-const boosters = require('./data/boosters.json');
-const cards = require('./data/cards.json');
-const rarities = require('./data/rarities.json');
-const godpackConfig = require('./data/godpack.json');
+const boosters = require('../../data/boosters.json');
+const cards = require('../../data/cards.json');
+const rarities = require('../../data/rarities.json');
+const godpackConfig = require('../../data/godpack.json');
 
 /**
  * Cache des cardIds groupés par booster et rareté

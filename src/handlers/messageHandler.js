@@ -1,6 +1,6 @@
 const OpenAI = require("openai");
-const personalities = require("./personalities.js");
-const { processMessageReward } = require("./userManager.js");
+const personalities = require("../utils/personalities.js");
+const { processMessageReward } = require("../services/userManager.js");
 
 class MessageHandler {
 	constructor(client, config) {

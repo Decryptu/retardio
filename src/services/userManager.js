@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DB_DIR = path.join(__dirname, 'data', 'db');
+const DB_DIR = path.join(__dirname, '../../data/db');
 
 // ⚙️ CONFIGURATION ÉCONOMIE - Facile à ajuster
 const ECONOMY_CONFIG = {
@@ -174,8 +174,8 @@ function userHasCard(userId, cardId) {
  */
 function getBoosterCompletion(userId, boosterId) {
   const userData = loadUserData(userId);
-  const boosters = require('./data/boosters.json');
-  const cards = require('./data/cards.json');
+  const boosters = require('../../data/boosters.json');
+  const cards = require('../../data/cards.json');
 
   const booster = boosters[boosterId];
   if (!booster) {

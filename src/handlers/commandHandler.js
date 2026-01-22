@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
-const DRINKS_FILE = path.join(__dirname, "drinks.json");
+const DRINKS_FILE = path.join(__dirname, "../../drinks.json");
 
 // Load drinks data (with fallback for missing keys)
 function loadDrinks() {
