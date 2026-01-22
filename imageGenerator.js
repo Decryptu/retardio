@@ -467,13 +467,17 @@ async function generateCardDetailImage(cardId, quantity = 1, boosterId = null) {
     ctx.fillText(`Carte ${cardId}`, x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
   }
 
-  // Texte en dessous avec ombre
+  // Texte en dessous avec fond noir semi-transparent
   const textY = y + CARD_HEIGHT + 35;
+
+  // Dessiner un fond noir semi-transparent pour le texte
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect(0, y + CARD_HEIGHT + 8, totalWidth, 70);
 
   ctx.shadowColor = '#000000';
   ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 3;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
 
   // Nom de la carte
   ctx.fillStyle = '#FFFFFF';
