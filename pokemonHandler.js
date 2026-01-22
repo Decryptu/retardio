@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { drawBoosterPack, getCardInfo } = require('./cardGenerator');
+const { drawBoosterPack, getCardInfo, getAllCardsFromBooster } = require('./cardGenerator');
 const { canOpenBooster, addCardsToUser, loadUserData, removeCardFromUser, saveUserData, getBoosterCompletion, getBoosterInventory, removeBoosterFromInventory, getMoney } = require('./userManager');
-const { generateBoosterOpeningImage, generateCollectionImage } = require('./imageGenerator');
+const { generateBoosterOpeningImage, generateCollectionImage, generateCardDetailImage } = require('./imageGenerator');
 const boosters = require('./data/boosters.json');
 const path = require('path');
 const fs = require('fs');
@@ -398,12 +398,36 @@ async function handleCollectionCommand(interaction) {
       .setPlaceholder('Changer de booster')
       .addOptions(limitedOptions);
 
-    const row = new ActionRowBuilder().addComponents(selectMenu);
+    const row1 = new ActionRowBuilder().addComponents(selectMenu);
+
+    // Créer le menu de sélection de carte possédée
+    const userData = loadUserData(userId);
+    const allCards = getAllCardsFromBooster(boosterId);
+    const ownedCards = allCards.filter(card => userData.cards[String(card.id)] && userData.cards[String(card.id)] > 0);
+
+    const components = [row1];
+
+    if (ownedCards.length > 0) {
+      const cardOptions = ownedCards.slice(0, 25).map(card => ({
+        label: card.name,
+        description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
+        value: `${card.id}_${boosterId}`,
+        emoji: '🃏'
+      }));
+
+      const cardSelectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`collection_card_${targetUser.id}`)
+        .setPlaceholder('Voir une carte en détail')
+        .addOptions(cardOptions);
+
+      const row2 = new ActionRowBuilder().addComponents(cardSelectMenu);
+      components.push(row2);
+    }
 
     await interaction.editReply({
       embeds: [embed],
       files: files,
-      components: [row]
+      components: components
     });
 
   } catch (error) {
@@ -825,18 +849,192 @@ async function handleCollectionSelectMenu(interaction) {
       .setPlaceholder('Changer de booster')
       .addOptions(limitedOptions);
 
-    const row = new ActionRowBuilder().addComponents(selectMenu);
+    const row1 = new ActionRowBuilder().addComponents(selectMenu);
+
+    // Créer le menu de sélection de carte possédée
+    const userData = loadUserData(targetUserId);
+    const allCards = getAllCardsFromBooster(selectedBoosterId);
+    const ownedCards = allCards.filter(card => userData.cards[String(card.id)] && userData.cards[String(card.id)] > 0);
+
+    const components = [row1];
+
+    if (ownedCards.length > 0) {
+      const cardOptions = ownedCards.slice(0, 25).map(card => ({
+        label: card.name,
+        description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
+        value: `${card.id}_${selectedBoosterId}`,
+        emoji: '🃏'
+      }));
+
+      const cardSelectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`collection_card_${targetUserId}`)
+        .setPlaceholder('Voir une carte en détail')
+        .addOptions(cardOptions);
+
+      const row2 = new ActionRowBuilder().addComponents(cardSelectMenu);
+      components.push(row2);
+    }
 
     await interaction.editReply({
       embeds: [embed],
       files: files,
-      components: [row]
+      components: components
     });
 
   } catch (error) {
     console.error('Erreur lors du changement de booster:', error);
     await interaction.followUp({
       content: '❌ Une erreur est survenue lors du changement de booster.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * Gère la sélection de carte pour voir en détail
+ */
+async function handleCardDetailSelectMenu(interaction) {
+  const [, , targetUserId] = interaction.customId.split('_');
+  const [cardId, boosterId] = interaction.values[0].split('_');
+
+  await interaction.deferUpdate();
+
+  try {
+    const targetUser = await interaction.client.users.fetch(targetUserId);
+    const userData = loadUserData(targetUserId);
+    const quantity = userData.cards[String(cardId)] || 0;
+    const cardInfo = getCardInfo(cardId);
+
+    if (!cardInfo) {
+      return interaction.followUp({
+        content: '❌ Cette carte n\'existe pas.',
+        ephemeral: true
+      });
+    }
+
+    // Générer l'image de détail de la carte
+    const imageBuffer = await generateCardDetailImage(cardId, quantity, boosterId);
+    const attachment = new AttachmentBuilder(imageBuffer, { name: 'card_detail.png' });
+
+    const embed = new EmbedBuilder()
+      .setColor(cardInfo.rarityColor)
+      .setTitle(`🃏 ${cardInfo.name}`)
+      .setDescription(`**Rareté:** ${cardInfo.rarityName}\n**Quantité:** x${quantity}`)
+      .setImage('attachment://card_detail.png');
+
+    // Bouton retour
+    const backButton = new ButtonBuilder()
+      .setCustomId(`collection_back_${targetUserId}_${boosterId}`)
+      .setLabel('Retour à la collection')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('◀️');
+
+    const row = new ActionRowBuilder().addComponents(backButton);
+
+    await interaction.editReply({
+      embeds: [embed],
+      files: [attachment],
+      components: [row]
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de l\'affichage du détail de carte:', error);
+    await interaction.followUp({
+      content: '❌ Une erreur est survenue lors de l\'affichage de la carte.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * Gère le bouton retour vers la collection
+ */
+async function handleCollectionBackButton(interaction) {
+  const parts = interaction.customId.split('_');
+  const targetUserId = parts[2];
+  const boosterId = parts[3];
+
+  await interaction.deferUpdate();
+
+  try {
+    const targetUser = await interaction.client.users.fetch(targetUserId);
+
+    // Générer l'image de la collection
+    const imageBuffer = await generateCollectionImage(targetUserId, boosterId);
+    const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
+
+    // Récupérer les stats
+    const { owned, total } = getBoosterCompletion(targetUserId, boosterId);
+    const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
+
+    // Charger l'image du booster pour le thumbnail
+    const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
+    let files = [attachment];
+
+    const embed = new EmbedBuilder()
+      .setColor('#0099ff')
+      .setTitle(`📚 Collection de ${targetUser.username}`)
+      .setDescription(`**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
+      .setImage('attachment://collection.png');
+
+    if (fs.existsSync(boosterImagePath)) {
+      const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
+      files.push(boosterAttachment);
+      embed.setThumbnail('attachment://booster_thumb.png');
+    }
+
+    // Recréer les menus
+    const boosterOptions = Object.values(boosters).map(booster => ({
+      label: booster.name,
+      description: `${booster.totalCards} cartes${booster.isPromo ? ' (Promo)' : ''}`,
+      value: String(booster.id),
+      default: String(booster.id) === String(boosterId),
+      emoji: booster.isPromo ? '✨' : '📦'
+    }));
+
+    const limitedOptions = boosterOptions.slice(0, 25);
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`collection_select_${targetUserId}`)
+      .setPlaceholder('Changer de booster')
+      .addOptions(limitedOptions);
+
+    const row1 = new ActionRowBuilder().addComponents(selectMenu);
+
+    // Créer le menu de sélection de carte possédée
+    const userData = loadUserData(targetUserId);
+    const allCards = getAllCardsFromBooster(boosterId);
+    const ownedCards = allCards.filter(card => userData.cards[String(card.id)] && userData.cards[String(card.id)] > 0);
+
+    const components = [row1];
+
+    if (ownedCards.length > 0) {
+      const cardOptions = ownedCards.slice(0, 25).map(card => ({
+        label: card.name,
+        description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
+        value: `${card.id}_${boosterId}`,
+        emoji: '🃏'
+      }));
+
+      const cardSelectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`collection_card_${targetUserId}`)
+        .setPlaceholder('Voir une carte en détail')
+        .addOptions(cardOptions);
+
+      const row2 = new ActionRowBuilder().addComponents(cardSelectMenu);
+      components.push(row2);
+    }
+
+    await interaction.editReply({
+      embeds: [embed],
+      files: files,
+      components: components
+    });
+
+  } catch (error) {
+    console.error('Erreur lors du retour à la collection:', error);
+    await interaction.followUp({
+      content: '❌ Une erreur est survenue.',
       ephemeral: true
     });
   }
@@ -959,6 +1157,8 @@ async function handlePokemonInteraction(interaction) {
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId.startsWith('trade_')) {
       await handleTradeSelectMenu(interaction);
+    } else if (interaction.customId.startsWith('collection_card_')) {
+      await handleCardDetailSelectMenu(interaction);
     } else if (interaction.customId.startsWith('collection_select_')) {
       await handleCollectionSelectMenu(interaction);
     } else if (interaction.customId.startsWith('booster_select_open_')) {
@@ -967,6 +1167,8 @@ async function handlePokemonInteraction(interaction) {
   } else if (interaction.isButton()) {
     if (interaction.customId.startsWith('trade_')) {
       await handleTradeButton(interaction);
+    } else if (interaction.customId.startsWith('collection_back_')) {
+      await handleCollectionBackButton(interaction);
     } else if (interaction.customId.startsWith('booster_')) {
       await handleBoosterButton(interaction);
     }

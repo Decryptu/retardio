@@ -33,17 +33,75 @@ function strokeRoundedRect(ctx, x, y, width, height, radius) {
 }
 
 /**
- * Draw glow effect behind a card
+ * Draw colored background behind a card (no glow for common)
  */
-function drawCardGlow(ctx, x, y, width, height, color) {
+function drawCardBackground(ctx, x, y, width, height, color, withGlow = true) {
   ctx.save();
-  ctx.shadowColor = color;
-  ctx.shadowBlur = GLOW_BLUR;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
+  if (withGlow) {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = GLOW_BLUR;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  }
   ctx.fillStyle = color;
   ctx.fillRect(x, y, width, height);
   ctx.restore();
+}
+
+/**
+ * Draw background image with center-crop (no stretching)
+ */
+function drawCenteredCrop(ctx, image, canvasWidth, canvasHeight) {
+  const imgRatio = image.width / image.height;
+  const canvasRatio = canvasWidth / canvasHeight;
+
+  let srcX = 0, srcY = 0, srcW = image.width, srcH = image.height;
+
+  if (imgRatio > canvasRatio) {
+    // Image is wider - crop horizontally
+    srcW = image.height * canvasRatio;
+    srcX = (image.width - srcW) / 2;
+  } else {
+    // Image is taller - crop vertically
+    srcH = image.width / canvasRatio;
+    srcY = (image.height - srcH) / 2;
+  }
+
+  ctx.drawImage(image, srcX, srcY, srcW, srcH, 0, 0, canvasWidth, canvasHeight);
+}
+
+/**
+ * Try to load a background image with fallback
+ * Priority: booster-specific > generic > gradient fallback
+ */
+async function loadBackgroundImage(type, boosterId = null) {
+  const bgDir = path.join(ASSETS_DIR, 'backgrounds');
+
+  // Try booster-specific background first
+  if (boosterId) {
+    const booster = boosters[boosterId];
+    if (booster) {
+      // Try by booster name (sanitized)
+      const sanitizedName = booster.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const boosterBgPath = path.join(bgDir, `${type}_${sanitizedName}.png`);
+      if (fs.existsSync(boosterBgPath)) {
+        return await loadImage(boosterBgPath);
+      }
+      // Try by booster id
+      const boosterIdBgPath = path.join(bgDir, `${type}_booster_${boosterId}.png`);
+      if (fs.existsSync(boosterIdBgPath)) {
+        return await loadImage(boosterIdBgPath);
+      }
+    }
+  }
+
+  // Try generic background
+  const genericPath = path.join(bgDir, `${type}_bg.png`);
+  if (fs.existsSync(genericPath)) {
+    return await loadImage(genericPath);
+  }
+
+  return null;
 }
 
 // Charger la police PixelOperator8-Bold si disponible
@@ -78,20 +136,16 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
   const canvas = createCanvas(totalWidth, totalHeight);
   const ctx = canvas.getContext('2d');
 
-  // Charger le fond personnalisé
-  const bgPath = path.join(ASSETS_DIR, 'backgrounds', 'opening_bg.png');
-  try {
-    const bgImage = await loadImage(bgPath);
-    // Dessiner l'image de fond en la redimensionnant pour remplir le canvas
-    ctx.drawImage(bgImage, 0, 0, totalWidth, totalHeight);
-
+  // Charger le fond personnalisé (avec center-crop)
+  const bgImage = await loadBackgroundImage('opening');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
     // Ajouter une overlay légère pour God Pack
     if (isGodPack) {
       ctx.fillStyle = 'rgba(129, 0, 127, 0.3)';
       ctx.fillRect(0, 0, totalWidth, totalHeight);
     }
-  } catch {
-    console.warn('⚠️  Impossible de charger opening_bg.png, utilisation du dégradé par défaut');
+  } else {
     // Fallback sur le dégradé
     const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
     if (isGodPack) {
@@ -119,10 +173,9 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
     try {
       const cardImage = await loadImage(cardImagePath);
 
-      // Draw glow effect for uncommon+ cards
-      if (GLOW_RARITIES.includes(cardInfo.rarity)) {
-        drawCardGlow(ctx, x, y, CARD_WIDTH, CARD_HEIGHT, cardInfo.rarityColor);
-      }
+      // Draw colored background (with glow for uncommon+, without for common)
+      const hasGlow = GLOW_RARITIES.includes(cardInfo.rarity);
+      drawCardBackground(ctx, x, y, CARD_WIDTH, CARD_HEIGHT, cardInfo.rarityColor, hasGlow);
 
       // Dessiner la carte
       ctx.drawImage(cardImage, x, y, CARD_WIDTH, CARD_HEIGHT);
@@ -225,14 +278,11 @@ async function generateCollectionImage(userId, boosterId) {
   const canvas = createCanvas(totalWidth, totalHeight);
   const ctx = canvas.getContext('2d');
 
-  // Charger le fond personnalisé
-  const bgPath = path.join(ASSETS_DIR, 'backgrounds', 'collection_bg.png');
-  try {
-    const bgImage = await loadImage(bgPath);
-    // Dessiner l'image de fond en la redimensionnant pour remplir le canvas
-    ctx.drawImage(bgImage, 0, 0, totalWidth, totalHeight);
-  } catch {
-    console.warn('⚠️  Impossible de charger collection_bg.png, utilisation du dégradé par défaut');
+  // Charger le fond personnalisé (per-booster ou générique, avec center-crop)
+  const bgImage = await loadBackgroundImage('collection', boosterId);
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+  } else {
     // Fallback sur le dégradé
     const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
     gradient.addColorStop(0, '#0f3460');
@@ -291,10 +341,9 @@ async function generateCollectionImage(userId, boosterId) {
       try {
         const cardImage = await loadImage(cardImagePath);
 
-        // Draw glow effect for uncommon+ cards
-        if (GLOW_RARITIES.includes(card.rarity)) {
-          drawCardGlow(ctx, x, y, cardDisplayWidth, cardDisplayHeight, card.rarityColor);
-        }
+        // Draw colored background (with glow for uncommon+, without for common)
+        const hasGlow = GLOW_RARITIES.includes(card.rarity);
+        drawCardBackground(ctx, x, y, cardDisplayWidth, cardDisplayHeight, card.rarityColor, hasGlow);
 
         ctx.drawImage(cardImage, x, y, cardDisplayWidth, cardDisplayHeight);
 
@@ -344,18 +393,111 @@ async function generateCollectionImage(userId, boosterId) {
     }
 
     // Numéro de la carte en petit
-    // - cartes possédées : noir
-    // - cartes non possédées : gris foncé
-    ctx.fillStyle = hasCard ? '#000000' : '#000000';
+    ctx.fillStyle = '#000000';
     ctx.font = `9px ${PIXEL_FONT}`;
     ctx.textAlign = 'center';
-    ctx.fillText(`#${card.id}`, x + cardDisplayWidth / 2, y + cardDisplayHeight - 16);
+    ctx.fillText(`#${card.id}`, x + cardDisplayWidth / 2, y + cardDisplayHeight - 18);
   }
+
+  return canvas.toBuffer('image/png');
+}
+
+/**
+ * Génère l'image de détail d'une carte
+ * @param {number|string} cardId - ID de la carte
+ * @param {number} quantity - Quantité possédée
+ * @param {string} boosterId - ID du booster (pour le fond personnalisé)
+ * @returns {Buffer} Buffer PNG de l'image générée
+ */
+async function generateCardDetailImage(cardId, quantity = 1, boosterId = null) {
+  const cardInfo = getCardInfo(cardId);
+  if (!cardInfo) {
+    throw new Error(`Carte ${cardId} introuvable`);
+  }
+
+  const padding = 40;
+  const totalWidth = CARD_WIDTH + (padding * 2);
+  const totalHeight = CARD_HEIGHT + (padding * 2) + 80; // +80 pour le texte en dessous
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Charger le fond personnalisé (per-booster ou générique, avec center-crop)
+  const bgImage = await loadBackgroundImage('carddetail', boosterId);
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+  } else {
+    // Fallback sur le dégradé
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  const x = padding;
+  const y = padding;
+
+  // Charger l'image de la carte
+  const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${cardId}.png`);
+  try {
+    const cardImage = await loadImage(cardImagePath);
+
+    // Draw colored background (with glow for uncommon+, without for common)
+    const hasGlow = GLOW_RARITIES.includes(cardInfo.rarity);
+    drawCardBackground(ctx, x, y, CARD_WIDTH, CARD_HEIGHT, cardInfo.rarityColor, hasGlow);
+
+    // Dessiner la carte
+    ctx.drawImage(cardImage, x, y, CARD_WIDTH, CARD_HEIGHT);
+
+    // Bordure colorée (avec border radius)
+    ctx.strokeStyle = cardInfo.rarityColor;
+    ctx.lineWidth = 4;
+    strokeRoundedRect(ctx, x - 2, y - 2, CARD_WIDTH + 4, CARD_HEIGHT + 4, BORDER_RADIUS);
+
+  } catch (error) {
+    console.error(`Erreur lors du chargement de la carte ${cardId}:`, error);
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `24px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`Carte ${cardId}`, x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
+  }
+
+  // Texte en dessous avec ombre
+  const textY = y + CARD_HEIGHT + 35;
+
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  // Nom de la carte
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 20px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(cardInfo.name, totalWidth / 2, textY);
+
+  // Rareté
+  ctx.fillStyle = cardInfo.rarityColor;
+  ctx.font = `16px ${PIXEL_FONT}`;
+  ctx.fillText(cardInfo.rarityName, totalWidth / 2, textY + 25);
+
+  // Quantité si > 1
+  if (quantity > 1) {
+    ctx.fillStyle = '#FFD700';
+    ctx.font = `bold 14px ${PIXEL_FONT}`;
+    ctx.fillText(`x${quantity}`, totalWidth / 2, textY + 48);
+  }
+
+  ctx.shadowColor = 'transparent';
 
   return canvas.toBuffer('image/png');
 }
 
 module.exports = {
   generateBoosterOpeningImage,
-  generateCollectionImage
+  generateCollectionImage,
+  generateCardDetailImage
 };
