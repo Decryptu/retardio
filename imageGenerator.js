@@ -443,17 +443,8 @@ async function generateCardDetailImage(cardId, quantity = 1, boosterId = null) {
   try {
     const cardImage = await loadImage(cardImagePath);
 
-    // Draw colored background (with glow for uncommon+, without for common)
-    const hasGlow = GLOW_RARITIES.includes(cardInfo.rarity);
-    drawCardBackground(ctx, x, y, CARD_WIDTH, CARD_HEIGHT, cardInfo.rarityColor, hasGlow);
-
-    // Dessiner la carte
+    // Dessiner la carte (sans bordure ni glow)
     ctx.drawImage(cardImage, x, y, CARD_WIDTH, CARD_HEIGHT);
-
-    // Bordure colorée (avec border radius)
-    ctx.strokeStyle = cardInfo.rarityColor;
-    ctx.lineWidth = 4;
-    strokeRoundedRect(ctx, x - 2, y - 2, CARD_WIDTH + 4, CARD_HEIGHT + 4, BORDER_RADIUS);
 
   } catch (error) {
     console.error(`Erreur lors du chargement de la carte ${cardId}:`, error);

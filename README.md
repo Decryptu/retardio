@@ -150,3 +150,17 @@ node index.js
 **Cartes:** Ajouter dans `data/cards.json` + images dans `assets/cards/`
 
 **Boosters:** Ajouter dans `data/boosters.json` + image dans `assets/boosters/`
+
+## Assets Images
+
+Images placées dans `assets/`. Le système utilise le center-crop (pas d'étirement).
+
+| Type | Fichier | Per-Booster | Taille recommandée |
+|------|---------|-------------|-------------------|
+| Cartes | `cards/card_{id}.png` | - | 300 x 363 px |
+| Boosters | `boosters/booster_{id}.png` | - | 200 x 280 px |
+| Ouverture | `backgrounds/opening_bg.png` | - | 1640 x 643 px |
+| Collection | `backgrounds/collection_bg.png` | `collection_{nom}.png` ou `collection_booster_{id}.png` | 1370 x variable |
+| Détail carte | `backgrounds/carddetail_bg.png` | `carddetail_{nom}.png` ou `carddetail_booster_{id}.png` | 380 x 563 px |
+
+**Nommage per-booster:** Le nom est en minuscules, caractères spéciaux remplacés par `_` (ex: "Puissance Génétique" → `collection_puissance_g_n_tique.png`)
