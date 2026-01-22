@@ -205,30 +205,36 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false, newCardId
 
       // Dessiner le badge "NEW" si c'est une nouvelle carte
       if (newCardSet.has(String(cardId))) {
-        const badgeWidth = 50;
-        const badgeHeight = 22;
-        const badgeX = x + CARD_WIDTH - badgeWidth - 5;
-        const badgeY = y + 5;
+        const badgeWidth = 70;
+        const badgeHeight = 32;
+        const badgeX = x + CARD_WIDTH - badgeWidth - 8;
+        const badgeY = y + 8;
+
+        // Ombre du badge
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.beginPath();
+        ctx.roundRect(badgeX + 3, badgeY + 3, badgeWidth, badgeHeight, 6);
+        ctx.fill();
 
         // Fond du badge
-        ctx.fillStyle = '#FF4444';
+        ctx.fillStyle = '#FF2222';
         ctx.beginPath();
-        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
+        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 6);
         ctx.fill();
 
         // Bordure du badge
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
+        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 6);
         ctx.stroke();
 
         // Texte du badge
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold 14px ${PIXEL_FONT}`;
+        ctx.font = `bold 20px ${PIXEL_FONT}`;
         ctx.textAlign = 'center';
         ctx.shadowColor = 'transparent';
-        ctx.fillText('NEW', badgeX + badgeWidth / 2, badgeY + 16);
+        ctx.fillText('NEW', badgeX + badgeWidth / 2, badgeY + 23);
       }
 
       // Dessiner le nom et la rareté en bas
