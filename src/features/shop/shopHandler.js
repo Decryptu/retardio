@@ -797,9 +797,9 @@ async function handleShopInteraction(interaction) {
       const boosterId = parts[3];
       await purchaseBooster(interaction, boosterId, ownerId);
     } else if (customId.includes('_confirm_card_')) {
-      // Format: shop_confirm_card_cardId_ownerId
+      // Format: shop_confirm_card_cardId_ownerId (cardId can contain underscores like promo_5)
       const parts = customId.split('_');
-      const cardId = parts[3];
+      const cardId = parts.slice(3, -1).join('_');
       await purchaseCard(interaction, cardId, ownerId);
     }
   }
