@@ -1,7 +1,7 @@
 const { createCanvas, loadImage, registerFont } = require('canvas');
 const path = require('node:path');
 const fs = require('node:fs');
-const { getCardInfo, getAllCardsFromBooster } = require('./cardGenerator').default;
+const { getCardInfo, getAllCardsFromBooster } = require('./cardGenerator');
 const { loadUserData } = require('./userManager');
 const boosters = require('../../data/boosters.json');
 

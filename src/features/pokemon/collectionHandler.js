@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator').default;
+const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, getBoosterCompletion } = require('../../services/userManager');
 const { generateCollectionImage, generateCardDetailImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
