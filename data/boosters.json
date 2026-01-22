@@ -22,7 +22,7 @@
   "promo_1": {
     "id": "promo_1",
     "name": "Collection Promo",
-    "totalCards": 2,
+    "totalCards": 12,
     "cardsPerPack": 0,
     "isPromo": true,
     "guarantees": {}
