@@ -11,6 +11,8 @@ const ADMIN_WHITELIST = [
   '98891713610797056',
 ];
 
+const CARDS_PER_PAGE = 25;
+
 /**
  * Obtient les boosters ou l'utilisateur a des cartes
  */
@@ -35,7 +37,7 @@ function getUserBoostersWithCards(userId) {
 }
 
 /**
- * Obtient les cartes d'un utilisateur pour un booster specifique
+ * Obtient les cartes d'un utilisateur pour un booster specifique, triees par quantite
  */
 function getUserCardsFromBooster(userId, boosterId) {
   const userData = loadUserData(userId);
@@ -47,7 +49,63 @@ function getUserCardsFromBooster(userId, boosterId) {
   }).map(card => ({
     ...card,
     quantity: userData.cards[String(card.id)]
+  })).sort((a, b) => b.quantity - a.quantity); // Trier par quantite decroissante
+}
+
+/**
+ * Cree les composants pour la selection de carte avec pagination
+ */
+function createCardSelectComponents(cards, tradeId, type, page, boosterName) {
+  const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
+  const startIndex = page * CARDS_PER_PAGE;
+  const pageCards = cards.slice(startIndex, startIndex + CARDS_PER_PAGE);
+
+  const components = [];
+
+  // Menu de selection des cartes
+  const cardOptions = pageCards.map(card => ({
+    label: `${card.name} (x${card.quantity})`,
+    description: card.rarityName,
+    value: `${type}_card_${card.id}`,
+    emoji: card.quantity > 1 ? '🔄' : '🃏'
   }));
+
+  const stepNum = type === 'give' ? '2' : '4';
+  const placeholder = totalPages > 1
+    ? `${stepNum}. Carte a ${type === 'give' ? 'donner' : 'recevoir'} (${page + 1}/${totalPages})`
+    : `${stepNum}. Choisissez la carte a ${type === 'give' ? 'donner' : 'recevoir'}`;
+
+  const cardSelect = new StringSelectMenuBuilder()
+    .setCustomId(`trade_${type}_card_${tradeId}`)
+    .setPlaceholder(placeholder)
+    .addOptions(cardOptions);
+
+  components.push(new ActionRowBuilder().addComponents(cardSelect));
+
+  // Boutons de pagination si necessaire
+  if (totalPages > 1) {
+    const prevButton = new ButtonBuilder()
+      .setCustomId(`trade_page_${type}_prev_${page}_${tradeId}`)
+      .setLabel('◀ Precedent')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page === 0);
+
+    const pageIndicator = new ButtonBuilder()
+      .setCustomId(`trade_page_indicator_${tradeId}`)
+      .setLabel(`${page + 1} / ${totalPages}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true);
+
+    const nextButton = new ButtonBuilder()
+      .setCustomId(`trade_page_${type}_next_${page}_${tradeId}`)
+      .setLabel('Suivant ▶')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page >= totalPages - 1);
+
+    components.push(new ActionRowBuilder().addComponents(prevButton, pageIndicator, nextButton));
+  }
+
+  return { components, totalCards: cards.length, totalPages };
 }
 
 /**
@@ -57,7 +115,6 @@ async function handleTradeCommand(interaction) {
   const initiator = interaction.user;
   const target = interaction.options.getUser('utilisateur');
 
-  // Verifications de base
   if (target.bot) {
     return interaction.reply({
       content: '❌ Vous ne pouvez pas echanger avec un bot.',
@@ -72,7 +129,6 @@ async function handleTradeCommand(interaction) {
     });
   }
 
-  // Verifier qu'ils ont des cartes
   const initiatorBoosters = getUserBoostersWithCards(initiator.id);
   const targetBoosters = getUserBoostersWithCards(target.id);
 
@@ -90,7 +146,6 @@ async function handleTradeCommand(interaction) {
     });
   }
 
-  // Creer le menu de selection de booster pour les cartes a donner
   const initiatorBoosterOptions = [];
   for (const [boosterId, data] of initiatorBoosters) {
     if (data.booster) {
@@ -110,14 +165,17 @@ async function handleTradeCommand(interaction) {
 
   const row1 = new ActionRowBuilder().addComponents(giveBoosterSelect);
 
-  // Initialiser l'echange
   activeTrades.set(interaction.id, {
     initiatorId: initiator.id,
     targetId: target.id,
     giveBoosterId: null,
     giveCardId: null,
+    giveCards: [],
+    givePage: 0,
     receiveBoosterId: null,
     receiveCardId: null,
+    receiveCards: [],
+    receivePage: 0,
     targetBoosters: targetBoosters,
     timestamp: Date.now()
   });
@@ -137,7 +195,6 @@ async function handleGiftBoosterCommand(interaction) {
   const adminId = interaction.user.id;
   const targetUser = interaction.options.getUser('utilisateur');
 
-  // Verifier si l'utilisateur est admin
   if (!ADMIN_WHITELIST.includes(adminId)) {
     return interaction.reply({
       content: '❌ Vous n\'avez pas la permission d\'utiliser cette commande.',
@@ -145,7 +202,6 @@ async function handleGiftBoosterCommand(interaction) {
     });
   }
 
-  // Verifier que ce n'est pas un bot
   if (targetUser.bot) {
     return interaction.reply({
       content: '❌ Vous ne pouvez pas offrir un booster a un bot.',
@@ -154,14 +210,10 @@ async function handleGiftBoosterCommand(interaction) {
   }
 
   try {
-    // Charger les donnees de l'utilisateur
     const userData = loadUserData(targetUser.id);
-
-    // Reset le cooldown (retirer lastBoosterOpen)
     delete userData.lastBoosterOpen;
     saveUserData(targetUser.id, userData);
 
-    // Envoyer la confirmation
     const embed = new EmbedBuilder()
       .setColor('#FFD700')
       .setTitle('🎁 Booster Offert !')
@@ -201,7 +253,6 @@ async function handleTradeSelectMenu(interaction) {
     });
   }
 
-  // Verifier que c'est l'initiateur qui selectionne
   if (interaction.user.id !== trade.initiatorId) {
     return interaction.reply({
       content: '❌ Seul l\'initiateur de l\'echange peut selectionner les cartes.',
@@ -215,9 +266,10 @@ async function handleTradeSelectMenu(interaction) {
   if (customId.startsWith('trade_give_booster_')) {
     const boosterId = selectedValue.replace('give_booster_', '');
     trade.giveBoosterId = boosterId;
+    trade.givePage = 0;
 
-    // Montrer les cartes de ce booster
     const userCards = getUserCardsFromBooster(trade.initiatorId, boosterId);
+    trade.giveCards = userCards;
 
     if (userCards.length === 0) {
       return interaction.update({
@@ -226,26 +278,15 @@ async function handleTradeSelectMenu(interaction) {
       });
     }
 
-    const cardOptions = userCards.slice(0, 25).map(card => ({
-      label: `${card.name} (x${card.quantity})`,
-      description: card.rarityName,
-      value: `give_card_${card.id}`,
-      emoji: '🃏'
-    }));
-
-    const cardSelect = new StringSelectMenuBuilder()
-      .setCustomId(`trade_give_card_${tradeId}`)
-      .setPlaceholder('2. Choisissez la carte a donner')
-      .addOptions(cardOptions);
-
-    const row = new ActionRowBuilder().addComponents(cardSelect);
-
     const booster = boosters[boosterId];
+    const { components, totalCards } = createCardSelectComponents(userCards, tradeId, 'give', 0, booster?.name);
+
     await interaction.update({
       content: `📋 **Echange en cours**\n\n` +
         `**Booster:** ${booster?.name || boosterId}\n` +
+        `**Cartes disponibles:** ${totalCards} (triees par quantite)\n\n` +
         `**Etape 2:** Selectionnez la carte a donner`,
-      components: [row]
+      components
     });
   }
   // Selection de la carte a donner
@@ -253,7 +294,6 @@ async function handleTradeSelectMenu(interaction) {
     const cardId = selectedValue.replace('give_card_', '');
     trade.giveCardId = cardId;
 
-    // Maintenant montrer les boosters du destinataire
     const targetBoosterOptions = [];
     for (const [boosterId, data] of trade.targetBoosters) {
       if (data.booster) {
@@ -285,9 +325,10 @@ async function handleTradeSelectMenu(interaction) {
   else if (customId.startsWith('trade_receive_booster_')) {
     const boosterId = selectedValue.replace('receive_booster_', '');
     trade.receiveBoosterId = boosterId;
+    trade.receivePage = 0;
 
-    // Montrer les cartes du destinataire dans ce booster
     const targetCards = getUserCardsFromBooster(trade.targetId, boosterId);
+    trade.receiveCards = targetCards;
 
     if (targetCards.length === 0) {
       return interaction.update({
@@ -296,28 +337,17 @@ async function handleTradeSelectMenu(interaction) {
       });
     }
 
-    const cardOptions = targetCards.slice(0, 25).map(card => ({
-      label: `${card.name} (x${card.quantity})`,
-      description: card.rarityName,
-      value: `receive_card_${card.id}`,
-      emoji: '🃏'
-    }));
-
-    const cardSelect = new StringSelectMenuBuilder()
-      .setCustomId(`trade_receive_card_${tradeId}`)
-      .setPlaceholder('4. Choisissez la carte a recevoir')
-      .addOptions(cardOptions);
-
-    const row = new ActionRowBuilder().addComponents(cardSelect);
-
     const giveCard = getCardInfo(trade.giveCardId);
     const booster = boosters[boosterId];
+    const { components, totalCards } = createCardSelectComponents(targetCards, tradeId, 'receive', 0, booster?.name);
+
     await interaction.update({
       content: `📋 **Echange en cours**\n\n` +
         `**Vous donnez:** ${giveCard?.name || trade.giveCardId}\n` +
-        `**Booster cible:** ${booster?.name || boosterId}\n\n` +
+        `**Booster cible:** ${booster?.name || boosterId}\n` +
+        `**Cartes disponibles:** ${totalCards} (triees par quantite)\n\n` +
         `**Etape 4:** Selectionnez la carte a recevoir`,
-      components: [row]
+      components
     });
   }
   // Selection de la carte a recevoir
@@ -325,7 +355,6 @@ async function handleTradeSelectMenu(interaction) {
     const cardId = selectedValue.replace('receive_card_', '');
     trade.receiveCardId = cardId;
 
-    // Les deux cartes sont selectionnees, montrer la confirmation
     await showTradeConfirmation(interaction, trade, tradeId);
   }
 }
@@ -371,7 +400,6 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
     components: [row]
   });
 
-  // Expiration automatique apres 5 minutes
   setTimeout(() => {
     if (activeTrades.has(tradeId)) {
       activeTrades.delete(tradeId);
@@ -380,10 +408,72 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
 }
 
 /**
- * Gere les boutons de confirmation d'echange
+ * Gere les boutons de confirmation d'echange et pagination
  */
 async function handleTradeButton(interaction) {
-  const [, decision, tradeId] = interaction.customId.split('_');
+  const customId = interaction.customId;
+
+  // Gestion de la pagination
+  if (customId.startsWith('trade_page_')) {
+    const parts = customId.split('_');
+    // Format: trade_page_give/receive_prev/next_currentPage_tradeId
+    const type = parts[2]; // give ou receive
+    const direction = parts[3]; // prev ou next
+    const currentPage = parseInt(parts[4]);
+    const tradeId = parts[5];
+
+    const trade = activeTrades.get(tradeId);
+    if (!trade) {
+      return interaction.reply({
+        content: '❌ Cet echange n\'est plus valide.',
+        ephemeral: true
+      });
+    }
+
+    if (interaction.user.id !== trade.initiatorId) {
+      return interaction.reply({
+        content: '❌ Seul l\'initiateur peut naviguer dans les pages.',
+        ephemeral: true
+      });
+    }
+
+    const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
+    const cards = type === 'give' ? trade.giveCards : trade.receiveCards;
+    const boosterId = type === 'give' ? trade.giveBoosterId : trade.receiveBoosterId;
+    const booster = boosters[boosterId];
+
+    if (type === 'give') {
+      trade.givePage = newPage;
+    } else {
+      trade.receivePage = newPage;
+    }
+
+    const { components, totalCards } = createCardSelectComponents(cards, tradeId, type, newPage, booster?.name);
+
+    let content;
+    if (type === 'give') {
+      content = `📋 **Echange en cours**\n\n` +
+        `**Booster:** ${booster?.name || boosterId}\n` +
+        `**Cartes disponibles:** ${totalCards} (triees par quantite)\n\n` +
+        `**Etape 2:** Selectionnez la carte a donner`;
+    } else {
+      const giveCard = getCardInfo(trade.giveCardId);
+      content = `📋 **Echange en cours**\n\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId}\n` +
+        `**Booster cible:** ${booster?.name || boosterId}\n` +
+        `**Cartes disponibles:** ${totalCards} (triees par quantite)\n\n` +
+        `**Etape 4:** Selectionnez la carte a recevoir`;
+    }
+
+    await interaction.update({
+      content,
+      components
+    });
+    return;
+  }
+
+  // Gestion de la confirmation/annulation
+  const [, decision, tradeId] = customId.split('_');
 
   const trade = activeTrades.get(tradeId);
   if (!trade) {
@@ -393,7 +483,6 @@ async function handleTradeButton(interaction) {
     });
   }
 
-  // Verifier que c'est la cible qui repond
   if (interaction.user.id !== trade.targetId) {
     return interaction.reply({
       content: '❌ Seul l\'utilisateur cible peut accepter ou refuser l\'echange.',
@@ -411,17 +500,14 @@ async function handleTradeButton(interaction) {
     return;
   }
 
-  // Confirmer l'echange
   try {
     const initiator = await interaction.client.users.fetch(trade.initiatorId);
     const target = await interaction.client.users.fetch(trade.targetId);
 
-    // Retirer les cartes et les ajouter aux autres utilisateurs
     const success1 = removeCardFromUser(trade.initiatorId, trade.giveCardId);
     const success2 = removeCardFromUser(trade.targetId, trade.receiveCardId);
 
     if (!success1 || !success2) {
-      // Rollback si l'un a echoue
       if (success1) addCardsToUser(trade.initiatorId, [trade.giveCardId]);
       if (success2) addCardsToUser(trade.targetId, [trade.receiveCardId]);
 
@@ -434,7 +520,6 @@ async function handleTradeButton(interaction) {
       return;
     }
 
-    // Ajouter les cartes
     addCardsToUser(trade.initiatorId, [trade.receiveCardId]);
     addCardsToUser(trade.targetId, [trade.giveCardId]);
 
