@@ -321,7 +321,7 @@ async function showCardsShop(interaction, ownerId) {
 }
 
 /**
- * Affiche la confirmation d'achat d'un booster avec image
+ * Affiche l'aperçu d'un booster avec image et option d'achat
  */
 async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
   const userMoney = getMoney(ownerId);
@@ -329,53 +329,68 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
 
   if (!booster || booster.isPromo) {
     return interaction.update({
-      content: '❌ Ce booster n\'est pas disponible à l\'achat.',
+      content: '❌ Ce booster n\'est pas disponible.',
       embeds: [],
       components: []
     });
   }
 
-  if (userMoney < booster.price) {
-    return interaction.update({
-      content: `❌ Vous n'avez pas assez de Poké Dollars ! (${userMoney.toLocaleString('fr-FR')} / ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL})`,
-      embeds: [],
-      components: []
-    });
-  }
+  const canAfford = userMoney >= booster.price;
 
   // Charger l'image du booster
   const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
   const files = [];
 
+  // Construire le message de statut
+  let statusMessage = '';
+  if (!canAfford) {
+    statusMessage = `\n\n🔒 **Fonds insuffisants.** (${userMoney.toLocaleString('fr-FR')} / ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL})`;
+  }
+
   const embed = new EmbedBuilder()
     .setColor('#3498DB')
-    .setTitle(`Acheter: ${booster.name}`)
+    .setTitle(`${booster.name}`)
     .setDescription(
       `**Prix:** ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
       `**Cartes par pack:** ${booster.cardsPerPack}\n` +
-      `**Cartes totales:** ${booster.totalCards}\n\n` +
-      `**Votre solde après achat:** ${(userMoney - booster.price).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
-      `Confirmer l'achat ?`
+      `**Cartes totales:** ${booster.totalCards}\n` +
+      `**Garantie:** ${booster.guarantees?.minRarity || 'Aucune'}` +
+      (canAfford ? `\n\n**Solde après achat:** ${(userMoney - booster.price).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` : '') +
+      statusMessage
     );
 
   if (fs.existsSync(boosterImagePath)) {
     const attachment = new AttachmentBuilder(boosterImagePath, { name: 'booster.png' });
     files.push(attachment);
-    embed.setThumbnail('attachment://booster.png');
+    embed.setImage('attachment://booster.png');
+  } else {
+    embed.setFooter({ text: 'Image non disponible' });
   }
 
+  const buttons = [];
+
+  // Bouton d'achat (désactivé si on ne peut pas acheter)
   const confirmButton = new ButtonBuilder()
     .setCustomId(`shop_confirm_booster_${boosterId}_${ownerId}`)
     .setLabel('Acheter')
-    .setStyle(ButtonStyle.Success)
-    .setEmoji('💰');
+    .setStyle(canAfford ? ButtonStyle.Success : ButtonStyle.Secondary)
+    .setDisabled(!canAfford);
 
-  const cancelButton = new ButtonBuilder()
+  if (canAfford) {
+    confirmButton.setEmoji('💰');
+  }
+
+  buttons.push(confirmButton);
+
+  const backButton = new ButtonBuilder()
     .setCustomId(`shop_category_boosters_${ownerId}`)
-    .setLabel('Annuler')
-    .setStyle(ButtonStyle.Secondary);
+    .setLabel('Retour')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('⬅️');
 
-  const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+  buttons.push(backButton);
+
+  const row = new ActionRowBuilder().addComponents(buttons);
 
   await interaction.update({
     embeds: [embed],
