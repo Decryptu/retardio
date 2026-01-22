@@ -1,7 +1,7 @@
 const { createCanvas, loadImage, registerFont } = require('canvas');
-const path = require('path');
-const fs = require('fs');
-const { getCardInfo, getAllCardsFromBooster } = require('./cardGenerator');
+const path = require('node:path');
+const fs = require('node:fs');
+const { getCardInfo, getAllCardsFromBooster } = require('./cardGenerator').default;
 const { loadUserData } = require('./userManager');
 const boosters = require('./data/boosters.json');
 
@@ -113,7 +113,7 @@ if (fs.existsSync(FONT_PATH)) {
     registerFont(FONT_PATH, { family: 'PixelOperator8Bold' });
     PIXEL_FONT = 'PixelOperator8Bold';
     console.log('✅ Police PixelOperator8-Bold.ttf chargée avec succès');
-  } catch (error) {
+  } catch {
     console.warn('⚠️  Impossible de charger PixelOperator8-Bold.ttf, utilisation d\'Arial');
   }
 } else {

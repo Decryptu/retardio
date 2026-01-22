@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const crypto = require('node:crypto');
 const boosters = require('./data/boosters.json');
 const cards = require('./data/cards.json');
 const rarities = require('./data/rarities.json');
@@ -253,7 +253,7 @@ function getAllCardsFromBooster(boosterId) {
   allCards.sort((a, b) => {
     const aNum = parseInt(a.id);
     const bNum = parseInt(b.id);
-    if (!isNaN(aNum) && !isNaN(bNum)) {
+    if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
       return aNum - bNum;
     }
     return String(a.id).localeCompare(String(b.id));

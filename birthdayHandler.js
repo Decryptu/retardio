@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const BIRTHDAYS_FILE = path.join(__dirname, "birthdays.json");
 
@@ -16,16 +16,6 @@ function loadBirthdays() {
 // Save birthdays data
 function saveBirthdays(data) {
 	fs.writeFileSync(BIRTHDAYS_FILE, JSON.stringify(data, null, 2));
-}
-
-// Get current date in Paris timezone
-function getParisDate() {
-	return new Date().toLocaleDateString("fr-FR", {
-		timeZone: "Europe/Paris",
-		day: "2-digit",
-		month: "2-digit",
-		year: "numeric",
-	});
 }
 
 // Parse Paris date to day/month

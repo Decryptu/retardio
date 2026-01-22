@@ -4,8 +4,8 @@ const { loadBirthdays, getParisDayMonth } = require('./birthdayHandler');
 const boosters = require('./data/boosters.json');
 const cards = require('./data/cards.json');
 const rarities = require('./data/rarities.json');
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 
 const ASSETS_DIR = path.join(__dirname, 'assets');
 const CURRENCY_SYMBOL = 'Ꝑ';
@@ -238,7 +238,6 @@ async function showCardsShop(interaction, ownerId) {
   const cardOptions = promoCards.map(card => {
     const alreadyOwned = hasLimitedCard(ownerId, card.id);
     const requiresBirthday = card.requiresBirthday;
-    const canClaim = requiresBirthday ? isBirthday : true;
     const price = requiresBirthday && isBirthday ? 0 : card.price;
     const canAfford = userMoney >= price;
 
@@ -312,7 +311,7 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
 
   // Charger l'image du booster
   const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
-  let files = [];
+  const files = [];
 
   const embed = new EmbedBuilder()
     .setColor('#3498DB')
@@ -401,7 +400,7 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
 
   // Charger l'image de la carte
   const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${cardId}.png`);
-  let files = [];
+  const files = [];
 
   const rarityData = rarities[card.rarity];
   const priceText = price === 0 ? '**GRATUIT** (Cadeau d\'anniversaire !)' : `${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`;

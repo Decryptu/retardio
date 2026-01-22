@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
+const fs = require("node:fs");
+const path = require("node:path");
+const crypto = require("node:crypto");
 
 const DRINKS_FILE = path.join(__dirname, "drinks.json");
 

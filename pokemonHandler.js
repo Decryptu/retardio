@@ -1,10 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { drawBoosterPack, getCardInfo, getAllCardsFromBooster } = require('./cardGenerator');
+const { drawBoosterPack, getCardInfo, getAllCardsFromBooster } = require('./cardGenerator').default;
 const { canOpenBooster, addCardsToUser, loadUserData, removeCardFromUser, saveUserData, getBoosterCompletion, getBoosterInventory, removeBoosterFromInventory, getMoney } = require('./userManager');
 const { generateBoosterOpeningImage, generateCollectionImage, generateCardDetailImage } = require('./imageGenerator');
 const boosters = require('./data/boosters.json');
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 
 const ASSETS_DIR = path.join(__dirname, 'assets');
 const CURRENCY_SYMBOL = 'Ꝑ';
@@ -123,9 +123,8 @@ async function handleBoosterCommand(interaction) {
 
   for (const booster of openableBoosters) {
     const inInventory = inventory[String(booster.id)] || 0;
-    const canOpenThis = canOpen || inInventory > 0;
 
-    let label = booster.name;
+    const label = booster.name;
     let descText = `${booster.totalCards} cartes`;
     let emoji = '📦';
 
@@ -181,9 +180,9 @@ async function showBoosterPreview(interaction, boosterId, ownerId) {
   }
 
   const inInventory = inventory[String(boosterId)] || 0;
-  const canOpenThis = canOpen || inInventory > 0;
-
-  if (!canOpenThis) {
+  // Removed unused canOpenThis variable
+  // Check directly instead
+  if (!canOpen && inInventory === 0) {
     return interaction.update({
       content: '❌ Vous n\'avez pas de booster disponible ! Achetez-en dans la `/boutique` ou attendez minuit pour votre booster quotidien.',
       embeds: [],
@@ -193,7 +192,7 @@ async function showBoosterPreview(interaction, boosterId, ownerId) {
 
   // Charger l'image du booster
   const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
-  let files = [];
+  const files = []; // Changed let to const
 
   const embed = new EmbedBuilder()
     .setColor('#FFD700')
@@ -366,7 +365,7 @@ async function handleCollectionCommand(interaction) {
 
     // Charger l'image du booster pour le thumbnail
     const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
-    let files = [attachment];
+    const files = [attachment];
 
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
@@ -818,7 +817,7 @@ async function handleCollectionSelectMenu(interaction) {
 
     // Charger l'image du booster pour le thumbnail
     const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${selectedBoosterId}.png`);
-    let files = [attachment];
+    const files = [attachment];
 
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
@@ -900,7 +899,6 @@ async function handleCardDetailSelectMenu(interaction) {
   await interaction.deferUpdate();
 
   try {
-    const targetUser = await interaction.client.users.fetch(targetUserId);
     const userData = loadUserData(targetUserId);
     const quantity = userData.cards[String(cardId)] || 0;
     const cardInfo = getCardInfo(cardId);
@@ -969,7 +967,7 @@ async function handleCollectionBackButton(interaction) {
 
     // Charger l'image du booster pour le thumbnail
     const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
-    let files = [attachment];
+    const files = [attachment];
 
     const embed = new EmbedBuilder()
       .setColor('#0099ff')

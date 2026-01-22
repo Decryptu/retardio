@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // PNG 1x1 transparent minimal (base64)
 const TRANSPARENT_PNG = Buffer.from(
