@@ -1,6 +1,6 @@
 const { pokemonCommands } = require('./commands');
 const { handleBoosterCommand, handleBoosterSelectMenu, handleBoosterButton } = require('./boosterHandler');
-const { handleCollectionCommand, handleCollectionSelectMenu, handleCardDetailSelectMenu, handleCollectionBackButton } = require('./collectionHandler');
+const { handleCollectionCommand, handleCollectionSelectMenu, handleCardDetailSelectMenu, handleCollectionButton } = require('./collectionHandler');
 const { handleTradeCommand, handleGiftBoosterCommand, handleTradeSelectMenu, handleTradeButton } = require('./tradeHandler');
 
 /**
@@ -37,8 +37,8 @@ async function handlePokemonInteraction(interaction) {
   } else if (interaction.isButton()) {
     if (interaction.customId.startsWith('trade_')) {
       await handleTradeButton(interaction);
-    } else if (interaction.customId.startsWith('collection_back_')) {
-      await handleCollectionBackButton(interaction);
+    } else if (interaction.customId.startsWith('collection_')) {
+      await handleCollectionButton(interaction);
     } else if (interaction.customId.startsWith('booster_')) {
       await handleBoosterButton(interaction);
     }

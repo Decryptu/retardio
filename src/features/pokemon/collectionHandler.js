@@ -7,6 +7,96 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 const ASSETS_DIR = path.join(__dirname, '../../../assets');
+const CARDS_PER_PAGE = 25;
+
+/**
+ * Obtient les cartes possedees d'un utilisateur pour un booster, triees par quantite
+ */
+function getOwnedCardsFromBooster(userId, boosterId) {
+  const userData = loadUserData(userId);
+  const allCards = getAllCardsFromBooster(boosterId);
+
+  return allCards.filter(card => {
+    const quantity = userData.cards[String(card.id)] || 0;
+    return quantity > 0;
+  }).map(card => ({
+    ...card,
+    quantity: userData.cards[String(card.id)]
+  })).sort((a, b) => b.quantity - a.quantity);
+}
+
+/**
+ * Cree les composants de la collection (booster select + card select avec pagination)
+ */
+function createCollectionComponents(targetUserId, boosterId, ownedCards, page = 0) {
+  const components = [];
+
+  // Menu de selection de booster
+  const boosterOptions = Object.values(boosters).map(booster => ({
+    label: booster.name,
+    description: `${booster.totalCards} cartes${booster.isPromo ? ' (Promo)' : ''}`,
+    value: String(booster.id),
+    default: String(booster.id) === String(boosterId),
+    emoji: booster.isPromo ? '✨' : '📦'
+  }));
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`collection_select_${targetUserId}`)
+    .setPlaceholder('Changer de booster')
+    .addOptions(boosterOptions.slice(0, 25));
+
+  components.push(new ActionRowBuilder().addComponents(selectMenu));
+
+  // Menu de selection de carte avec pagination
+  if (ownedCards.length > 0) {
+    const totalPages = Math.ceil(ownedCards.length / CARDS_PER_PAGE);
+    const startIndex = page * CARDS_PER_PAGE;
+    const pageCards = ownedCards.slice(startIndex, startIndex + CARDS_PER_PAGE);
+
+    const cardOptions = pageCards.map(card => ({
+      label: card.name,
+      description: `${card.rarityName} - x${card.quantity}`,
+      value: `${card.id}::${boosterId}`,
+      emoji: card.quantity > 1 ? '🔄' : '🃏'
+    }));
+
+    const placeholder = totalPages > 1
+      ? `Voir une carte (${page + 1}/${totalPages})`
+      : 'Voir une carte en detail';
+
+    const cardSelectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`collection_card_${targetUserId}_${boosterId}_${page}`)
+      .setPlaceholder(placeholder)
+      .addOptions(cardOptions);
+
+    components.push(new ActionRowBuilder().addComponents(cardSelectMenu));
+
+    // Boutons de pagination si necessaire
+    if (totalPages > 1) {
+      const prevButton = new ButtonBuilder()
+        .setCustomId(`collection_page_prev_${targetUserId}_${boosterId}_${page}`)
+        .setLabel('◀ Precedent')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(page === 0);
+
+      const pageIndicator = new ButtonBuilder()
+        .setCustomId(`collection_page_indicator_${targetUserId}`)
+        .setLabel(`${page + 1} / ${totalPages}`)
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true);
+
+      const nextButton = new ButtonBuilder()
+        .setCustomId(`collection_page_next_${targetUserId}_${boosterId}_${page}`)
+        .setLabel('Suivant ▶')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(page >= totalPages - 1);
+
+      components.push(new ActionRowBuilder().addComponents(prevButton, pageIndicator, nextButton));
+    }
+  }
+
+  return components;
+}
 
 /**
  * Gere la commande /collection
@@ -17,9 +107,7 @@ async function handleCollectionCommand(interaction) {
   let boosterId = boosterIdOption || '1';
   const userId = targetUser.id;
 
-  // Verifier que le booster existe
   if (!boosters[boosterId]) {
-    // Essayer de trouver un booster par defaut
     boosterId = Object.keys(boosters)[0] || '1';
     if (!boosters[boosterId]) {
       return interaction.reply({
@@ -32,15 +120,12 @@ async function handleCollectionCommand(interaction) {
   await interaction.deferReply();
 
   try {
-    // Generer l'image de la collection
     const imageBuffer = await generateCollectionImage(userId, boosterId);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
-    // Recuperer les stats
     const { owned, total } = getBoosterCompletion(userId, boosterId);
     const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
 
-    // Charger l'image du booster pour le thumbnail
     const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
     const files = [attachment];
 
@@ -50,55 +135,14 @@ async function handleCollectionCommand(interaction) {
       .setDescription(`**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
       .setImage('attachment://collection.png');
 
-    // Ajouter l'image du booster en thumbnail si disponible
     if (fs.existsSync(boosterImagePath)) {
       const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
       files.push(boosterAttachment);
       embed.setThumbnail('attachment://booster_thumb.png');
     }
 
-    // Creer le menu de selection de booster (tous les boosters, y compris promo)
-    const boosterOptions = Object.values(boosters).map(booster => ({
-      label: booster.name,
-      description: `${booster.totalCards} cartes${booster.isPromo ? ' (Promo)' : ''}`,
-      value: String(booster.id),
-      default: String(booster.id) === String(boosterId),
-      emoji: booster.isPromo ? '✨' : '📦'
-    }));
-
-    // Limiter a 25 options
-    const limitedOptions = boosterOptions.slice(0, 25);
-
-    const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId(`collection_select_${targetUser.id}`)
-      .setPlaceholder('Changer de booster')
-      .addOptions(limitedOptions);
-
-    const row1 = new ActionRowBuilder().addComponents(selectMenu);
-
-    // Creer le menu de selection de carte possedee
-    const userData = loadUserData(userId);
-    const allCards = getAllCardsFromBooster(boosterId);
-    const ownedCards = allCards.filter(card => userData.cards[String(card.id)] && userData.cards[String(card.id)] > 0);
-
-    const components = [row1];
-
-    if (ownedCards.length > 0) {
-      const cardOptions = ownedCards.slice(0, 25).map(card => ({
-        label: card.name,
-        description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
-        value: `${card.id}::${boosterId}`,
-        emoji: '🃏'
-      }));
-
-      const cardSelectMenu = new StringSelectMenuBuilder()
-        .setCustomId(`collection_card_${targetUser.id}`)
-        .setPlaceholder('Voir une carte en detail')
-        .addOptions(cardOptions);
-
-      const row2 = new ActionRowBuilder().addComponents(cardSelectMenu);
-      components.push(row2);
-    }
+    const ownedCards = getOwnedCardsFromBooster(userId, boosterId);
+    const components = createCollectionComponents(targetUser.id, boosterId, ownedCards, 0);
 
     await interaction.editReply({
       embeds: [embed],
@@ -121,7 +165,6 @@ async function handleCollectionSelectMenu(interaction) {
   const [, , targetUserId] = interaction.customId.split('_');
   const selectedBoosterId = interaction.values[0];
 
-  // Verifier que le booster existe
   if (!boosters[selectedBoosterId]) {
     return interaction.reply({
       content: '❌ Ce booster n\'existe pas.',
@@ -134,15 +177,12 @@ async function handleCollectionSelectMenu(interaction) {
   try {
     const targetUser = await interaction.client.users.fetch(targetUserId);
 
-    // Generer l'image de la nouvelle collection
     const imageBuffer = await generateCollectionImage(targetUserId, selectedBoosterId);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
-    // Recuperer les stats
     const { owned, total } = getBoosterCompletion(targetUserId, selectedBoosterId);
     const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
 
-    // Charger l'image du booster pour le thumbnail
     const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${selectedBoosterId}.png`);
     const files = [attachment];
 
@@ -152,54 +192,14 @@ async function handleCollectionSelectMenu(interaction) {
       .setDescription(`**${boosters[selectedBoosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
       .setImage('attachment://collection.png');
 
-    // Ajouter l'image du booster en thumbnail si disponible
     if (fs.existsSync(boosterImagePath)) {
       const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
       files.push(boosterAttachment);
       embed.setThumbnail('attachment://booster_thumb.png');
     }
 
-    // Recreer le menu avec la nouvelle selection
-    const boosterOptions = Object.values(boosters).map(booster => ({
-      label: booster.name,
-      description: `${booster.totalCards} cartes${booster.isPromo ? ' (Promo)' : ''}`,
-      value: String(booster.id),
-      default: String(booster.id) === String(selectedBoosterId),
-      emoji: booster.isPromo ? '✨' : '📦'
-    }));
-
-    const limitedOptions = boosterOptions.slice(0, 25);
-
-    const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId(`collection_select_${targetUserId}`)
-      .setPlaceholder('Changer de booster')
-      .addOptions(limitedOptions);
-
-    const row1 = new ActionRowBuilder().addComponents(selectMenu);
-
-    // Creer le menu de selection de carte possedee
-    const userData = loadUserData(targetUserId);
-    const allCards = getAllCardsFromBooster(selectedBoosterId);
-    const ownedCards = allCards.filter(card => userData.cards[String(card.id)] && userData.cards[String(card.id)] > 0);
-
-    const components = [row1];
-
-    if (ownedCards.length > 0) {
-      const cardOptions = ownedCards.slice(0, 25).map(card => ({
-        label: card.name,
-        description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
-        value: `${card.id}::${selectedBoosterId}`,
-        emoji: '🃏'
-      }));
-
-      const cardSelectMenu = new StringSelectMenuBuilder()
-        .setCustomId(`collection_card_${targetUserId}`)
-        .setPlaceholder('Voir une carte en detail')
-        .addOptions(cardOptions);
-
-      const row2 = new ActionRowBuilder().addComponents(cardSelectMenu);
-      components.push(row2);
-    }
+    const ownedCards = getOwnedCardsFromBooster(targetUserId, selectedBoosterId);
+    const components = createCollectionComponents(targetUserId, selectedBoosterId, ownedCards, 0);
 
     await interaction.editReply({
       embeds: [embed],
@@ -220,7 +220,9 @@ async function handleCollectionSelectMenu(interaction) {
  * Gere la selection de carte pour voir en detail
  */
 async function handleCardDetailSelectMenu(interaction) {
-  const [, , targetUserId] = interaction.customId.split('_');
+  const parts = interaction.customId.split('_');
+  // Format: collection_card_targetUserId_boosterId_page
+  const targetUserId = parts[2];
   const [cardId, boosterId] = interaction.values[0].split('::');
 
   await interaction.deferUpdate();
@@ -237,7 +239,6 @@ async function handleCardDetailSelectMenu(interaction) {
       });
     }
 
-    // Generer l'image de detail de la carte
     const imageBuffer = await generateCardDetailImage(cardId, quantity, boosterId);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'card_detail.png' });
 
@@ -247,9 +248,8 @@ async function handleCardDetailSelectMenu(interaction) {
       .setDescription(`**Rarete:** ${cardInfo.rarityName}\n**Quantite:** x${quantity}`)
       .setImage('attachment://card_detail.png');
 
-    // Bouton retour
     const backButton = new ButtonBuilder()
-      .setCustomId(`collection_back_${targetUserId}_${boosterId}`)
+      .setCustomId(`collection_back_${targetUserId}_${boosterId}_0`)
       .setLabel('Retour a la collection')
       .setStyle(ButtonStyle.Secondary)
       .setEmoji('◀️');
@@ -272,96 +272,117 @@ async function handleCardDetailSelectMenu(interaction) {
 }
 
 /**
- * Gere le bouton retour vers la collection
+ * Gere les boutons de la collection (retour et pagination)
  */
-async function handleCollectionBackButton(interaction) {
-  const parts = interaction.customId.split('_');
-  const targetUserId = parts[2];
-  const boosterId = parts[3];
+async function handleCollectionButton(interaction) {
+  const customId = interaction.customId;
 
-  await interaction.deferUpdate();
+  // Pagination
+  if (customId.startsWith('collection_page_prev_') || customId.startsWith('collection_page_next_')) {
+    const parts = customId.split('_');
+    // Format: collection_page_prev/next_targetUserId_boosterId_currentPage
+    const direction = parts[2];
+    const targetUserId = parts[3];
+    const boosterId = parts[4];
+    const currentPage = parseInt(parts[5]);
 
-  try {
-    const targetUser = await interaction.client.users.fetch(targetUserId);
+    const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
 
-    // Generer l'image de la collection
-    const imageBuffer = await generateCollectionImage(targetUserId, boosterId);
-    const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
+    await interaction.deferUpdate();
 
-    // Recuperer les stats
-    const { owned, total } = getBoosterCompletion(targetUserId, boosterId);
-    const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
+    try {
+      const targetUser = await interaction.client.users.fetch(targetUserId);
 
-    // Charger l'image du booster pour le thumbnail
-    const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
-    const files = [attachment];
+      const imageBuffer = await generateCollectionImage(targetUserId, boosterId);
+      const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
-    const embed = new EmbedBuilder()
-      .setColor('#0099ff')
-      .setTitle(`📚 Collection de ${targetUser.username}`)
-      .setDescription(`**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
-      .setImage('attachment://collection.png');
+      const { owned, total } = getBoosterCompletion(targetUserId, boosterId);
+      const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
 
-    if (fs.existsSync(boosterImagePath)) {
-      const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
-      files.push(boosterAttachment);
-      embed.setThumbnail('attachment://booster_thumb.png');
+      const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
+      const files = [attachment];
+
+      const embed = new EmbedBuilder()
+        .setColor('#0099ff')
+        .setTitle(`📚 Collection de ${targetUser.username}`)
+        .setDescription(`**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
+        .setImage('attachment://collection.png');
+
+      if (fs.existsSync(boosterImagePath)) {
+        const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
+        files.push(boosterAttachment);
+        embed.setThumbnail('attachment://booster_thumb.png');
+      }
+
+      const ownedCards = getOwnedCardsFromBooster(targetUserId, boosterId);
+      const components = createCollectionComponents(targetUserId, boosterId, ownedCards, newPage);
+
+      await interaction.editReply({
+        embeds: [embed],
+        files: files,
+        components: components
+      });
+
+    } catch (error) {
+      console.error('Erreur lors de la pagination:', error);
+      await interaction.followUp({
+        content: '❌ Une erreur est survenue.',
+        ephemeral: true
+      });
     }
+    return;
+  }
 
-    // Recreer les menus
-    const boosterOptions = Object.values(boosters).map(booster => ({
-      label: booster.name,
-      description: `${booster.totalCards} cartes${booster.isPromo ? ' (Promo)' : ''}`,
-      value: String(booster.id),
-      default: String(booster.id) === String(boosterId),
-      emoji: booster.isPromo ? '✨' : '📦'
-    }));
+  // Bouton retour
+  if (customId.startsWith('collection_back_')) {
+    const parts = customId.split('_');
+    // Format: collection_back_targetUserId_boosterId_page
+    const targetUserId = parts[2];
+    const boosterId = parts[3];
+    const page = parseInt(parts[4]) || 0;
 
-    const limitedOptions = boosterOptions.slice(0, 25);
+    await interaction.deferUpdate();
 
-    const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId(`collection_select_${targetUserId}`)
-      .setPlaceholder('Changer de booster')
-      .addOptions(limitedOptions);
+    try {
+      const targetUser = await interaction.client.users.fetch(targetUserId);
 
-    const row1 = new ActionRowBuilder().addComponents(selectMenu);
+      const imageBuffer = await generateCollectionImage(targetUserId, boosterId);
+      const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
-    // Creer le menu de selection de carte possedee
-    const userData = loadUserData(targetUserId);
-    const allCards = getAllCardsFromBooster(boosterId);
-    const ownedCards = allCards.filter(card => userData.cards[String(card.id)] && userData.cards[String(card.id)] > 0);
+      const { owned, total } = getBoosterCompletion(targetUserId, boosterId);
+      const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
 
-    const components = [row1];
+      const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
+      const files = [attachment];
 
-    if (ownedCards.length > 0) {
-      const cardOptions = ownedCards.slice(0, 25).map(card => ({
-        label: card.name,
-        description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
-        value: `${card.id}::${boosterId}`,
-        emoji: '🃏'
-      }));
+      const embed = new EmbedBuilder()
+        .setColor('#0099ff')
+        .setTitle(`📚 Collection de ${targetUser.username}`)
+        .setDescription(`**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)`)
+        .setImage('attachment://collection.png');
 
-      const cardSelectMenu = new StringSelectMenuBuilder()
-        .setCustomId(`collection_card_${targetUserId}`)
-        .setPlaceholder('Voir une carte en detail')
-        .addOptions(cardOptions);
+      if (fs.existsSync(boosterImagePath)) {
+        const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
+        files.push(boosterAttachment);
+        embed.setThumbnail('attachment://booster_thumb.png');
+      }
 
-      const row2 = new ActionRowBuilder().addComponents(cardSelectMenu);
-      components.push(row2);
+      const ownedCards = getOwnedCardsFromBooster(targetUserId, boosterId);
+      const components = createCollectionComponents(targetUserId, boosterId, ownedCards, page);
+
+      await interaction.editReply({
+        embeds: [embed],
+        files: files,
+        components: components
+      });
+
+    } catch (error) {
+      console.error('Erreur lors du retour a la collection:', error);
+      await interaction.followUp({
+        content: '❌ Une erreur est survenue.',
+        ephemeral: true
+      });
     }
-
-    await interaction.editReply({
-      embeds: [embed],
-      files: files,
-      components: components
-    });
-
-  } catch (error) {
-    console.error('Erreur lors du retour a la collection:', error);
-    await interaction.followUp({
-      content: '❌ Une erreur est survenue.',
-      ephemeral: true
-    });
   }
 }
 
@@ -369,5 +390,5 @@ module.exports = {
   handleCollectionCommand,
   handleCollectionSelectMenu,
   handleCardDetailSelectMenu,
-  handleCollectionBackButton
+  handleCollectionButton
 };
