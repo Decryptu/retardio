@@ -1,6 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getCardInfo } = require('../../services/cardGenerator');
+const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, removeCardFromUser, addCardsToUser, saveUserData } = require('../../services/userManager');
+const boosters = require('../../../data/boosters.json');
 
 // Map pour stocker les echanges en cours
 const activeTrades = new Map();
@@ -9,6 +10,45 @@ const activeTrades = new Map();
 const ADMIN_WHITELIST = [
   '98891713610797056',
 ];
+
+/**
+ * Obtient les boosters ou l'utilisateur a des cartes
+ */
+function getUserBoostersWithCards(userId) {
+  const userData = loadUserData(userId);
+  const userCards = Object.keys(userData.cards).filter(id => userData.cards[id] > 0);
+
+  const boostersWithCards = new Map();
+
+  for (const cardId of userCards) {
+    const cardInfo = getCardInfo(cardId);
+    if (cardInfo && cardInfo.boosterPackId) {
+      const boosterId = String(cardInfo.boosterPackId);
+      if (!boostersWithCards.has(boosterId)) {
+        boostersWithCards.set(boosterId, { count: 0, booster: boosters[boosterId] });
+      }
+      boostersWithCards.get(boosterId).count++;
+    }
+  }
+
+  return boostersWithCards;
+}
+
+/**
+ * Obtient les cartes d'un utilisateur pour un booster specifique
+ */
+function getUserCardsFromBooster(userId, boosterId) {
+  const userData = loadUserData(userId);
+  const allBoosterCards = getAllCardsFromBooster(boosterId);
+
+  return allBoosterCards.filter(card => {
+    const quantity = userData.cards[String(card.id)] || 0;
+    return quantity > 0;
+  }).map(card => ({
+    ...card,
+    quantity: userData.cards[String(card.id)]
+  }));
+}
 
 /**
  * Gere la commande /echange
@@ -32,74 +72,60 @@ async function handleTradeCommand(interaction) {
     });
   }
 
-  // Charger les donnees des utilisateurs
-  const initiatorData = loadUserData(initiator.id);
-  const targetData = loadUserData(target.id);
-
   // Verifier qu'ils ont des cartes
-  const initiatorCards = Object.keys(initiatorData.cards).filter(id => initiatorData.cards[id] > 0);
-  const targetCards = Object.keys(targetData.cards).filter(id => targetData.cards[id] > 0);
+  const initiatorBoosters = getUserBoostersWithCards(initiator.id);
+  const targetBoosters = getUserBoostersWithCards(target.id);
 
-  if (initiatorCards.length === 0) {
+  if (initiatorBoosters.size === 0) {
     return interaction.reply({
       content: '❌ Vous n\'avez aucune carte a echanger.',
       ephemeral: true
     });
   }
 
-  if (targetCards.length === 0) {
+  if (targetBoosters.size === 0) {
     return interaction.reply({
       content: `❌ ${target.username} n'a aucune carte a echanger.`,
       ephemeral: true
     });
   }
 
-  // Creer les menus de selection
-  const initiatorOptions = initiatorCards.slice(0, 25).map(cardId => {
-    const cardInfo = getCardInfo(cardId);
-    const quantity = initiatorData.cards[cardId];
-    return {
-      label: `${cardInfo?.name || `Carte ${cardId}`} (x${quantity})`,
-      description: `${cardInfo?.rarityName || 'Inconnue'}`,
-      value: cardId
-    };
-  });
+  // Creer le menu de selection de booster pour les cartes a donner
+  const initiatorBoosterOptions = [];
+  for (const [boosterId, data] of initiatorBoosters) {
+    if (data.booster) {
+      initiatorBoosterOptions.push({
+        label: data.booster.name,
+        description: `${data.count} carte${data.count > 1 ? 's' : ''} disponible${data.count > 1 ? 's' : ''}`,
+        value: `give_booster_${boosterId}`,
+        emoji: '📦'
+      });
+    }
+  }
 
-  const targetOptions = targetCards.slice(0, 25).map(cardId => {
-    const cardInfo = getCardInfo(cardId);
-    const quantity = targetData.cards[cardId];
-    return {
-      label: `${cardInfo?.name || `Carte ${cardId}`} (x${quantity})`,
-      description: `${cardInfo?.rarityName || 'Inconnue'}`,
-      value: cardId
-    };
-  });
+  const giveBoosterSelect = new StringSelectMenuBuilder()
+    .setCustomId(`trade_give_booster_${interaction.id}`)
+    .setPlaceholder('1. Choisissez le booster de la carte a donner')
+    .addOptions(initiatorBoosterOptions.slice(0, 25));
 
-  const initiatorSelect = new StringSelectMenuBuilder()
-    .setCustomId(`trade_give_${interaction.id}`)
-    .setPlaceholder('Choisissez la carte que vous donnez')
-    .addOptions(initiatorOptions);
-
-  const targetSelect = new StringSelectMenuBuilder()
-    .setCustomId(`trade_receive_${interaction.id}`)
-    .setPlaceholder('Choisissez la carte que vous recevez')
-    .addOptions(targetOptions);
-
-  const row1 = new ActionRowBuilder().addComponents(initiatorSelect);
-  const row2 = new ActionRowBuilder().addComponents(targetSelect);
+  const row1 = new ActionRowBuilder().addComponents(giveBoosterSelect);
 
   // Initialiser l'echange
   activeTrades.set(interaction.id, {
     initiatorId: initiator.id,
     targetId: target.id,
+    giveBoosterId: null,
     giveCardId: null,
+    receiveBoosterId: null,
     receiveCardId: null,
+    targetBoosters: targetBoosters,
     timestamp: Date.now()
   });
 
   await interaction.reply({
-    content: `📋 **Echange avec ${target}**\n\nEtape 1: Choisissez la carte que vous donnez\nEtape 2: Choisissez la carte que vous recevez`,
-    components: [row1, row2],
+    content: `📋 **Echange avec ${target}**\n\n` +
+      `**Etape 1:** Selectionnez le booster contenant la carte que vous voulez donner`,
+    components: [row1],
     ephemeral: false
   });
 }
@@ -163,7 +189,9 @@ async function handleGiftBoosterCommand(interaction) {
  * Gere les interactions des menus de selection d'echange
  */
 async function handleTradeSelectMenu(interaction) {
-  const [, type, tradeId] = interaction.customId.split('_');
+  const customId = interaction.customId;
+  const parts = customId.split('_');
+  const tradeId = parts[parts.length - 1];
 
   const trade = activeTrades.get(tradeId);
   if (!trade) {
@@ -181,29 +209,124 @@ async function handleTradeSelectMenu(interaction) {
     });
   }
 
-  const selectedCardId = interaction.values[0];
+  const selectedValue = interaction.values[0];
 
-  if (type === 'give') {
-    trade.giveCardId = selectedCardId;
-  } else if (type === 'receive') {
-    trade.receiveCardId = selectedCardId;
-  }
+  // Selection du booster pour les cartes a donner
+  if (customId.startsWith('trade_give_booster_')) {
+    const boosterId = selectedValue.replace('give_booster_', '');
+    trade.giveBoosterId = boosterId;
 
-  // Verifier si les deux cartes sont selectionnees
-  if (trade.giveCardId && trade.receiveCardId) {
-    await showTradeConfirmation(interaction, trade, tradeId);
-  } else {
-    const giveCardInfo = trade.giveCardId ? getCardInfo(trade.giveCardId) : null;
-    const receiveCardInfo = trade.receiveCardId ? getCardInfo(trade.receiveCardId) : null;
-    const giveCardName = giveCardInfo?.name || '❓ Non selectionnee';
-    const receiveCardName = receiveCardInfo?.name || '❓ Non selectionnee';
+    // Montrer les cartes de ce booster
+    const userCards = getUserCardsFromBooster(trade.initiatorId, boosterId);
 
+    if (userCards.length === 0) {
+      return interaction.update({
+        content: '❌ Aucune carte trouvee dans ce booster.',
+        components: []
+      });
+    }
+
+    const cardOptions = userCards.slice(0, 25).map(card => ({
+      label: `${card.name} (x${card.quantity})`,
+      description: card.rarityName,
+      value: `give_card_${card.id}`,
+      emoji: '🃏'
+    }));
+
+    const cardSelect = new StringSelectMenuBuilder()
+      .setCustomId(`trade_give_card_${tradeId}`)
+      .setPlaceholder('2. Choisissez la carte a donner')
+      .addOptions(cardOptions);
+
+    const row = new ActionRowBuilder().addComponents(cardSelect);
+
+    const booster = boosters[boosterId];
     await interaction.update({
       content: `📋 **Echange en cours**\n\n` +
-        `Vous donnez: ${giveCardName}\n` +
-        `Vous recevez: ${receiveCardName}`,
-      components: interaction.message.components
+        `**Booster:** ${booster?.name || boosterId}\n` +
+        `**Etape 2:** Selectionnez la carte a donner`,
+      components: [row]
     });
+  }
+  // Selection de la carte a donner
+  else if (customId.startsWith('trade_give_card_')) {
+    const cardId = selectedValue.replace('give_card_', '');
+    trade.giveCardId = cardId;
+
+    // Maintenant montrer les boosters du destinataire
+    const targetBoosterOptions = [];
+    for (const [boosterId, data] of trade.targetBoosters) {
+      if (data.booster) {
+        targetBoosterOptions.push({
+          label: data.booster.name,
+          description: `${data.count} carte${data.count > 1 ? 's' : ''} disponible${data.count > 1 ? 's' : ''}`,
+          value: `receive_booster_${boosterId}`,
+          emoji: '📦'
+        });
+      }
+    }
+
+    const receiveBoosterSelect = new StringSelectMenuBuilder()
+      .setCustomId(`trade_receive_booster_${tradeId}`)
+      .setPlaceholder('3. Choisissez le booster de la carte a recevoir')
+      .addOptions(targetBoosterOptions.slice(0, 25));
+
+    const row = new ActionRowBuilder().addComponents(receiveBoosterSelect);
+
+    const giveCard = getCardInfo(trade.giveCardId);
+    await interaction.update({
+      content: `📋 **Echange en cours**\n\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId}\n\n` +
+        `**Etape 3:** Selectionnez le booster contenant la carte que vous voulez recevoir`,
+      components: [row]
+    });
+  }
+  // Selection du booster pour les cartes a recevoir
+  else if (customId.startsWith('trade_receive_booster_')) {
+    const boosterId = selectedValue.replace('receive_booster_', '');
+    trade.receiveBoosterId = boosterId;
+
+    // Montrer les cartes du destinataire dans ce booster
+    const targetCards = getUserCardsFromBooster(trade.targetId, boosterId);
+
+    if (targetCards.length === 0) {
+      return interaction.update({
+        content: '❌ Aucune carte trouvee dans ce booster.',
+        components: []
+      });
+    }
+
+    const cardOptions = targetCards.slice(0, 25).map(card => ({
+      label: `${card.name} (x${card.quantity})`,
+      description: card.rarityName,
+      value: `receive_card_${card.id}`,
+      emoji: '🃏'
+    }));
+
+    const cardSelect = new StringSelectMenuBuilder()
+      .setCustomId(`trade_receive_card_${tradeId}`)
+      .setPlaceholder('4. Choisissez la carte a recevoir')
+      .addOptions(cardOptions);
+
+    const row = new ActionRowBuilder().addComponents(cardSelect);
+
+    const giveCard = getCardInfo(trade.giveCardId);
+    const booster = boosters[boosterId];
+    await interaction.update({
+      content: `📋 **Echange en cours**\n\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId}\n` +
+        `**Booster cible:** ${booster?.name || boosterId}\n\n` +
+        `**Etape 4:** Selectionnez la carte a recevoir`,
+      components: [row]
+    });
+  }
+  // Selection de la carte a recevoir
+  else if (customId.startsWith('trade_receive_card_')) {
+    const cardId = selectedValue.replace('receive_card_', '');
+    trade.receiveCardId = cardId;
+
+    // Les deux cartes sont selectionnees, montrer la confirmation
+    await showTradeConfirmation(interaction, trade, tradeId);
   }
 }
 
@@ -219,19 +342,21 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
 
   const confirmButton = new ButtonBuilder()
     .setCustomId(`trade_confirm_${tradeId}`)
-    .setLabel('✅ Accepter')
-    .setStyle(ButtonStyle.Success);
+    .setLabel('Accepter')
+    .setStyle(ButtonStyle.Success)
+    .setEmoji('✅');
 
   const cancelButton = new ButtonBuilder()
     .setCustomId(`trade_cancel_${tradeId}`)
-    .setLabel('❌ Refuser')
-    .setStyle(ButtonStyle.Danger);
+    .setLabel('Refuser')
+    .setStyle(ButtonStyle.Danger)
+    .setEmoji('❌');
 
   const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
 
   const embed = new EmbedBuilder()
     .setColor('#FFA500')
-    .setTitle('🔄 Confirmation d\'echange')
+    .setTitle('Confirmation d\'echange')
     .setDescription(
       `**${initiator.username}** propose un echange a **${target}**\n\n` +
       `${initiator.username} donne: **${giveCard?.name || 'Carte inconnue'}** (${giveCard?.rarityName || 'Inconnue'})\n` +
@@ -320,7 +445,7 @@ async function handleTradeButton(interaction) {
 
     const embed = new EmbedBuilder()
       .setColor('#00FF00')
-      .setTitle('✅ Echange reussi !')
+      .setTitle('Echange reussi !')
       .setDescription(
         `${initiator} a recu **${receiveCard?.name || 'Carte'}**\n` +
         `${target} a recu **${giveCard?.name || 'Carte'}**`

@@ -211,6 +211,12 @@ async function openBooster(interaction, boosterId, ownerId) {
   await interaction.deferUpdate();
 
   try {
+    // Capturer les cartes possedees AVANT l'ouverture pour detecter les nouvelles
+    const userDataBefore = loadUserData(ownerId);
+    const ownedCardsBefore = new Set(
+      Object.keys(userDataBefore.cards).filter(id => userDataBefore.cards[id] > 0)
+    );
+
     // Consommer le booster
     if (useInventory) {
       const removed = removeBoosterFromInventory(ownerId, boosterId);
@@ -241,8 +247,11 @@ async function openBooster(interaction, boosterId, ownerId) {
       saveUserData(ownerId, userData);
     }
 
+    // Determiner quelles cartes sont nouvelles
+    const newCardIds = cardIds.filter(cardId => !ownedCardsBefore.has(String(cardId)));
+
     // Generer l'image
-    const imageBuffer = await generateBoosterOpeningImage(cardIds, isGodPack);
+    const imageBuffer = await generateBoosterOpeningImage(cardIds, isGodPack, newCardIds);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'booster.png' });
 
     // Preparer la description des cartes

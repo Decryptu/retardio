@@ -138,9 +138,11 @@ if (fs.existsSync(FONT_PATH)) {
  * Génère l'image d'ouverture d'un booster (5 cartes)
  * @param {number[]} cardIds - IDs des 5 cartes tirées
  * @param {boolean} isGodPack - Si c'est un God Pack
+ * @param {string[]} newCardIds - IDs des cartes nouvellement obtenues (pas possedees avant)
  * @returns {Buffer} Buffer PNG de l'image générée
  */
-async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
+async function generateBoosterOpeningImage(cardIds, isGodPack = false, newCardIds = []) {
+  const newCardSet = new Set(newCardIds.map(id => String(id)));
   // Dimensions de l'image finale
   const padding = 20;
   const cardSpacing = 15;
@@ -200,6 +202,34 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
       ctx.strokeStyle = cardInfo.rarityColor;
       ctx.lineWidth = 4;
       strokeRoundedRect(ctx, x - 2, y - 2, CARD_WIDTH + 4, CARD_HEIGHT + 4, BORDER_RADIUS);
+
+      // Dessiner le badge "NEW" si c'est une nouvelle carte
+      if (newCardSet.has(String(cardId))) {
+        const badgeWidth = 50;
+        const badgeHeight = 22;
+        const badgeX = x + CARD_WIDTH - badgeWidth - 5;
+        const badgeY = y + 5;
+
+        // Fond du badge
+        ctx.fillStyle = '#FF4444';
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
+        ctx.fill();
+
+        // Bordure du badge
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
+        ctx.stroke();
+
+        // Texte du badge
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold 14px ${PIXEL_FONT}`;
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'transparent';
+        ctx.fillText('NEW', badgeX + badgeWidth / 2, badgeY + 16);
+      }
 
       // Dessiner le nom et la rareté en bas
       const textY = y + CARD_HEIGHT + 35;
