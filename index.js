@@ -116,7 +116,7 @@ client.on("messageCreate", async (message) => {
 });
 
 // Event handler pour quand le bot est prêt
-client.on("ready", async () => {
+client.on("clientReady", async () => {
 	console.log(
 		`[${new Date().toISOString()}] Bot connecté en tant que ${client.user.tag}`,
 	);
