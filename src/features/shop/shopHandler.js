@@ -385,7 +385,7 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
 }
 
 /**
- * Affiche la confirmation d'achat d'une carte promo avec image
+ * Affiche l'aperçu d'une carte promo avec image et option d'achat
  */
 async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
   const userMoney = getMoney(ownerId);
@@ -393,98 +393,105 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
 
   if (!card || !card.isPromo) {
     return interaction.update({
-      content: '❌ Cette carte n\'est pas disponible à l\'achat.',
+      content: '❌ Cette carte n\'est pas disponible.',
       embeds: [],
       components: []
     });
   }
 
-  // Vérifier si déjà possédée
-  if (card.limitedPerUser && hasLimitedCard(ownerId, cardId)) {
-    return interaction.update({
-      content: '❌ Vous possédez déjà cette carte ! (Limitée à 1 par personne)',
-      embeds: [],
-      components: []
-    });
-  }
+  // Vérifier les conditions
+  const alreadyOwned = card.limitedPerUser && hasLimitedCard(ownerId, cardId);
 
-  // Vérifier l'anniversaire si requis
   const { day: todayDay, month: todayMonth } = getParisDayMonth();
   const birthdaysList = loadBirthdays();
   const userBirthday = birthdaysList.find(b => b.userId === ownerId);
   const isBirthday = userBirthday && userBirthday.day === todayDay && userBirthday.month === todayMonth;
 
-  if (card.requiresBirthday && !isBirthday) {
-    return interaction.update({
-      content: '❌ Cette carte ne peut être réclamée que le jour de votre anniversaire ! Assurez-vous d\'avoir enregistré votre date avec `/anniversaire_ajouter`.',
-      embeds: [],
-      components: []
-    });
-  }
-
-  // Vérifier le master set si requis
   const { hasMasterSet, completedBoosterName } = checkMasterSet(ownerId);
 
-  if (card.requiresMasterSet && !hasMasterSet) {
-    return interaction.update({
-      content: '❌ Cette carte ne peut être réclamée que si vous avez complété un Master Set (100% d\'un booster) ! Complétez une collection pour débloquer cette récompense.',
-      embeds: [],
-      components: []
-    });
-  }
+  const requiresBirthdayButNotBirthday = card.requiresBirthday && !isBirthday;
+  const requiresMasterSetButNoSet = card.requiresMasterSet && !hasMasterSet;
 
   const price = (card.requiresBirthday && isBirthday) || card.requiresMasterSet ? 0 : card.price;
+  const canAfford = userMoney >= price;
 
-  if (userMoney < price) {
-    return interaction.update({
-      content: `❌ Vous n'avez pas assez de Poké Dollars ! (${userMoney.toLocaleString('fr-FR')} / ${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL})`,
-      embeds: [],
-      components: []
-    });
-  }
+  // Déterminer si l'achat est possible
+  const canPurchase = !alreadyOwned && !requiresBirthdayButNotBirthday && !requiresMasterSetButNoSet && canAfford;
 
   // Charger l'image de la carte
   const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${cardId}.png`);
   const files = [];
 
   const rarityData = rarities[card.rarity];
+
+  // Construire le texte du prix
   let priceText;
-  if (card.requiresMasterSet) {
+  if (card.requiresMasterSet && hasMasterSet) {
     priceText = `**GRATUIT** (Récompense Master Set - ${completedBoosterName})`;
-  } else if (price === 0) {
+  } else if (card.requiresMasterSet) {
+    priceText = '**GRATUIT** (Requiert un Master Set)';
+  } else if (card.requiresBirthday && isBirthday) {
     priceText = '**GRATUIT** (Cadeau d\'anniversaire !)';
+  } else if (card.requiresBirthday) {
+    priceText = '**GRATUIT** (Requiert anniversaire)';
   } else {
     priceText = `${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`;
   }
 
+  // Construire le message de statut
+  let statusMessage = '';
+  if (alreadyOwned) {
+    statusMessage = '\n\n✅ **Vous possédez déjà cette carte !**';
+  } else if (requiresBirthdayButNotBirthday) {
+    statusMessage = '\n\n🎂 **Disponible uniquement le jour de votre anniversaire.**\nAssurez-vous d\'avoir enregistré votre date avec `/anniversaire_ajouter`.';
+  } else if (requiresMasterSetButNoSet) {
+    statusMessage = '\n\n🏆 **Requiert un Master Set complet.**\nComplétez 100% d\'un booster pour débloquer cette récompense !';
+  } else if (!canAfford) {
+    statusMessage = `\n\n🔒 **Fonds insuffisants.** (${userMoney.toLocaleString('fr-FR')} / ${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL})`;
+  }
+
   const embed = new EmbedBuilder()
     .setColor(rarityData?.color || '#FF69B4')
-    .setTitle(`Acheter: ${card.name}`)
+    .setTitle(`${card.name}`)
     .setDescription(
       `**Rareté:** ${rarityData?.name || card.rarity}\n` +
-      `**Prix:** ${priceText}\n\n` +
-      (price > 0 ? `**Votre solde après achat:** ${(userMoney - price).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` : '') +
-      `Confirmer l'achat ?`
+      `**Prix:** ${priceText}` +
+      (canPurchase && price > 0 ? `\n**Solde après achat:** ${(userMoney - price).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` : '') +
+      statusMessage
     );
 
   if (fs.existsSync(cardImagePath)) {
     const attachment = new AttachmentBuilder(cardImagePath, { name: 'card.png' });
     files.push(attachment);
     embed.setImage('attachment://card.png');
+  } else {
+    embed.setFooter({ text: 'Image non disponible' });
   }
 
+  const buttons = [];
+
+  // Bouton d'achat (désactivé si on ne peut pas acheter)
   const confirmButton = new ButtonBuilder()
     .setCustomId(`shop_confirm_card_${cardId}_${ownerId}`)
-    .setLabel(price === 0 ? 'Réclamer' : 'Acheter')
-    .setStyle(ButtonStyle.Success)
-    .setEmoji(price === 0 ? '🎁' : '💰');
+    .setLabel(alreadyOwned ? 'Déjà possédée' : (price === 0 ? 'Réclamer' : 'Acheter'))
+    .setStyle(canPurchase ? ButtonStyle.Success : ButtonStyle.Secondary)
+    .setDisabled(!canPurchase);
 
-  const cancelButton = new ButtonBuilder()
+  if (canPurchase) {
+    confirmButton.setEmoji(price === 0 ? '🎁' : '💰');
+  }
+
+  buttons.push(confirmButton);
+
+  const backButton = new ButtonBuilder()
     .setCustomId(`shop_category_cards_${ownerId}`)
-    .setLabel('Annuler')
-    .setStyle(ButtonStyle.Secondary);
+    .setLabel('Retour')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('⬅️');
 
-  const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+  buttons.push(backButton);
+
+  const row = new ActionRowBuilder().addComponents(buttons);
 
   await interaction.update({
     embeds: [embed],
