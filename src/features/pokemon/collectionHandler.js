@@ -188,7 +188,7 @@ async function handleCollectionSelectMenu(interaction) {
       const cardOptions = ownedCards.slice(0, 25).map(card => ({
         label: card.name,
         description: `${card.rarityName} - x${userData.cards[String(card.id)]}`,
-        value: `${card.id}_${selectedBoosterId}`,
+        value: `${card.id}::${selectedBoosterId}`,
         emoji: '🃏'
       }));
 
