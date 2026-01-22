@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getCardInfo } = require('../../services/cardGenerator').default;
+const { getCardInfo } = require('../../services/cardGenerator');
 const { loadUserData, removeCardFromUser, addCardsToUser, saveUserData } = require('../../services/userManager');
 
 // Map pour stocker les echanges en cours
