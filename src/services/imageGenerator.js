@@ -15,9 +15,9 @@ const GLOW_BLUR = 20; // Blur amount for glow effect
 const GLOW_RARITIES = ['uncommon', 'rare', 'epic', 'legendary', 'promo'];
 
 /**
- * Draw a rounded rectangle stroke
+ * Create a rounded rectangle path
  */
-function strokeRoundedRect(ctx, x, y, width, height, radius) {
+function roundedRectPath(ctx, x, y, width, height, radius) {
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.lineTo(x + width - radius, y);
@@ -29,22 +29,36 @@ function strokeRoundedRect(ctx, x, y, width, height, radius) {
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
+}
+
+/**
+ * Draw a rounded rectangle stroke
+ */
+function strokeRoundedRect(ctx, x, y, width, height, radius) {
+  roundedRectPath(ctx, x, y, width, height, radius);
   ctx.stroke();
 }
 
 /**
- * Draw colored background behind a card (no glow for common)
+ * Draw a rounded rectangle fill
  */
-function drawCardBackground(ctx, x, y, width, height, color, withGlow = true) {
+function fillRoundedRect(ctx, x, y, width, height, radius) {
+  roundedRectPath(ctx, x, y, width, height, radius);
+  ctx.fill();
+}
+
+/**
+ * Draw glow effect behind a card (only for uncommon+)
+ */
+function drawCardGlow(ctx, x, y, width, height, color) {
   ctx.save();
-  if (withGlow) {
-    ctx.shadowColor = color;
-    ctx.shadowBlur = GLOW_BLUR;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-  }
+  ctx.shadowColor = color;
+  ctx.shadowBlur = GLOW_BLUR;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
   ctx.fillStyle = color;
-  ctx.fillRect(x, y, width, height);
+  // Draw rounded rectangle for glow - slightly larger to create the glow effect
+  fillRoundedRect(ctx, x, y, width, height, BORDER_RADIUS);
   ctx.restore();
 }
 
@@ -173,9 +187,11 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false) {
     try {
       const cardImage = await loadImage(cardImagePath);
 
-      // Draw colored background (with glow for uncommon+, without for common)
+      // Draw glow effect for uncommon+ cards
       const hasGlow = GLOW_RARITIES.includes(cardInfo.rarity);
-      drawCardBackground(ctx, x, y, CARD_WIDTH, CARD_HEIGHT, cardInfo.rarityColor, hasGlow);
+      if (hasGlow) {
+        drawCardGlow(ctx, x, y, CARD_WIDTH, CARD_HEIGHT, cardInfo.rarityColor);
+      }
 
       // Dessiner la carte
       ctx.drawImage(cardImage, x, y, CARD_WIDTH, CARD_HEIGHT);
@@ -341,9 +357,11 @@ async function generateCollectionImage(userId, boosterId) {
       try {
         const cardImage = await loadImage(cardImagePath);
 
-        // Draw colored background (with glow for uncommon+, without for common)
+        // Draw glow effect for uncommon+ cards
         const hasGlow = GLOW_RARITIES.includes(card.rarity);
-        drawCardBackground(ctx, x, y, cardDisplayWidth, cardDisplayHeight, card.rarityColor, hasGlow);
+        if (hasGlow) {
+          drawCardGlow(ctx, x, y, cardDisplayWidth, cardDisplayHeight, card.rarityColor);
+        }
 
         ctx.drawImage(cardImage, x, y, cardDisplayWidth, cardDisplayHeight);
 
