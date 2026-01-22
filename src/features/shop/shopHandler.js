@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { getMoney, removeMoney, addBoosterToInventory, addCardToUser, hasLimitedCard, loadUserData } = require('../../services/userManager');
+const { getMoney, removeMoney, addBoosterToInventory, addCardToUser, hasLimitedCard, loadUserData, getBoosterCompletion } = require('../../services/userManager');
 const { loadBirthdays, getParisDayMonth } = require('../birthday/birthdayHandler');
 const boosters = require('../../../data/boosters.json');
 const cards = require('../../../data/cards.json');
@@ -59,6 +59,25 @@ function getPurchasableBoosters() {
  */
 function getPurchasableCards() {
   return Object.values(cards).filter(c => c.isPromo);
+}
+
+/**
+ * Vérifie si un utilisateur a un master set (collection complète) d'au moins un booster
+ * @param {string} userId - ID Discord de l'utilisateur
+ * @returns {Object} { hasMasterSet: boolean, completedBoosterName: string|null }
+ */
+function checkMasterSet(userId) {
+  // Vérifier tous les boosters non-promo
+  const regularBoosters = Object.values(boosters).filter(b => !b.isPromo);
+
+  for (const booster of regularBoosters) {
+    const { owned, total } = getBoosterCompletion(userId, booster.id);
+    if (total > 0 && owned === total) {
+      return { hasMasterSet: true, completedBoosterName: booster.name };
+    }
+  }
+
+  return { hasMasterSet: false, completedBoosterName: null };
 }
 
 /**
@@ -226,19 +245,31 @@ async function showCardsShop(interaction, ownerId) {
   const userBirthday = birthdaysList.find(b => b.userId === ownerId);
   const isBirthday = userBirthday && userBirthday.day === todayDay && userBirthday.month === todayMonth;
 
+  // Vérifier si l'utilisateur a un master set
+  const { hasMasterSet, completedBoosterName } = checkMasterSet(ownerId);
+
+  let descriptionExtras = '';
+  if (isBirthday) {
+    descriptionExtras += '🎂 **C\'est votre anniversaire !** Certaines cartes sont gratuites aujourd\'hui !\n';
+  }
+  if (hasMasterSet) {
+    descriptionExtras += `🏆 **Master Set complété !** (${completedBoosterName}) Vous pouvez réclamer des récompenses exclusives !`;
+  }
+
   const embed = new EmbedBuilder()
     .setColor('#E91E63')
     .setTitle('Boutique - Cartes Promo')
     .setDescription(
       `**Votre solde:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
       `Sélectionnez une carte pour l'acheter.\n` +
-      (isBirthday ? '🎂 **C\'est votre anniversaire !** Certaines cartes sont gratuites aujourd\'hui !' : '')
+      descriptionExtras
     );
 
   const cardOptions = promoCards.map(card => {
     const alreadyOwned = hasLimitedCard(ownerId, card.id);
     const requiresBirthday = card.requiresBirthday;
-    const price = requiresBirthday && isBirthday ? 0 : card.price;
+    const requiresMasterSet = card.requiresMasterSet;
+    const price = (requiresBirthday && isBirthday) || requiresMasterSet ? 0 : card.price;
     const canAfford = userMoney >= price;
 
     let statusEmoji = '✨';
@@ -250,6 +281,9 @@ async function showCardsShop(interaction, ownerId) {
     } else if (requiresBirthday && !isBirthday) {
       statusEmoji = '🎂';
       statusText = ' (Anniversaire requis)';
+    } else if (requiresMasterSet && !hasMasterSet) {
+      statusEmoji = '🏆';
+      statusText = ' (Master Set requis)';
     } else if (!canAfford) {
       statusEmoji = '🔒';
       statusText = ' (Fonds insuffisants)';
@@ -388,7 +422,18 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
     });
   }
 
-  const price = card.requiresBirthday && isBirthday ? 0 : card.price;
+  // Vérifier le master set si requis
+  const { hasMasterSet, completedBoosterName } = checkMasterSet(ownerId);
+
+  if (card.requiresMasterSet && !hasMasterSet) {
+    return interaction.update({
+      content: '❌ Cette carte ne peut être réclamée que si vous avez complété un Master Set (100% d\'un booster) ! Complétez une collection pour débloquer cette récompense.',
+      embeds: [],
+      components: []
+    });
+  }
+
+  const price = (card.requiresBirthday && isBirthday) || card.requiresMasterSet ? 0 : card.price;
 
   if (userMoney < price) {
     return interaction.update({
@@ -403,7 +448,14 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
   const files = [];
 
   const rarityData = rarities[card.rarity];
-  const priceText = price === 0 ? '**GRATUIT** (Cadeau d\'anniversaire !)' : `${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`;
+  let priceText;
+  if (card.requiresMasterSet) {
+    priceText = `**GRATUIT** (Récompense Master Set - ${completedBoosterName})`;
+  } else if (price === 0) {
+    priceText = '**GRATUIT** (Cadeau d\'anniversaire !)';
+  } else {
+    priceText = `${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`;
+  }
 
   const embed = new EmbedBuilder()
     .setColor(rarityData?.color || '#FF69B4')
@@ -537,7 +589,18 @@ async function purchaseCard(interaction, cardId, ownerId) {
     });
   }
 
-  const price = card.requiresBirthday && isBirthday ? 0 : card.price;
+  // Vérifier le master set si requis
+  const { hasMasterSet } = checkMasterSet(ownerId);
+
+  if (card.requiresMasterSet && !hasMasterSet) {
+    return interaction.update({
+      content: '❌ Cette carte nécessite un Master Set complet !',
+      embeds: [],
+      components: []
+    });
+  }
+
+  const price = (card.requiresBirthday && isBirthday) || card.requiresMasterSet ? 0 : card.price;
 
   if (userMoney < price) {
     return interaction.update({
@@ -562,7 +625,14 @@ async function purchaseCard(interaction, cardId, ownerId) {
   addCardToUser(ownerId, cardId);
 
   const rarityData = rarities[card.rarity];
-  const priceText = price === 0 ? 'Cadeau d\'anniversaire' : `${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`;
+  let priceText;
+  if (card.requiresMasterSet) {
+    priceText = 'Récompense Master Set';
+  } else if (price === 0) {
+    priceText = 'Cadeau d\'anniversaire';
+  } else {
+    priceText = `${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`;
+  }
 
   const embed = new EmbedBuilder()
     .setColor(rarityData?.color || '#2ECC71')

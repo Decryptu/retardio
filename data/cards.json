@@ -701,5 +701,24 @@
     "price": 0,
     "limitedPerUser": 1,
     "requiresBirthday": true
+  },
+  "promo_3": {
+    "id": "promo_3",
+    "name": "Mew Antique",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 0,
+    "limitedPerUser": 1,
+    "requiresMasterSet": true
+  },
+  "promo_4": {
+    "id": "promo_4",
+    "name": "Fat Pikachu",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
   }
 }
