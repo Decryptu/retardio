@@ -163,7 +163,7 @@
   },
   "28": {
     "id": 28,
-    "name": "Akwakwa",
+    "name": "Akwakwak",
     "rarity": "uncommon",
     "boosterPackId": 1
   },
@@ -715,6 +715,78 @@
   "promo_4": {
     "id": "promo_4",
     "name": "Fat Pikachu",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
+  },
+  "promo_5": {
+    "id": "promo_5",
+    "name": "Ectoplasma Shiny",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
+  },
+  "promo_6": {
+    "id": "promo_6",
+    "name": "Métamorph Shiny",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
+  },
+  "promo_7": {
+    "id": "promo_7",
+    "name": "Goupix Shiny",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
+  },
+  "promo_8": {
+    "id": "promo_8",
+    "name": "Raikou Shiny",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
+  },
+  "promo_9": {
+    "id": "promo_9",
+    "name": "Jirachi Shiny",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
+  },
+  "promo_10": {
+    "id": "promo_10",
+    "name": "Mimiqui Shiny",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
+  },
+  "promo_11": {
+    "id": "promo_11",
+    "name": "Évoli Shiny",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1
+  },
+  "promo_12": {
+    "id": "promo_12",
+    "name": "Zorua Shiny",
     "rarity": "promo",
     "boosterPackId": "promo_1",
     "isPromo": true,
