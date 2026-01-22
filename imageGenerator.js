@@ -8,7 +8,7 @@ const boosters = require('./data/boosters.json');
 const ASSETS_DIR = path.join(__dirname, 'assets');
 const CARD_WIDTH = 300;
 const CARD_HEIGHT = 363;
-const BORDER_RADIUS = 4; // Small border radius for card frames
+const BORDER_RADIUS = 8; // Small border radius for card frames
 const GLOW_BLUR = 20; // Blur amount for glow effect
 
 // Rarities that get the glow effect (uncommon and above)
