@@ -62,6 +62,16 @@ function getPurchasableCards() {
 }
 
 /**
+ * Obtient le prix effectif d'une carte pour un utilisateur (vérifie les prix spéciaux)
+ */
+function getCardPrice(card, userId) {
+  if (card.specialPrices && card.specialPrices[userId] !== undefined) {
+    return card.specialPrices[userId];
+  }
+  return card.price;
+}
+
+/**
  * Vérifie si un utilisateur a un master set (collection complète) d'au moins un booster
  * @param {string} userId - ID Discord de l'utilisateur
  * @returns {Object} { hasMasterSet: boolean, completedBoosterName: string|null }
@@ -269,7 +279,7 @@ async function showCardsShop(interaction, ownerId) {
     const alreadyOwned = hasLimitedCard(ownerId, card.id);
     const requiresBirthday = card.requiresBirthday;
     const requiresMasterSet = card.requiresMasterSet;
-    const price = (requiresBirthday && isBirthday) || requiresMasterSet ? 0 : card.price;
+    const price = (requiresBirthday && isBirthday) || requiresMasterSet ? 0 : getCardPrice(card, ownerId);
     const canAfford = userMoney >= price;
 
     let statusEmoji = '✨';
@@ -427,7 +437,7 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
   const requiresBirthdayButNotBirthday = card.requiresBirthday && !isBirthday;
   const requiresMasterSetButNoSet = card.requiresMasterSet && !hasMasterSet;
 
-  const price = (card.requiresBirthday && isBirthday) || card.requiresMasterSet ? 0 : card.price;
+  const price = (card.requiresBirthday && isBirthday) || card.requiresMasterSet ? 0 : getCardPrice(card, ownerId);
   const canAfford = userMoney >= price;
 
   // Déterminer si l'achat est possible
@@ -622,7 +632,7 @@ async function purchaseCard(interaction, cardId, ownerId) {
     });
   }
 
-  const price = (card.requiresBirthday && isBirthday) || card.requiresMasterSet ? 0 : card.price;
+  const price = (card.requiresBirthday && isBirthday) || card.requiresMasterSet ? 0 : getCardPrice(card, ownerId);
 
   if (userMoney < price) {
     return interaction.update({

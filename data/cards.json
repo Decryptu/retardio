@@ -728,7 +728,8 @@
     "boosterPackId": "promo_1",
     "isPromo": true,
     "price": 5000,
-    "limitedPerUser": 1
+    "limitedPerUser": 1,
+    "specialPrices": { "98891713610797056": 500 }
   },
   "promo_6": {
     "id": "promo_6",
@@ -737,7 +738,8 @@
     "boosterPackId": "promo_1",
     "isPromo": true,
     "price": 5000,
-    "limitedPerUser": 1
+    "limitedPerUser": 1,
+    "specialPrices": { "508377833945563140": 500 }
   },
   "promo_7": {
     "id": "promo_7",
@@ -746,7 +748,8 @@
     "boosterPackId": "promo_1",
     "isPromo": true,
     "price": 5000,
-    "limitedPerUser": 1
+    "limitedPerUser": 1,
+    "specialPrices": { "277887390645747712": 500 }
   },
   "promo_8": {
     "id": "promo_8",
@@ -755,7 +758,8 @@
     "boosterPackId": "promo_1",
     "isPromo": true,
     "price": 5000,
-    "limitedPerUser": 1
+    "limitedPerUser": 1,
+    "specialPrices": { "219777236755152896": 500 }
   },
   "promo_9": {
     "id": "promo_9",
@@ -764,7 +768,8 @@
     "boosterPackId": "promo_1",
     "isPromo": true,
     "price": 5000,
-    "limitedPerUser": 1
+    "limitedPerUser": 1,
+    "specialPrices": { "261260647155630081": 500 }
   },
   "promo_10": {
     "id": "promo_10",
@@ -773,7 +778,8 @@
     "boosterPackId": "promo_1",
     "isPromo": true,
     "price": 5000,
-    "limitedPerUser": 1
+    "limitedPerUser": 1,
+    "specialPrices": { "460563686839549963": 500 }
   },
   "promo_11": {
     "id": "promo_11",
@@ -782,7 +788,8 @@
     "boosterPackId": "promo_1",
     "isPromo": true,
     "price": 5000,
-    "limitedPerUser": 1
+    "limitedPerUser": 1,
+    "specialPrices": { "317023659225251840": 500 }
   },
   "promo_12": {
     "id": "promo_12",
@@ -791,6 +798,7 @@
     "boosterPackId": "promo_1",
     "isPromo": true,
     "price": 5000,
-    "limitedPerUser": 1
+    "limitedPerUser": 1,
+    "specialPrices": { "299265520086286336": 500 }
   }
 }
