@@ -422,8 +422,19 @@ async function generateCardDetailImage(cardId, quantity = 1, boosterId = null) {
   const canvas = createCanvas(totalWidth, totalHeight);
   const ctx = canvas.getContext('2d');
 
-  // Charger le fond personnalisé (per-booster ou générique, avec center-crop)
-  const bgImage = await loadBackgroundImage('carddetail', boosterId);
+  // Charger le fond personnalisé (per-card > per-booster > générique, avec center-crop)
+  const bgDir = path.join(ASSETS_DIR, 'backgrounds');
+  let bgImage = null;
+
+  // Try per-card background first
+  const cardBgPath = path.join(bgDir, `carddetail_card_${cardId}.png`);
+  if (fs.existsSync(cardBgPath)) {
+    bgImage = await loadImage(cardBgPath);
+  } else {
+    // Fall back to per-booster or generic
+    bgImage = await loadBackgroundImage('carddetail', boosterId);
+  }
+
   if (bgImage) {
     drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
   } else {
