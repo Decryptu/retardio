@@ -805,9 +805,13 @@ async function handleShopCommands(interaction) {
  */
 function extractOwnerId(customId) {
   const parts = customId.split('_');
-  // Pour les customIds avec page, l'ownerId est l'avant-dernier element
-  // Pour les autres, c'est le dernier
-  if (customId.includes('_page_')) {
+  // Pour les customIds avec page (pagination buttons ou select menus avec page)
+  // L'ownerId est l'avant-dernier element
+  // Patterns: shop_booster_page_prev/next_ownerId_page, shop_card_page_prev/next_ownerId_page
+  //           shop_booster_select_ownerId_page, shop_card_select_ownerId_page
+  if (customId.includes('_page_') ||
+      customId.startsWith('shop_booster_select_') ||
+      customId.startsWith('shop_card_select_')) {
     return parts[parts.length - 2];
   }
   return parts[parts.length - 1];
