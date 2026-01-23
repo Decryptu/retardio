@@ -810,5 +810,15 @@
     "price": 5000,
     "limitedPerUser": 1,
     "specialPrices": { "427582315233935371": 500 }
+  },
+  "promo_14": {
+    "id": "promo_14",
+    "name": "Darkrai Shiny",
+    "rarity": "promo",
+    "boosterPackId": "promo_1",
+    "isPromo": true,
+    "price": 5000,
+    "limitedPerUser": 1,
+    "specialPrices": { "247395588142923776": 500 }
   }
 }
