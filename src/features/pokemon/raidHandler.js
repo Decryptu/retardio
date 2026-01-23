@@ -115,7 +115,7 @@ async function startRaid(client) {
     components: [row]
   });
 
-  // Stocker le raid actif
+  // Stocker le raid actif (including the image buffer to avoid duplication on edits)
   activeRaid = {
     messageId: message.id,
     channelId: channel.id,
@@ -123,7 +123,8 @@ async function startRaid(client) {
     level,
     participants: new Map(), // userId -> { username, team }
     endTime,
-    client
+    client,
+    imageBuffer: bossImageBuffer // Store for potential re-use
   };
 
   // Programmer la fin du raid
@@ -177,31 +178,20 @@ async function handleRaidJoin(interaction) {
   });
 
   // Mettre a jour le message avec le nombre de participants
+  // We update the message content (not the embed) to avoid attachment duplication issues
   try {
     const channel = interaction.client.channels.cache.get(activeRaid.channelId);
     const message = await channel.messages.fetch(activeRaid.messageId);
-
-    const embed = EmbedBuilder.from(message.embeds[0]);
-    const endTimestamp = Math.floor(activeRaid.endTime / 1000);
-
-    const raidTypeText = activeRaid.level === 100 ? '**LEGENDAIRE**' :
-                         activeRaid.level === 75 ? '**RARE**' :
-                         '**PEU COMMUN**';
 
     // Build participants list with mentions
     const participantMentions = Array.from(activeRaid.participants.keys())
       .map(id => `<@${id}>`)
       .join(', ');
 
-    embed.setDescription(
-      `Un **${activeRaid.bossCard.name}** sauvage de niveau **${activeRaid.level}** est apparu !\n\n` +
-      `Type de raid: ${raidTypeText}\n\n` +
-      `Le combat commence <t:${endTimestamp}:R>\n\n` +
-      `**Participants (${activeRaid.participants.size}):** ${participantMentions}\n\n` +
-      `Rejoignez le raid avec votre equipe pour avoir une chance de capturer ce Pokemon !`
-    );
+    const contentText = `**Participants (${activeRaid.participants.size}):** ${participantMentions}`;
 
-    await message.edit({ embeds: [embed] });
+    // Only edit the content, leave embed and attachments untouched
+    await message.edit({ content: contentText });
   } catch (error) {
     console.error('Erreur lors de la mise a jour du message de raid:', error);
   }
