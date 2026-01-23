@@ -109,7 +109,6 @@ async function startRaid(client) {
     .setFooter({ text: 'Utilisez /team pour configurer votre equipe avant de rejoindre !' });
 
   const message = await channel.send({
-    content: '@everyone Un raid vient d\'apparaitre !',
     embeds: [embed],
     files: [attachment],
     components: [row]
