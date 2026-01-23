@@ -24,7 +24,7 @@ function getUserBoostersWithCards(userId) {
 
   for (const cardId of userCards) {
     const cardInfo = getCardInfo(cardId);
-    if (cardInfo && cardInfo.boosterPackId) {
+    if (cardInfo?.boosterPackId) {
       const boosterId = String(cardInfo.boosterPackId);
       if (!boostersWithCards.has(boosterId)) {
         boostersWithCards.set(boosterId, { count: 0, booster: boosters[boosterId] });
@@ -55,7 +55,7 @@ function getUserCardsFromBooster(userId, boosterId) {
 /**
  * Cree les composants pour la selection de carte avec pagination
  */
-function createCardSelectComponents(cards, tradeId, type, page, boosterName) {
+function createCardSelectComponents(cards, tradeId, type, page, _boosterName) {
   const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
   const startIndex = page * CARDS_PER_PAGE;
   const pageCards = cards.slice(startIndex, startIndex + CARDS_PER_PAGE);

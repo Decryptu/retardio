@@ -1,10 +1,9 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const OpenAI = require('openai');
 const { getCardInfo } = require('../../services/cardGenerator');
-const { loadUserData, getTeam, hasTeamMember, addCardToUser, addMoney } = require('../../services/userManager');
+const { getTeam, hasTeamMember, addCardToUser, addMoney } = require('../../services/userManager');
 const { generateRaidBossImage, generateRaidResultImage } = require('../../services/imageGenerator');
 const config = require('../../config');
-const boosters = require('../../../data/boosters.json');
 const cards = require('../../../data/cards.json');
 const { ADMIN_WHITELIST } = require('./tradeHandler');
 
@@ -239,7 +238,7 @@ async function executeRaid() {
 
   // Construire les donnees pour OpenAI
   const participantData = [];
-  for (const [userId, data] of raid.participants) {
+  for (const [, data] of raid.participants) {
     participantData.push({
       username: data.username,
       team: data.team.map(card => ({

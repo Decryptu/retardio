@@ -593,7 +593,7 @@ async function generateCardDetailImage(cardId, quantity = 1, boosterId = null) {
  * @param {Array} team - Tableau de 3 cardIds (ou null)
  * @returns {Buffer} Buffer PNG de l'image generee
  */
-async function generateTeamImage(userId, team) {
+async function generateTeamImage(_userId, team) {
   // Dimensions: 3 cartes + espaces
   const padding = 30;
   const cardSpacing = 20;
@@ -883,7 +883,7 @@ async function generateRaidResultImage(bossCard, level, victory, participants, b
 
   // Carte du boss a gauche
   const cardX = padding;
-  const cardY = 120;
+  const cardY = 133;
   const cardScale = 0.6;
   const cardW = CARD_WIDTH * cardScale;
   const cardH = CARD_HEIGHT * cardScale;
@@ -896,7 +896,7 @@ async function generateRaidResultImage(bossCard, level, victory, participants, b
     ctx.strokeStyle = victory ? '#00FF00' : '#FF0000';
     ctx.lineWidth = 3;
     strokeRoundedRect(ctx, cardX - 2, cardY - 2, cardW + 4, cardH + 4, BORDER_RADIUS);
-  } catch (error) {
+  } catch (_error) {
     ctx.fillStyle = '#333333';
     ctx.fillRect(cardX, cardY, cardW, cardH);
   }
