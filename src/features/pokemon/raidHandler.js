@@ -108,6 +108,7 @@ async function startRaid(client) {
     .setImage('attachment://raid_boss.png')
     .setFooter({ text: 'Utilisez /team pour configurer votre equipe avant de rejoindre !' });
 
+  // Send without content to avoid showing attachment twice
   const message = await channel.send({
     embeds: [embed],
     files: [attachment],
@@ -187,11 +188,16 @@ async function handleRaidJoin(interaction) {
                          activeRaid.level === 75 ? '**RARE**' :
                          '**PEU COMMUN**';
 
+    // Build participants list with mentions
+    const participantMentions = Array.from(activeRaid.participants.keys())
+      .map(id => `<@${id}>`)
+      .join(', ');
+
     embed.setDescription(
       `Un **${activeRaid.bossCard.name}** sauvage de niveau **${activeRaid.level}** est apparu !\n\n` +
       `Type de raid: ${raidTypeText}\n\n` +
       `Le combat commence <t:${endTimestamp}:R>\n\n` +
-      `**Participants: ${activeRaid.participants.size}**\n\n` +
+      `**Participants (${activeRaid.participants.size}):** ${participantMentions}\n\n` +
       `Rejoignez le raid avec votre equipe pour avoir une chance de capturer ce Pokemon !`
     );
 
@@ -357,13 +363,18 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
 
   try {
     const message = await channel.messages.fetch(raid.messageId);
+    // Remove components from original message (disable join button)
     await message.edit({
+      components: []
+    });
+
+    // Send result as a new message to avoid attachment duplication issue
+    await channel.send({
       content: result.victory
         ? `${mentions}\nVictoire ! Vous avez vaincu le raid !`
         : `${mentions}\nDefaite... Le boss etait trop puissant.`,
       embeds: [resultEmbed],
-      files: [attachment],
-      components: []
+      files: [attachment]
     });
   } catch (error) {
     console.error('Erreur lors de la mise a jour du message de raid:', error);

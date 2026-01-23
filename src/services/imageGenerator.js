@@ -48,6 +48,37 @@ function fillRoundedRect(ctx, x, y, width, height, radius) {
 }
 
 /**
+ * Wrap text to fit within a specific width
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {string} text - Text to wrap
+ * @param {number} maxWidth - Maximum width in pixels
+ * @returns {string[]} Array of text lines
+ */
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = currentLine + (currentLine ? ' ' : '') + words[i];
+    const metrics = ctx.measureText(testLine);
+
+    if (metrics.width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = words[i];
+    } else {
+      currentLine = testLine;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+/**
  * Draw glow effect behind a card (only for uncommon+)
  */
 function drawCardGlow(ctx, x, y, width, height, color) {
@@ -882,16 +913,27 @@ async function generateRaidResultImage(bossCard, level, victory, participants, b
   ctx.lineWidth = 2;
   ctx.strokeRect(logX, logY, logWidth, logHeight);
 
-  // Texte du log
+  // Texte du log with proper wrapping
   ctx.fillStyle = '#CCCCCC';
   ctx.font = `14px ${PIXEL_FONT}`;
   ctx.textAlign = 'left';
 
-  const lines = battleLog.split('\n');
+  // Split by newlines first, then wrap each paragraph
+  const paragraphs = battleLog.split('\n');
+  const allLines = [];
+
+  for (const paragraph of paragraphs) {
+    if (paragraph.trim()) {
+      const wrappedLines = wrapText(ctx, paragraph.trim(), logWidth - 20);
+      allLines.push(...wrappedLines);
+    }
+  }
+
+  // Render wrapped lines
   let lineY = logY + 25;
-  for (let i = 0; i < Math.min(lines.length, 15); i++) {
-    const line = lines[i].substring(0, 50);
-    ctx.fillText(line, logX + 10, lineY);
+  const maxLines = Math.floor((logHeight - 30) / 18); // Calculate max lines that fit
+  for (let i = 0; i < Math.min(allLines.length, maxLines); i++) {
+    ctx.fillText(allLines[i], logX + 10, lineY);
     lineY += 18;
   }
 
