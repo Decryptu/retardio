@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, getTeam, setTeamSlot } = require('../../services/userManager');
 const { generateTeamImage } = require('../../services/imageGenerator');
@@ -318,14 +318,14 @@ async function handleTeamButton(interaction) {
     if (!session) {
       return interaction.reply({
         content: '❌ Cette session a expire. Utilisez `/team` a nouveau.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     if (interaction.user.id !== session.userId) {
       return interaction.reply({
         content: '❌ Cette interaction ne vous appartient pas.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -492,14 +492,14 @@ async function handleTeamSelectMenu(interaction) {
     if (!session) {
       return interaction.reply({
         content: '❌ Cette session a expire. Utilisez `/team` a nouveau.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     if (interaction.user.id !== session.userId) {
       return interaction.reply({
         content: '❌ Cette interaction ne vous appartient pas.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -541,14 +541,14 @@ async function handleTeamSelectMenu(interaction) {
     if (!session) {
       return interaction.reply({
         content: '❌ Cette session a expire. Utilisez `/team` a nouveau.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     if (interaction.user.id !== session.userId) {
       return interaction.reply({
         content: '❌ Cette interaction ne vous appartient pas.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -561,7 +561,7 @@ async function handleTeamSelectMenu(interaction) {
     if (!success) {
       return interaction.reply({
         content: '❌ Vous ne possedez pas cette carte.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
