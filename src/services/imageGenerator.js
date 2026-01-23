@@ -556,8 +556,372 @@ async function generateCardDetailImage(cardId, quantity = 1, boosterId = null) {
   return canvas.toBuffer('image/png');
 }
 
+/**
+ * Genere l'image de l'equipe d'un utilisateur (3 slots)
+ * @param {string} userId - ID Discord de l'utilisateur
+ * @param {Array} team - Tableau de 3 cardIds (ou null)
+ * @returns {Buffer} Buffer PNG de l'image generee
+ */
+async function generateTeamImage(userId, team) {
+  // Dimensions: 3 cartes + espaces
+  const padding = 30;
+  const cardSpacing = 20;
+  const slotWidth = CARD_WIDTH;
+  const slotHeight = CARD_HEIGHT;
+
+  const totalWidth = (slotWidth * 3) + (cardSpacing * 2) + (padding * 2);
+  const totalHeight = slotHeight + (padding * 2) + 100; // +100 pour le titre et infos
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Charger le fond personnalise
+  const bgImage = await loadBackgroundImage('team');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+  } else {
+    // Fallback sur le degrade
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(0.5, '#16213e');
+    gradient.addColorStop(1, '#0f3460');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  // Titre avec ombre
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold 32px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('EQUIPE DE RAID', totalWidth / 2, 50);
+
+  ctx.shadowColor = 'transparent';
+
+  // Charger l'image du dos de carte pour les slots vides
+  const cardBackPath = path.join(ASSETS_DIR, 'cards', 'card_back.png');
+  let cardBackImage;
+  try {
+    cardBackImage = await loadImage(cardBackPath);
+  } catch (error) {
+    console.error('Erreur lors du chargement du dos de carte:', error);
+  }
+
+  // Dessiner les 3 slots
+  for (let i = 0; i < 3; i++) {
+    const x = padding + (i * (slotWidth + cardSpacing));
+    const y = 80;
+
+    const cardId = team[i];
+
+    if (cardId) {
+      // Slot avec Pokemon
+      const cardInfo = getCardInfo(cardId);
+      const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${cardId}.png`);
+
+      try {
+        const cardImage = await loadImage(cardImagePath);
+
+        // Glow effect pour les cartes peu communes+
+        const hasGlow = GLOW_RARITIES.includes(cardInfo?.rarity);
+        if (hasGlow && cardInfo) {
+          drawCardGlow(ctx, x, y, slotWidth, slotHeight, cardInfo.rarityColor);
+        }
+
+        ctx.drawImage(cardImage, x, y, slotWidth, slotHeight);
+
+        // Bordure coloree
+        if (cardInfo) {
+          ctx.strokeStyle = cardInfo.rarityColor;
+          ctx.lineWidth = 4;
+          strokeRoundedRect(ctx, x - 2, y - 2, slotWidth + 4, slotHeight + 4, BORDER_RADIUS);
+        }
+
+        // Numero de slot
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(x, y + slotHeight - 30, 35, 30);
+        ctx.fillStyle = '#FFD700';
+        ctx.font = `bold 18px ${PIXEL_FONT}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`${i + 1}`, x + 17, y + slotHeight - 8);
+
+      } catch (error) {
+        console.error(`Erreur lors du chargement de la carte ${cardId}:`, error);
+        // Placeholder
+        ctx.fillStyle = '#333333';
+        ctx.fillRect(x, y, slotWidth, slotHeight);
+      }
+    } else {
+      // Slot vide
+      if (cardBackImage) {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.drawImage(cardBackImage, x, y, slotWidth, slotHeight);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#222222';
+        ctx.fillRect(x, y, slotWidth, slotHeight);
+      }
+
+      // Bordure grise
+      ctx.strokeStyle = '#555555';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 5]);
+      strokeRoundedRect(ctx, x, y, slotWidth, slotHeight, BORDER_RADIUS);
+      ctx.setLineDash([]);
+
+      // Numero de slot + texte vide
+      ctx.fillStyle = '#666666';
+      ctx.font = `bold 24px ${PIXEL_FONT}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`SLOT ${i + 1}`, x + slotWidth / 2, y + slotHeight / 2 - 10);
+      ctx.font = `18px ${PIXEL_FONT}`;
+      ctx.fillText('Vide', x + slotWidth / 2, y + slotHeight / 2 + 20);
+    }
+  }
+
+  return canvas.toBuffer('image/png');
+}
+
+/**
+ * Genere l'image d'un raid boss
+ * @param {Object} bossCard - Infos de la carte boss
+ * @param {number} level - Niveau du raid (50, 75, ou 100)
+ * @returns {Buffer} Buffer PNG de l'image generee
+ */
+async function generateRaidBossImage(bossCard, level) {
+  const padding = 40;
+  const totalWidth = CARD_WIDTH + (padding * 2);
+  const totalHeight = CARD_HEIGHT + (padding * 2) + 120;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Fond avec effet dramatique selon le niveau
+  const bgImage = await loadBackgroundImage('raid');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+    // Overlay couleur selon niveau
+    const overlayColor = level === 100 ? 'rgba(255, 80, 0, 0.3)' :
+                         level === 75 ? 'rgba(47, 210, 255, 0.2)' :
+                         'rgba(30, 255, 0, 0.2)';
+    ctx.fillStyle = overlayColor;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    if (level === 100) {
+      gradient.addColorStop(0, '#4a0000');
+      gradient.addColorStop(0.5, '#8B0000');
+      gradient.addColorStop(1, '#4a0000');
+    } else if (level === 75) {
+      gradient.addColorStop(0, '#0a2a4a');
+      gradient.addColorStop(0.5, '#1a4a7a');
+      gradient.addColorStop(1, '#0a2a4a');
+    } else {
+      gradient.addColorStop(0, '#0a4a0a');
+      gradient.addColorStop(0.5, '#1a6a1a');
+      gradient.addColorStop(1, '#0a4a0a');
+    }
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  // Titre RAID avec ombre
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  const raidColor = level === 100 ? '#FF8000' : level === 75 ? '#2fd2ff' : '#1EFF00';
+  ctx.fillStyle = raidColor;
+  ctx.font = `bold 36px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('RAID', totalWidth / 2, 45);
+
+  // Niveau
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.fillText(`Niveau ${level}`, totalWidth / 2, 75);
+
+  ctx.shadowColor = 'transparent';
+
+  // Carte du boss
+  const x = padding;
+  const y = 95;
+
+  const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${bossCard.id}.png`);
+  try {
+    const cardImage = await loadImage(cardImagePath);
+
+    // Glow effect
+    drawCardGlow(ctx, x, y, CARD_WIDTH, CARD_HEIGHT, raidColor);
+
+    ctx.drawImage(cardImage, x, y, CARD_WIDTH, CARD_HEIGHT);
+
+    // Bordure
+    ctx.strokeStyle = raidColor;
+    ctx.lineWidth = 5;
+    strokeRoundedRect(ctx, x - 3, y - 3, CARD_WIDTH + 6, CARD_HEIGHT + 6, BORDER_RADIUS);
+
+  } catch (error) {
+    console.error(`Erreur lors du chargement de la carte ${bossCard.id}:`, error);
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT);
+  }
+
+  // Nom du boss en bas
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 22px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(bossCard.name, totalWidth / 2, totalHeight - 45);
+
+  ctx.fillStyle = raidColor;
+  ctx.font = `18px ${PIXEL_FONT}`;
+  ctx.fillText(bossCard.rarityName, totalWidth / 2, totalHeight - 20);
+
+  ctx.shadowColor = 'transparent';
+
+  return canvas.toBuffer('image/png');
+}
+
+/**
+ * Genere l'image des resultats du raid
+ * @param {Object} bossCard - Infos de la carte boss
+ * @param {number} level - Niveau du raid
+ * @param {boolean} victory - Si le raid a ete gagne
+ * @param {Array} participants - Liste des participants
+ * @param {string} battleLog - Resume du combat
+ * @returns {Buffer} Buffer PNG de l'image generee
+ */
+async function generateRaidResultImage(bossCard, level, victory, participants, battleLog) {
+  const padding = 30;
+  const totalWidth = 800;
+  const totalHeight = 500;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Fond
+  const bgImage = await loadBackgroundImage('raid');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+    const overlayColor = victory ? 'rgba(0, 100, 0, 0.5)' : 'rgba(100, 0, 0, 0.5)';
+    ctx.fillStyle = overlayColor;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    if (victory) {
+      gradient.addColorStop(0, '#0a3a0a');
+      gradient.addColorStop(0.5, '#1a5a1a');
+      gradient.addColorStop(1, '#0a3a0a');
+    } else {
+      gradient.addColorStop(0, '#3a0a0a');
+      gradient.addColorStop(0.5, '#5a1a1a');
+      gradient.addColorStop(1, '#3a0a0a');
+    }
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  // Titre
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = victory ? '#00FF00' : '#FF0000';
+  ctx.font = `bold 48px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(victory ? 'VICTOIRE !' : 'DEFAITE...', totalWidth / 2, 60);
+
+  // Sous-titre
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `24px ${PIXEL_FONT}`;
+  ctx.fillText(`Raid Nv.${level} - ${bossCard.name}`, totalWidth / 2, 95);
+
+  ctx.shadowColor = 'transparent';
+
+  // Carte du boss a gauche
+  const cardX = padding;
+  const cardY = 120;
+  const cardScale = 0.6;
+  const cardW = CARD_WIDTH * cardScale;
+  const cardH = CARD_HEIGHT * cardScale;
+
+  const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${bossCard.id}.png`);
+  try {
+    const cardImage = await loadImage(cardImagePath);
+    ctx.drawImage(cardImage, cardX, cardY, cardW, cardH);
+
+    ctx.strokeStyle = victory ? '#00FF00' : '#FF0000';
+    ctx.lineWidth = 3;
+    strokeRoundedRect(ctx, cardX - 2, cardY - 2, cardW + 4, cardH + 4, BORDER_RADIUS);
+  } catch (error) {
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(cardX, cardY, cardW, cardH);
+  }
+
+  // Log de combat a droite
+  const logX = cardX + cardW + 30;
+  const logY = 130;
+  const logWidth = totalWidth - logX - padding;
+  const logHeight = 280;
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.fillRect(logX, logY, logWidth, logHeight);
+  ctx.strokeStyle = '#555555';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(logX, logY, logWidth, logHeight);
+
+  // Texte du log
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.textAlign = 'left';
+
+  const lines = battleLog.split('\n');
+  let lineY = logY + 25;
+  for (let i = 0; i < Math.min(lines.length, 15); i++) {
+    const line = lines[i].substring(0, 50);
+    ctx.fillText(line, logX + 10, lineY);
+    lineY += 18;
+  }
+
+  // Participants en bas
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold 18px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`Participants: ${participants.length}`, totalWidth / 2, totalHeight - 60);
+
+  // Recompenses
+  if (victory) {
+    const bonus = level === 100 ? 0 : level === 75 ? 100 : 250;
+    const rewardText = bonus > 0 ? `Recompense: ${bossCard.name} + ${bonus} P` : `Recompense: ${bossCard.name}`;
+    ctx.fillStyle = '#00FF00';
+    ctx.font = `bold 20px ${PIXEL_FONT}`;
+    ctx.fillText(rewardText, totalWidth / 2, totalHeight - 30);
+  } else {
+    ctx.fillStyle = '#888888';
+    ctx.font = `18px ${PIXEL_FONT}`;
+    ctx.fillText('Aucune recompense...', totalWidth / 2, totalHeight - 30);
+  }
+
+  return canvas.toBuffer('image/png');
+}
+
 module.exports = {
   generateBoosterOpeningImage,
   generateCollectionImage,
-  generateCardDetailImage
+  generateCardDetailImage,
+  generateTeamImage,
+  generateRaidBossImage,
+  generateRaidResultImage
 };

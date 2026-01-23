@@ -48,7 +48,9 @@ Système de collection de cartes avec boosters quotidiens, échanges, boutique e
 - `/boutique` - Acheter des boosters et cartes promo
 - `/solde [utilisateur]` - Voir son solde de Poké Dollars (Ꝑ)
 - `/inventaire` - Voir ses boosters en stock
+- `/team` - Gérer son équipe de 3 Pokémon pour les raids
 - `/giftbooster <utilisateur>` - [ADMIN] Offrir un booster (reset cooldown)
+- `/forceraid` - [ADMIN] Déclencher un raid manuellement
 
 **Caractéristiques:**
 
@@ -58,7 +60,30 @@ Système de collection de cartes avec boosters quotidiens, échanges, boutique e
 - Économie: Gagnez des Ꝑ en discutant (5-15 Ꝑ/message, anti-spam)
 - Cartes Promo exclusives (achat en boutique, certaines limitées)
 - Images générées avec police pixel (PixelOperator8-Bold.ttf)
-- Admin whitelist configurable dans `pokemonHandler.js` ligne 14
+- Admin whitelist configurable dans `tradeHandler.js` ligne 10
+
+### ⚔️ Système de Raids
+
+Combattez des boss Pokémon en équipe pour gagner des cartes rares !
+
+**Équipe:**
+
+- Utilisez `/team` pour configurer votre équipe de 3 Pokémon
+- Sélectionnez vos cartes via un menu avec pagination
+- Au moins 1 Pokémon requis pour rejoindre un raid
+
+**Raids:**
+
+- Apparition aléatoire (0.05% par message)
+- Niveaux: 50 (Peu commun), 75 (Rare), 100 (Légendaire)
+- Probabilités: 50% Peu commun, 40% Rare, 10% Légendaire
+- 5 minutes pour rejoindre avant le combat
+- Combat simulé par IA (stratégies Pokémon réalistes)
+
+**Récompenses (victoire):**
+
+- Carte du boss pour tous les participants
+- Bonus Ꝑ: 250 (Nv.50), 100 (Nv.75), 0 (Nv.100 - carte légendaire suffit !)
 
 **Stockage:**
 
@@ -85,6 +110,7 @@ Système de collection de cartes avec boosters quotidiens, échanges, boutique e
 - `CLIENT_ID` - ID de l'application Discord
 - `GUILD_ID` - (Optionnel) ID du serveur pour commandes instantanées
 - `BIRTHDAY_CHANNEL_ID` - Canal pour les annonces d'anniversaires
+- `API_KEY` - Clé API OpenAI (pour les combats de raids)
 
 ## Installation
 
@@ -139,7 +165,7 @@ node index.js
 
 ## Personnalisation
 
-**Admin Pokémon:** Modifier `ADMIN_WHITELIST` dans `pokemonHandler.js` (ligne 14)
+**Admin Pokémon:** Modifier `ADMIN_WHITELIST` dans `tradeHandler.js` (ligne 10)
 
 **Économie:** Ajuster `ECONOMY_CONFIG` dans `userManager.js` (récompenses, cooldown, anti-spam)
 
@@ -150,6 +176,8 @@ node index.js
 **Cartes:** Ajouter dans `data/cards.json` + images dans `assets/cards/`
 
 **Boosters:** Ajouter dans `data/boosters.json` + image dans `assets/boosters/`
+
+**Raids:** Ajuster `triggers.raidChance` dans `src/config/index.js` et `raidChannelId` pour le canal
 
 ## Assets Images
 
@@ -162,6 +190,8 @@ Images placées dans `assets/`. Le système utilise le center-crop (pas d'étire
 | Ouverture | `backgrounds/opening_bg.png` | - | 1640 x 643 px |
 | Collection | `backgrounds/collection_bg.png` | `collection_{nom}.png` ou `collection_booster_{id}.png` | 1370 x variable |
 | Détail carte | `backgrounds/carddetail_bg.png` | `carddetail_card_{id}.png` (per-card) ou `carddetail_{nom}.png` (per-booster) | 380 x 563 px |
+| Équipe | `backgrounds/team_bg.png` | - | 1000 x 563 px |
+| Raid | `backgrounds/raid_bg.png` | - | 800 x 500 px |
 
 **Priorité détail carte:** per-card → per-booster → générique → dégradé
 
