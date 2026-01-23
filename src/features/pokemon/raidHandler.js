@@ -90,8 +90,8 @@ async function startRaid(client) {
   const row = new ActionRowBuilder().addComponents(joinButton);
 
   const raidTypeText = level === 100 ? '**LEGENDAIRE**' :
-                       level === 75 ? '**RARE**' :
-                       '**PEU COMMUN**';
+    level === 75 ? '**RARE**' :
+      '**PEU COMMUN**';
 
   const endTime = Date.now() + RAID_DURATION;
   const endTimestamp = Math.floor(endTime / 1000);
@@ -110,10 +110,13 @@ async function startRaid(client) {
 
   // Send without content to avoid showing attachment twice
   const message = await channel.send({
+    content: '<@&1464335798341206046>',
     embeds: [embed],
     files: [attachment],
-    components: [row]
+    components: [row],
+    allowedMentions: { roles: ['1464335798341206046'] }
   });
+
 
   // Stocker le raid actif (including the image buffer to avoid duplication on edits)
   activeRaid = {
@@ -159,7 +162,7 @@ async function handleRaidJoin(interaction) {
   if (!hasTeamMember(userId)) {
     return interaction.reply({
       content: '❌ Vous devez avoir au moins un Pokemon dans votre equipe pour rejoindre un raid !\n' +
-               'Utilisez `/team` pour configurer votre equipe.',
+        'Utilisez `/team` pour configurer votre equipe.',
       flags: MessageFlags.Ephemeral
     });
   }
@@ -198,7 +201,7 @@ async function handleRaidJoin(interaction) {
 
   await interaction.reply({
     content: `⚔️ Vous avez rejoint le raid avec ${teamCards.length} Pokemon !\n` +
-             `Equipe: ${teamCards.map(c => c.name).join(', ')}`,
+      `Equipe: ${teamCards.map(c => c.name).join(', ')}`,
     flags: MessageFlags.Ephemeral
   });
 }
@@ -343,7 +346,7 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
       `**Participants:** ${raid.participants.size}\n` +
       (result.victory
         ? `\n**Recompenses:** ${raid.bossCard.name}` +
-          (raid.level === 100 ? '' : ` + ${raid.level === 75 ? '100' : '250'} P`)
+        (raid.level === 100 ? '' : ` + ${raid.level === 75 ? '100' : '250'} P`)
         : '\nAucune recompense.')
     )
     .setImage('attachment://raid_result.png');
