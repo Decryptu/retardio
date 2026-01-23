@@ -9,6 +9,7 @@ const fs = require('node:fs');
 
 const ASSETS_DIR = path.join(__dirname, '../../../assets');
 const CURRENCY_SYMBOL = 'Ꝑ';
+const ITEMS_PER_PAGE = 25;
 
 // Commandes slash
 const shopCommands = [
@@ -32,9 +33,6 @@ const shopCommands = [
 
 /**
  * Vérifie que l'utilisateur qui interagit est le propriétaire de l'interaction
- * @param {Interaction} interaction - L'interaction Discord
- * @param {string} ownerId - L'ID du propriétaire attendu
- * @returns {boolean} true si autorisé
  */
 async function verifyInteractionOwner(interaction, ownerId) {
   if (interaction.user.id !== ownerId) {
@@ -73,11 +71,8 @@ function getCardPrice(card, userId) {
 
 /**
  * Vérifie si un utilisateur a un master set (collection complète) d'au moins un booster
- * @param {string} userId - ID Discord de l'utilisateur
- * @returns {Object} { hasMasterSet: boolean, completedBoosterName: string|null }
  */
 function checkMasterSet(userId) {
-  // Vérifier tous les boosters non-promo
   const regularBoosters = Object.values(boosters).filter(b => !b.isPromo);
 
   for (const booster of regularBoosters) {
@@ -182,9 +177,9 @@ async function handleInventoryCommand(interaction) {
 }
 
 /**
- * Affiche les boosters disponibles à l'achat
+ * Affiche les boosters disponibles à l'achat avec pagination
  */
-async function showBoostersShop(interaction, ownerId) {
+async function showBoostersShop(interaction, ownerId, page = 0) {
   const userMoney = getMoney(ownerId);
   const purchasableBoosters = getPurchasableBoosters();
 
@@ -196,6 +191,10 @@ async function showBoostersShop(interaction, ownerId) {
     });
   }
 
+  const totalPages = Math.ceil(purchasableBoosters.length / ITEMS_PER_PAGE);
+  const startIndex = page * ITEMS_PER_PAGE;
+  const pageBoosters = purchasableBoosters.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
   const embed = new EmbedBuilder()
     .setColor('#3498DB')
     .setTitle('Boutique - Boosters')
@@ -204,7 +203,7 @@ async function showBoostersShop(interaction, ownerId) {
       `Sélectionnez un booster pour l'acheter.`
     );
 
-  const boosterOptions = purchasableBoosters.map(booster => {
+  const boosterOptions = pageBoosters.map(booster => {
     const canAfford = userMoney >= booster.price;
     return {
       label: `${booster.name} - ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`,
@@ -214,10 +213,41 @@ async function showBoostersShop(interaction, ownerId) {
     };
   });
 
+  const placeholder = totalPages > 1
+    ? `Choisir un booster (${page + 1}/${totalPages})`
+    : 'Choisir un booster à acheter...';
+
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId(`shop_booster_select_${ownerId}`)
-    .setPlaceholder('Choisir un booster à acheter...')
+    .setCustomId(`shop_booster_select_${ownerId}_${page}`)
+    .setPlaceholder(placeholder)
     .addOptions(boosterOptions);
+
+  const components = [new ActionRowBuilder().addComponents(selectMenu)];
+
+  // Boutons de navigation
+  const navButtons = [];
+
+  if (totalPages > 1) {
+    const prevButton = new ButtonBuilder()
+      .setCustomId(`shop_booster_page_prev_${ownerId}_${page}`)
+      .setLabel('◀')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page === 0);
+
+    const pageIndicator = new ButtonBuilder()
+      .setCustomId(`shop_page_indicator_${ownerId}`)
+      .setLabel(`${page + 1} / ${totalPages}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true);
+
+    const nextButton = new ButtonBuilder()
+      .setCustomId(`shop_booster_page_next_${ownerId}_${page}`)
+      .setLabel('▶')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page >= totalPages - 1);
+
+    navButtons.push(prevButton, pageIndicator, nextButton);
+  }
 
   const backButton = new ButtonBuilder()
     .setCustomId(`shop_back_main_${ownerId}`)
@@ -225,19 +255,19 @@ async function showBoostersShop(interaction, ownerId) {
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('⬅️');
 
-  const row1 = new ActionRowBuilder().addComponents(selectMenu);
-  const row2 = new ActionRowBuilder().addComponents(backButton);
+  navButtons.push(backButton);
+  components.push(new ActionRowBuilder().addComponents(navButtons));
 
   await interaction.update({
     embeds: [embed],
-    components: [row1, row2]
+    components
   });
 }
 
 /**
- * Affiche les cartes promo disponibles à l'achat
+ * Affiche les cartes promo disponibles à l'achat avec pagination
  */
-async function showCardsShop(interaction, ownerId) {
+async function showCardsShop(interaction, ownerId, page = 0) {
   const userMoney = getMoney(ownerId);
   const promoCards = getPurchasableCards();
 
@@ -266,6 +296,10 @@ async function showCardsShop(interaction, ownerId) {
     descriptionExtras += `🏆 **Master Set complété !** (${completedBoosterName}) Vous pouvez réclamer des récompenses exclusives !`;
   }
 
+  const totalPages = Math.ceil(promoCards.length / ITEMS_PER_PAGE);
+  const startIndex = page * ITEMS_PER_PAGE;
+  const pageCards = promoCards.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
   const embed = new EmbedBuilder()
     .setColor('#E91E63')
     .setTitle('Boutique - Cartes Promo')
@@ -275,7 +309,7 @@ async function showCardsShop(interaction, ownerId) {
       descriptionExtras
     );
 
-  const cardOptions = promoCards.map(card => {
+  const cardOptions = pageCards.map(card => {
     const alreadyOwned = hasLimitedCard(ownerId, card.id);
     const requiresBirthday = card.requiresBirthday;
     const requiresMasterSet = card.requiresMasterSet;
@@ -310,10 +344,41 @@ async function showCardsShop(interaction, ownerId) {
     };
   });
 
+  const placeholder = totalPages > 1
+    ? `Choisir une carte (${page + 1}/${totalPages})`
+    : 'Choisir une carte à acheter...';
+
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId(`shop_card_select_${ownerId}`)
-    .setPlaceholder('Choisir une carte à acheter...')
+    .setCustomId(`shop_card_select_${ownerId}_${page}`)
+    .setPlaceholder(placeholder)
     .addOptions(cardOptions);
+
+  const components = [new ActionRowBuilder().addComponents(selectMenu)];
+
+  // Boutons de navigation
+  const navButtons = [];
+
+  if (totalPages > 1) {
+    const prevButton = new ButtonBuilder()
+      .setCustomId(`shop_card_page_prev_${ownerId}_${page}`)
+      .setLabel('◀')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page === 0);
+
+    const pageIndicator = new ButtonBuilder()
+      .setCustomId(`shop_page_indicator_${ownerId}`)
+      .setLabel(`${page + 1} / ${totalPages}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true);
+
+    const nextButton = new ButtonBuilder()
+      .setCustomId(`shop_card_page_next_${ownerId}_${page}`)
+      .setLabel('▶')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page >= totalPages - 1);
+
+    navButtons.push(prevButton, pageIndicator, nextButton);
+  }
 
   const backButton = new ButtonBuilder()
     .setCustomId(`shop_back_main_${ownerId}`)
@@ -321,12 +386,12 @@ async function showCardsShop(interaction, ownerId) {
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('⬅️');
 
-  const row1 = new ActionRowBuilder().addComponents(selectMenu);
-  const row2 = new ActionRowBuilder().addComponents(backButton);
+  navButtons.push(backButton);
+  components.push(new ActionRowBuilder().addComponents(navButtons));
 
   await interaction.update({
     embeds: [embed],
-    components: [row1, row2]
+    components
   });
 }
 
@@ -347,11 +412,9 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
 
   const canAfford = userMoney >= booster.price;
 
-  // Charger l'image du booster
   const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
   const files = [];
 
-  // Construire le message de statut
   let statusMessage = '';
   if (!canAfford) {
     statusMessage = `\n\n🔒 **Fonds insuffisants.** (${userMoney.toLocaleString('fr-FR')} / ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL})`;
@@ -379,7 +442,6 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
 
   const buttons = [];
 
-  // Bouton d'achat (désactivé si on ne peut pas acheter)
   const confirmButton = new ButtonBuilder()
     .setCustomId(`shop_confirm_booster_${boosterId}_${ownerId}`)
     .setLabel('Acheter')
@@ -424,7 +486,6 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
     });
   }
 
-  // Vérifier les conditions
   const alreadyOwned = card.limitedPerUser && hasLimitedCard(ownerId, cardId);
 
   const { day: todayDay, month: todayMonth } = getParisDayMonth();
@@ -440,16 +501,13 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
   const price = (card.requiresBirthday && isBirthday) || card.requiresMasterSet ? 0 : getCardPrice(card, ownerId);
   const canAfford = userMoney >= price;
 
-  // Déterminer si l'achat est possible
   const canPurchase = !alreadyOwned && !requiresBirthdayButNotBirthday && !requiresMasterSetButNoSet && canAfford;
 
-  // Charger l'image de la carte
   const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${cardId}.png`);
   const files = [];
 
   const rarityData = rarities[card.rarity];
 
-  // Construire le texte du prix
   let priceText;
   if (card.requiresMasterSet && hasMasterSet) {
     priceText = `**GRATUIT** (Récompense Master Set - ${completedBoosterName})`;
@@ -463,7 +521,6 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
     priceText = `${price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`;
   }
 
-  // Construire le message de statut
   let statusMessage = '';
   if (alreadyOwned) {
     statusMessage = '\n\n✅ **Vous possédez déjà cette carte !**';
@@ -495,7 +552,6 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
 
   const buttons = [];
 
-  // Bouton d'achat (désactivé si on ne peut pas acheter)
   const confirmButton = new ButtonBuilder()
     .setCustomId(`shop_confirm_card_${cardId}_${ownerId}`)
     .setLabel(alreadyOwned ? 'Déjà possédée' : (price === 0 ? 'Réclamer' : 'Acheter'))
@@ -548,7 +604,6 @@ async function purchaseBooster(interaction, boosterId, ownerId) {
     });
   }
 
-  // Effectuer la transaction
   const success = removeMoney(ownerId, booster.price);
   if (!success) {
     return interaction.update({
@@ -599,7 +654,6 @@ async function purchaseCard(interaction, cardId, ownerId) {
     });
   }
 
-  // Re-vérifier toutes les conditions
   if (card.limitedPerUser && hasLimitedCard(ownerId, cardId)) {
     return interaction.update({
       content: '❌ Vous possédez déjà cette carte !',
@@ -621,7 +675,6 @@ async function purchaseCard(interaction, cardId, ownerId) {
     });
   }
 
-  // Vérifier le master set si requis
   const { hasMasterSet } = checkMasterSet(ownerId);
 
   if (card.requiresMasterSet && !hasMasterSet) {
@@ -642,7 +695,6 @@ async function purchaseCard(interaction, cardId, ownerId) {
     });
   }
 
-  // Effectuer la transaction
   if (price > 0) {
     const success = removeMoney(ownerId, price);
     if (!success) {
@@ -750,10 +802,14 @@ async function handleShopCommands(interaction) {
 
 /**
  * Extrait l'ID du propriétaire depuis un customId
- * Format attendu: shop_action_..._ownerId
  */
 function extractOwnerId(customId) {
   const parts = customId.split('_');
+  // Pour les customIds avec page, l'ownerId est l'avant-dernier element
+  // Pour les autres, c'est le dernier
+  if (customId.includes('_page_')) {
+    return parts[parts.length - 2];
+  }
   return parts[parts.length - 1];
 }
 
@@ -764,7 +820,6 @@ async function handleShopInteraction(interaction) {
   const customId = interaction.customId;
   const ownerId = extractOwnerId(customId);
 
-  // Vérifier que l'utilisateur est le propriétaire de l'interaction
   if (!await verifyInteractionOwner(interaction, ownerId)) {
     return;
   }
@@ -773,9 +828,9 @@ async function handleShopInteraction(interaction) {
     if (customId.startsWith('shop_category_select_')) {
       const selected = interaction.values[0];
       if (selected === 'boosters') {
-        await showBoostersShop(interaction, ownerId);
+        await showBoostersShop(interaction, ownerId, 0);
       } else if (selected === 'cards') {
-        await showCardsShop(interaction, ownerId);
+        await showCardsShop(interaction, ownerId, 0);
       }
     } else if (customId.startsWith('shop_booster_select_')) {
       const boosterId = interaction.values[0].replace('buy_booster_', '');
@@ -788,16 +843,28 @@ async function handleShopInteraction(interaction) {
     if (customId.startsWith('shop_back_main_')) {
       await showMainShop(interaction, ownerId);
     } else if (customId.startsWith('shop_category_boosters_')) {
-      await showBoostersShop(interaction, ownerId);
+      await showBoostersShop(interaction, ownerId, 0);
     } else if (customId.startsWith('shop_category_cards_')) {
-      await showCardsShop(interaction, ownerId);
+      await showCardsShop(interaction, ownerId, 0);
+    } else if (customId.startsWith('shop_booster_page_')) {
+      // Format: shop_booster_page_prev/next_ownerId_currentPage
+      const parts = customId.split('_');
+      const direction = parts[3];
+      const currentPage = parseInt(parts[5]);
+      const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
+      await showBoostersShop(interaction, ownerId, newPage);
+    } else if (customId.startsWith('shop_card_page_')) {
+      // Format: shop_card_page_prev/next_ownerId_currentPage
+      const parts = customId.split('_');
+      const direction = parts[3];
+      const currentPage = parseInt(parts[5]);
+      const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
+      await showCardsShop(interaction, ownerId, newPage);
     } else if (customId.includes('_confirm_booster_')) {
-      // Format: shop_confirm_booster_boosterId_ownerId
       const parts = customId.split('_');
       const boosterId = parts[3];
       await purchaseBooster(interaction, boosterId, ownerId);
     } else if (customId.includes('_confirm_card_')) {
-      // Format: shop_confirm_card_cardId_ownerId (cardId can contain underscores like promo_5)
       const parts = customId.split('_');
       const cardId = parts.slice(3, -1).join('_');
       await purchaseCard(interaction, cardId, ownerId);
