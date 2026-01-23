@@ -36,7 +36,15 @@ const pokemonCommands = [
       option.setName('utilisateur')
         .setDescription('Utilisateur a qui offrir un booster')
         .setRequired(true)
-    )
+    ),
+
+  new SlashCommandBuilder()
+    .setName('team')
+    .setDescription('Gerer votre equipe de 3 Pokemon pour les raids'),
+
+  new SlashCommandBuilder()
+    .setName('forceraid')
+    .setDescription('[ADMIN] Declencher un raid aleatoire')
 ];
 
 module.exports = { pokemonCommands };

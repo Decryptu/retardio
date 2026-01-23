@@ -34,6 +34,7 @@ function loadUserData(userId) {
     inventory: {
       boosters: {}
     },
+    team: [null, null, null], // Team of 3 Pokemon for raids
     rewardCooldown: null,
     recentMessages: [],
     stats: {
@@ -53,6 +54,7 @@ function loadUserData(userId) {
       ...defaultData,
       ...fileData,
       inventory: { ...defaultData.inventory, ...fileData.inventory },
+      team: fileData.team || defaultData.team,
       stats: { ...defaultData.stats, ...fileData.stats }
     };
   } catch (error) {
@@ -354,6 +356,54 @@ function hasLimitedCard(userId, cardId) {
   return userData.cards[id] && userData.cards[id] > 0;
 }
 
+/**
+ * Obtient l'équipe d'un utilisateur
+ * @param {string} userId - ID Discord de l'utilisateur
+ * @returns {Array} Tableau de 3 cardIds (ou null si slot vide)
+ */
+function getTeam(userId) {
+  const userData = loadUserData(userId);
+  return userData.team || [null, null, null];
+}
+
+/**
+ * Met à jour l'équipe d'un utilisateur
+ * @param {string} userId - ID Discord de l'utilisateur
+ * @param {number} slot - Index du slot (0, 1, ou 2)
+ * @param {string|number|null} cardId - ID de la carte ou null pour vider
+ * @returns {boolean} true si la mise à jour a réussi
+ */
+function setTeamSlot(userId, slot, cardId) {
+  if (slot < 0 || slot > 2) return false;
+
+  const userData = loadUserData(userId);
+  if (!userData.team) {
+    userData.team = [null, null, null];
+  }
+
+  // Vérifier que l'utilisateur possède la carte si on en ajoute une
+  if (cardId !== null) {
+    const id = String(cardId);
+    if (!userData.cards[id] || userData.cards[id] <= 0) {
+      return false;
+    }
+  }
+
+  userData.team[slot] = cardId ? String(cardId) : null;
+  saveUserData(userId, userData);
+  return true;
+}
+
+/**
+ * Vérifie si l'utilisateur a au moins un Pokemon dans son équipe
+ * @param {string} userId - ID Discord de l'utilisateur
+ * @returns {boolean} true si l'équipe contient au moins un Pokemon
+ */
+function hasTeamMember(userId) {
+  const team = getTeam(userId);
+  return team.some(cardId => cardId !== null);
+}
+
 module.exports = {
   loadUserData,
   saveUserData,
@@ -372,5 +422,8 @@ module.exports = {
   processMessageReward,
   addCardToUser,
   hasLimitedCard,
+  getTeam,
+  setTeamSlot,
+  hasTeamMember,
   ECONOMY_CONFIG
 };

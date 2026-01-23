@@ -12,6 +12,7 @@ const {
 	pokemonCommands,
 	handlePokemonCommand,
 	handlePokemonInteraction,
+	checkRaidTrigger,
 } = require("./src/features/pokemon");
 const {
 	shopCommands,
@@ -68,7 +69,7 @@ async function registerCommands() {
 client.on("interactionCreate", async (interaction) => {
 	const cmdName = interaction.commandName;
 	const isBirthdayCmd = cmdName?.startsWith("anniversaire");
-	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster"].includes(cmdName);
+	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster", "team", "forceraid"].includes(cmdName);
 	const isShopCmd = ["boutique", "solde", "inventaire"].includes(cmdName);
 
 	if (interaction.isAutocomplete()) {
@@ -113,6 +114,11 @@ client.on("messageCreate", async (message) => {
 	console.log("-".repeat(50));
 
 	await messageHandler.handleMessage(message);
+
+	// Verifier si un raid doit etre declenche (sur chaque message)
+	if (!message.author.bot) {
+		await checkRaidTrigger(client);
+	}
 });
 
 // Event handler pour quand le bot est prêt
