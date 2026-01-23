@@ -598,7 +598,7 @@ async function generateTeamImage(userId, team) {
   ctx.fillStyle = '#FFD700';
   ctx.font = `bold 32px ${PIXEL_FONT}`;
   ctx.textAlign = 'center';
-  ctx.fillText('EQUIPE DE RAID', totalWidth / 2, 50);
+  ctx.fillText('EQUIPE', totalWidth / 2, 50);
 
   ctx.shadowColor = 'transparent';
 
