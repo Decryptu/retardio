@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const OpenAI = require('openai');
 const { getCardInfo } = require('../../services/cardGenerator');
 const { loadUserData, getTeam, hasTeamMember, addCardToUser, addMoney } = require('../../services/userManager');
@@ -109,7 +109,6 @@ async function startRaid(client) {
     .setFooter({ text: 'Utilisez /team pour configurer votre equipe avant de rejoindre !' });
 
   const message = await channel.send({
-    content: '@everyone Un raid vient d\'apparaitre !',
     embeds: [embed],
     files: [attachment],
     components: [row]
@@ -140,7 +139,7 @@ async function handleRaidJoin(interaction) {
   if (!activeRaid) {
     return interaction.reply({
       content: '❌ Il n\'y a pas de raid en cours.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -150,7 +149,7 @@ async function handleRaidJoin(interaction) {
   if (activeRaid.participants.has(userId)) {
     return interaction.reply({
       content: '✅ Vous avez deja rejoint ce raid !',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -159,7 +158,7 @@ async function handleRaidJoin(interaction) {
     return interaction.reply({
       content: '❌ Vous devez avoir au moins un Pokemon dans votre equipe pour rejoindre un raid !\n' +
                'Utilisez `/team` pour configurer votre equipe.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -204,7 +203,7 @@ async function handleRaidJoin(interaction) {
   await interaction.reply({
     content: `⚔️ Vous avez rejoint le raid avec ${teamCards.length} Pokemon !\n` +
              `Equipe: ${teamCards.map(c => c.name).join(', ')}`,
-    ephemeral: true
+    flags: MessageFlags.Ephemeral
   });
 }
 
@@ -251,24 +250,28 @@ async function executeRaid() {
     });
   }
 
-  const prompt = `You are simulating a Pokemon raid battle. Answer ONLY with raw JSON, no markdown, no code blocks, no extra text.
+  // Compter le nombre total de Pokemon participants
+  const totalParticipantPokemon = participantData.reduce((sum, p) => sum + p.team.length, 0);
 
-Raid boss: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Level ${raid.level})
-Participants and their teams:
+  const prompt = `Tu simules un combat de raid Pokemon. Reponds UNIQUEMENT avec du JSON brut, pas de markdown, pas de blocs de code, pas de texte supplementaire.
+
+Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
+Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
 ${participantData.map(p => `- ${p.username}: ${p.team.map(t => t.name).join(', ')}`).join('\n')}
 
-Rules:
-- Consider type advantages (water>fire, fire>grass, etc)
-- Higher level bosses are harder to beat
-- More participants = better chance
-- Legendary raids (Lv100) are very hard
-- Keep the battle realistic but fun
+REGLES IMPORTANTES:
+- C'est un combat ${totalParticipantPokemon} contre 1 (avantage numerique aux dresseurs)
+- Respecte les avantages de types Pokemon (Eau>Feu, Feu>Plante, Plante>Eau, Psy>Combat, Combat ne peut PAS toucher Spectre, etc)
+- Les noms sont en francais, identifie correctement les types de chaque Pokemon
+- Boss plus haut niveau = plus difficile (Nv100 legendaire = tres dur)
+- Plus de participants = meilleures chances
+- Garde le combat realiste selon la strategie Pokemon
 
-Generate a JSON object with:
-- "victory": boolean (did players win?)
-- "battleLog": string (short battle summary, 3-5 lines max, use \\n for newlines)
+Genere un objet JSON avec:
+- "victory": boolean (les joueurs ont-ils gagne?)
+- "battleLog": string (resume du combat en francais, 3-5 lignes max, utilise \\n pour les retours a la ligne)
 
-Example format: {"victory":true,"battleLog":"Line1\\nLine2\\nLine3"}`;
+Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
 
   let result = { victory: false, battleLog: 'Le combat fut intense...' };
 
@@ -276,7 +279,7 @@ Example format: {"victory":true,"battleLog":"Line1\\nLine2\\nLine3"}`;
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'You output only valid raw JSON. No markdown, no code blocks, no explanation.' },
+        { role: 'system', content: 'Tu reponds uniquement en JSON brut valide. Pas de markdown, pas de blocs de code, pas d\'explication. Le battleLog doit etre en francais.' },
         { role: 'user', content: prompt }
       ],
       max_tokens: 512,
@@ -293,6 +296,12 @@ Example format: {"victory":true,"battleLog":"Line1\\nLine2\\nLine3"}`;
     cleanJson = cleanJson.trim();
 
     result = JSON.parse(cleanJson);
+
+    // S'assurer que les \n dans le battleLog sont bien des retours a la ligne
+    if (result.battleLog) {
+      // Remplacer les \n litteraux par de vrais retours a la ligne si necessaire
+      result.battleLog = result.battleLog.replace(/\\n/g, '\n');
+    }
   } catch (error) {
     console.error('Erreur OpenAI pour le raid:', error);
     // Resultat aleatoire en fallback
@@ -380,20 +389,20 @@ async function handleForceRaidCommand(interaction) {
   if (!ADMIN_WHITELIST.includes(adminId)) {
     return interaction.reply({
       content: '❌ Vous n\'avez pas la permission d\'utiliser cette commande.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
   if (activeRaid) {
     return interaction.reply({
       content: '❌ Un raid est deja en cours !',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
   await interaction.reply({
     content: '⚔️ Declenchement d\'un raid...',
-    ephemeral: true
+    flags: MessageFlags.Ephemeral
   });
 
   await startRaid(interaction.client);
