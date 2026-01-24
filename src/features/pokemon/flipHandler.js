@@ -1,4 +1,5 @@
 const { MessageFlags } = require('discord.js');
+const crypto = require('node:crypto');
 const { loadUserData, addMoney, removeMoney } = require('../../services/userManager');
 
 /**
@@ -31,10 +32,10 @@ async function handleFlipCommand(interaction) {
   removeMoney(userId, bet);
 
   // 1% chance de tripler, 48% de doubler, 51% de perdre
-  const roll = Math.random();
+  const roll = crypto.randomInt(0, 100);
 
-  if (roll < 0.01) {
-    // JACKPOT! Triple
+  if (roll === 0) {
+    // JACKPOT! Triple (1%)
     const winAmount = bet * 3;
     addMoney(userId, winAmount);
     const newBalance = currentMoney + (bet * 2); // currentMoney - bet + (bet * 3)
@@ -43,8 +44,8 @@ async function handleFlipCommand(interaction) {
       content: `💎 **JACKPOT !** Vous avez mise ${bet} P et gagne ${bet * 2} P !\n` +
         `Nouveau solde: ${newBalance} P`
     });
-  } else if (roll < 0.49) {
-    // Gagner = doubler la mise
+  } else if (roll <= 48) {
+    // Gagner = doubler la mise (48%)
     const winAmount = bet * 2;
     addMoney(userId, winAmount);
     const newBalance = currentMoney + bet; // currentMoney - bet + (bet * 2)
@@ -54,7 +55,7 @@ async function handleFlipCommand(interaction) {
         `Nouveau solde: ${newBalance} P`
     });
   } else {
-    // Perdre = perdre la mise
+    // Perdre = perdre la mise (51%)
     const newBalance = currentMoney - bet;
 
     return interaction.reply({
