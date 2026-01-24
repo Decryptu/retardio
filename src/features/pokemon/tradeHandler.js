@@ -14,6 +14,57 @@ const ADMIN_WHITELIST = [
 const CARDS_PER_PAGE = 25;
 
 /**
+ * Trouve les opportunites d'echange entre deux utilisateurs
+ * Une opportunite = une carte que l'un a en double et l'autre n'a pas
+ * @param {string} initiatorId - ID de l'initiateur
+ * @param {string} targetId - ID de la cible
+ * @returns {Object} { canOffer: [], canReceive: [] }
+ */
+function findTradeOpportunities(initiatorId, targetId) {
+  const initiatorData = loadUserData(initiatorId);
+  const targetData = loadUserData(targetId);
+
+  const canOffer = []; // Cartes que l'initiateur peut offrir (doublons que la cible n'a pas)
+  const canReceive = []; // Cartes que l'initiateur peut recevoir (doublons de la cible que l'initiateur n'a pas)
+
+  // Trouver les cartes que l'initiateur a en double et que la cible n'a pas
+  for (const [cardId, quantity] of Object.entries(initiatorData.cards)) {
+    if (quantity > 1) {
+      const targetQuantity = targetData.cards[cardId] || 0;
+      if (targetQuantity === 0) {
+        const cardInfo = getCardInfo(cardId);
+        if (cardInfo) {
+          canOffer.push({
+            ...cardInfo,
+            quantity,
+            boosterId: String(cardInfo.boosterPackId)
+          });
+        }
+      }
+    }
+  }
+
+  // Trouver les cartes que la cible a en double et que l'initiateur n'a pas
+  for (const [cardId, quantity] of Object.entries(targetData.cards)) {
+    if (quantity > 1) {
+      const initiatorQuantity = initiatorData.cards[cardId] || 0;
+      if (initiatorQuantity === 0) {
+        const cardInfo = getCardInfo(cardId);
+        if (cardInfo) {
+          canReceive.push({
+            ...cardInfo,
+            quantity,
+            boosterId: String(cardInfo.boosterPackId)
+          });
+        }
+      }
+    }
+  }
+
+  return { canOffer, canReceive };
+}
+
+/**
  * Obtient les boosters ou l'utilisateur a des cartes
  */
 function getUserBoostersWithCards(userId) {
@@ -165,6 +216,15 @@ async function handleTradeCommand(interaction) {
 
   const row1 = new ActionRowBuilder().addComponents(giveBoosterSelect);
 
+  // Bouton pour voir les opportunites d'echange
+  const opportunitiesButton = new ButtonBuilder()
+    .setCustomId(`trade_opportunities_${interaction.id}`)
+    .setLabel('Opportunites')
+    .setStyle(ButtonStyle.Primary)
+    .setEmoji('💡');
+
+  const row2 = new ActionRowBuilder().addComponents(opportunitiesButton);
+
   activeTrades.set(interaction.id, {
     initiatorId: initiator.id,
     targetId: target.id,
@@ -182,8 +242,9 @@ async function handleTradeCommand(interaction) {
 
   await interaction.reply({
     content: `📋 **Echange avec ${target}**\n\n` +
-      `**Etape 1:** Selectionnez le booster contenant la carte que vous voulez donner`,
-    components: [row1],
+      `**Etape 1:** Selectionnez le booster contenant la carte que vous voulez donner\n` +
+      `💡 Cliquez sur **Opportunites** pour voir les echanges possibles`,
+    components: [row1, row2],
     ephemeral: false
   });
 }
@@ -412,6 +473,86 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
  */
 async function handleTradeButton(interaction) {
   const customId = interaction.customId;
+
+  // Gestion du bouton Opportunites
+  if (customId.startsWith('trade_opportunities_')) {
+    const tradeId = customId.replace('trade_opportunities_', '');
+    const trade = activeTrades.get(tradeId);
+
+    if (!trade) {
+      return interaction.reply({
+        content: '❌ Cet echange n\'est plus valide.',
+        ephemeral: true
+      });
+    }
+
+    if (interaction.user.id !== trade.initiatorId) {
+      return interaction.reply({
+        content: '❌ Seul l\'initiateur peut voir les opportunites.',
+        ephemeral: true
+      });
+    }
+
+    const { canOffer, canReceive } = findTradeOpportunities(trade.initiatorId, trade.targetId);
+
+    // Grouper par booster
+    const groupByBooster = (cards) => {
+      const grouped = {};
+      for (const card of cards) {
+        const boosterName = boosters[card.boosterId]?.name || card.boosterId;
+        if (!grouped[boosterName]) {
+          grouped[boosterName] = [];
+        }
+        grouped[boosterName].push(card);
+      }
+      return grouped;
+    };
+
+    const offerByBooster = groupByBooster(canOffer);
+    const receiveByBooster = groupByBooster(canReceive);
+
+    // Construire le message
+    let description = '';
+
+    if (canOffer.length === 0 && canReceive.length === 0) {
+      description = '*Aucune opportunite d\'echange trouvee.*\n\n' +
+        'Les opportunites apparaissent quand:\n' +
+        '• Vous avez des doublons que l\'autre n\'a pas\n' +
+        '• L\'autre a des doublons que vous n\'avez pas';
+    } else {
+      // Ce que vous pouvez offrir
+      if (canOffer.length > 0) {
+        description += '**Vous pouvez offrir** (vos doublons):\n';
+        for (const [boosterName, cards] of Object.entries(offerByBooster)) {
+          const cardList = cards.slice(0, 5).map(c => `${c.name} (x${c.quantity})`).join(', ');
+          const more = cards.length > 5 ? ` +${cards.length - 5}` : '';
+          description += `📦 ${boosterName}: ${cardList}${more}\n`;
+        }
+        description += '\n';
+      }
+
+      // Ce que vous pouvez recevoir
+      if (canReceive.length > 0) {
+        description += '**Vous pouvez recevoir** (leurs doublons):\n';
+        for (const [boosterName, cards] of Object.entries(receiveByBooster)) {
+          const cardList = cards.slice(0, 5).map(c => `${c.name} (x${c.quantity})`).join(', ');
+          const more = cards.length > 5 ? ` +${cards.length - 5}` : '';
+          description += `📦 ${boosterName}: ${cardList}${more}\n`;
+        }
+      }
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor('#3498db')
+      .setTitle('💡 Opportunites d\'echange')
+      .setDescription(description)
+      .setFooter({ text: `${canOffer.length} carte(s) a offrir • ${canReceive.length} carte(s) a recevoir` });
+
+    return interaction.reply({
+      embeds: [embed],
+      ephemeral: true
+    });
+  }
 
   // Gestion de la pagination
   if (customId.startsWith('trade_page_')) {
