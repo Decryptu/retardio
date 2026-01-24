@@ -184,7 +184,7 @@ node index.js
 Images placées dans `assets/`. Le système utilise le center-crop (pas d'étirement).
 
 | Type | Fichier | Personnalisé | Taille recommandée |
-|------|---------|--------------|-------------------|
+| ---- | ------- | ------------ | ------------------- |
 | Cartes | `cards/card_{id}.png` | - | 300 x 363 px |
 | Boosters | `boosters/booster_{id}.png` | - | 200 x 280 px |
 | Ouverture | `backgrounds/opening_bg.png` | - | 1640 x 643 px |
