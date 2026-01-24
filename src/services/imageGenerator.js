@@ -831,9 +831,10 @@ async function generateRaidBossImage(bossCard, level) {
  * @param {boolean} victory - Si le raid a ete gagne
  * @param {Array} participants - Liste des participants
  * @param {string} battleLog - Resume du combat
+ * @param {number} bonus - Bonus en Poke Dollars
  * @returns {Buffer} Buffer PNG de l'image generee
  */
-async function generateRaidResultImage(bossCard, level, victory, participants, battleLog) {
+async function generateRaidResultImage(bossCard, level, victory, participants, battleLog, bonus = 0) {
   const padding = 30;
   const totalWidth = 800;
   const totalHeight = 500;
@@ -945,8 +946,7 @@ async function generateRaidResultImage(bossCard, level, victory, participants, b
 
   // Recompenses
   if (victory) {
-    const bonus = level === 100 ? 0 : level === 75 ? 100 : 250;
-    const rewardText = bonus > 0 ? `Recompense: ${bossCard.name} + ${bonus} P` : `Recompense: ${bossCard.name}`;
+    const rewardText = `Recompense: ${bossCard.name} + ${bonus} P`;
     ctx.fillStyle = '#00FF00';
     ctx.font = `bold 20px ${PIXEL_FONT}`;
     ctx.fillText(rewardText, totalWidth / 2, totalHeight - 30);
