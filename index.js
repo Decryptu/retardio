@@ -69,7 +69,7 @@ async function registerCommands() {
 client.on("interactionCreate", async (interaction) => {
 	const cmdName = interaction.commandName;
 	const isBirthdayCmd = cmdName?.startsWith("anniversaire");
-	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster", "team", "forceraid"].includes(cmdName);
+	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster", "team", "forceraid", "flip"].includes(cmdName);
 	const isShopCmd = ["boutique", "solde", "inventaire"].includes(cmdName);
 
 	if (interaction.isAutocomplete()) {
