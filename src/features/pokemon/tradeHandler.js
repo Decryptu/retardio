@@ -444,6 +444,9 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
 
   const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
 
+  // Timestamp d'expiration (5 minutes)
+  const expirationTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
+
   const embed = new EmbedBuilder()
     .setColor('#FFA500')
     .setTitle('Confirmation d\'echange')
@@ -451,9 +454,9 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
       `**${initiator.username}** propose un echange a **${target}**\n\n` +
       `${initiator.username} donne: **${giveCard?.name || 'Carte inconnue'}** (${giveCard?.rarityName || 'Inconnue'})\n` +
       `${target.username} donne: **${receiveCard?.name || 'Carte inconnue'}** (${receiveCard?.rarityName || 'Inconnue'})\n\n` +
-      `${target}, acceptez-vous cet echange ?`
-    )
-    .setFooter({ text: 'L\'echange expire dans 5 minutes' });
+      `${target}, acceptez-vous cet echange ?\n` +
+      `Expire <t:${expirationTimestamp}:R>`
+    );
 
   await interaction.update({
     content: null,
