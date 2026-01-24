@@ -511,6 +511,18 @@ async function handleTradeButton(interaction) {
     const offerByBooster = groupByBooster(canOffer);
     const receiveByBooster = groupByBooster(canReceive);
 
+    // Emoji de rarete par couleur
+    const rarityEmoji = (rarity) => {
+      switch (rarity) {
+        case 'common': return '⚪';
+        case 'uncommon': return '🟢';
+        case 'rare': return '🔵';
+        case 'legendary': return '🟠';
+        case 'promo': return '🟣';
+        default: return '⚪';
+      }
+    };
+
     // Construire le message
     let description = '';
 
@@ -524,7 +536,7 @@ async function handleTradeButton(interaction) {
       if (canOffer.length > 0) {
         description += '**Vous pouvez offrir** (vos doublons):\n';
         for (const [boosterName, cards] of Object.entries(offerByBooster)) {
-          const cardList = cards.slice(0, 5).map(c => `${c.name} (x${c.quantity})`).join(', ');
+          const cardList = cards.slice(0, 5).map(c => `${rarityEmoji(c.rarity)}${c.name} x${c.quantity}`).join(', ');
           const more = cards.length > 5 ? ` +${cards.length - 5}` : '';
           description += `📦 ${boosterName}: ${cardList}${more}\n`;
         }
@@ -535,7 +547,7 @@ async function handleTradeButton(interaction) {
       if (canReceive.length > 0) {
         description += '**Vous pouvez recevoir** (leurs doublons):\n';
         for (const [boosterName, cards] of Object.entries(receiveByBooster)) {
-          const cardList = cards.slice(0, 5).map(c => `${c.name} (x${c.quantity})`).join(', ');
+          const cardList = cards.slice(0, 5).map(c => `${rarityEmoji(c.rarity)}${c.name} x${c.quantity}`).join(', ');
           const more = cards.length > 5 ? ` +${cards.length - 5}` : '';
           description += `📦 ${boosterName}: ${cardList}${more}\n`;
         }
