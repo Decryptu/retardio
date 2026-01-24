@@ -48,7 +48,7 @@ const pokemonCommands = [
 
   new SlashCommandBuilder()
     .setName('flip')
-    .setDescription('Pile ou face - 48% double, 1% triple, 51% perte')
+    .setDescription('Pile ou face - 48% x2, 1% x3, 0.01% x10, 51% perte')
     .addIntegerOption(option =>
       option.setName('mise')
         .setDescription('Montant a miser (1-100 Poke Dollars)')
