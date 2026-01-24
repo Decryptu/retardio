@@ -31,11 +31,21 @@ async function handleFlipCommand(interaction) {
   // Retirer la mise
   removeMoney(userId, bet);
 
-  // 1% chance de tripler, 48% de doubler, 51% de perdre
-  const roll = crypto.randomInt(0, 100);
+  // 0.01% x10, 0.99% x3, 48% x2, 51% perte
+  const roll = crypto.randomInt(0, 10000);
 
   if (roll === 0) {
-    // JACKPOT! Triple (1%)
+    // MEGA JACKPOT! x10 (0.01%)
+    const winAmount = bet * 10;
+    addMoney(userId, winAmount);
+    const newBalance = currentMoney + (bet * 9); // currentMoney - bet + (bet * 10)
+
+    return interaction.reply({
+      content: `💰 **MEGA JACKPOT !!!** Vous avez mise ${bet} P et gagne ${bet * 9} P !\n` +
+        `Nouveau solde: ${newBalance} P`
+    });
+  } else if (roll <= 99) {
+    // JACKPOT! x3 (0.99%)
     const winAmount = bet * 3;
     addMoney(userId, winAmount);
     const newBalance = currentMoney + (bet * 2); // currentMoney - bet + (bet * 3)
@@ -44,7 +54,7 @@ async function handleFlipCommand(interaction) {
       content: `💎 **JACKPOT !** Vous avez mise ${bet} P et gagne ${bet * 2} P !\n` +
         `Nouveau solde: ${newBalance} P`
     });
-  } else if (roll <= 48) {
+  } else if (roll <= 4899) {
     // Gagner = doubler la mise (48%)
     const winAmount = bet * 2;
     addMoney(userId, winAmount);
