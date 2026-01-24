@@ -241,7 +241,7 @@ async function handleTradeCommand(interaction) {
   });
 
   await interaction.reply({
-    content: `📋 **Echange avec ${target}**\n\n` +
+    content: `📋 **Echange avec ${target.username}**\n\n` +
       `**Etape 1:** Selectionnez le booster contenant la carte que vous voulez donner\n` +
       `💡 Cliquez sur **Opportunites** pour voir les echanges possibles`,
     components: [row1, row2],
