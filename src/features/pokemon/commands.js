@@ -44,7 +44,18 @@ const pokemonCommands = [
 
   new SlashCommandBuilder()
     .setName('forceraid')
-    .setDescription('[ADMIN] Declencher un raid aleatoire')
+    .setDescription('[ADMIN] Declencher un raid aleatoire'),
+
+  new SlashCommandBuilder()
+    .setName('flip')
+    .setDescription('Pile ou face - 49% de chance de doubler votre mise')
+    .addIntegerOption(option =>
+      option.setName('mise')
+        .setDescription('Montant a miser (1-100 Poke Dollars)')
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(100)
+    )
 ];
 
 module.exports = { pokemonCommands };

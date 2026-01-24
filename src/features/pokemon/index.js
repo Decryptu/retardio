@@ -4,6 +4,7 @@ const { handleCollectionCommand, handleCollectionSelectMenu, handleCardDetailSel
 const { handleTradeCommand, handleGiftBoosterCommand, handleTradeSelectMenu, handleTradeButton } = require('./tradeHandler');
 const { handleTeamCommand, handleTeamButton, handleTeamSelectMenu } = require('./teamHandler');
 const { handleForceRaidCommand, handleRaidButton, checkRaidTrigger } = require('./raidHandler');
+const { handleFlipCommand } = require('./flipHandler');
 
 /**
  * Gere toutes les commandes Pokemon
@@ -23,6 +24,8 @@ async function handlePokemonCommand(interaction) {
     await handleTeamCommand(interaction);
   } else if (commandName === 'forceraid') {
     await handleForceRaidCommand(interaction);
+  } else if (commandName === 'flip') {
+    await handleFlipCommand(interaction);
   }
 }
 
