@@ -30,14 +30,24 @@ async function handleFlipCommand(interaction) {
   // Retirer la mise
   removeMoney(userId, bet);
 
-  // 49% de chance de gagner
-  const won = Math.random() < 0.49;
+  // 1% chance de tripler, 48% de doubler, 51% de perdre
+  const roll = Math.random();
 
-  if (won) {
-    // Gagner = doubler la mise (récupérer la mise + le gain)
+  if (roll < 0.01) {
+    // JACKPOT! Triple
+    const winAmount = bet * 3;
+    addMoney(userId, winAmount);
+    const newBalance = currentMoney + (bet * 2); // currentMoney - bet + (bet * 3)
+
+    return interaction.reply({
+      content: `💎 **JACKPOT !** Vous avez mise ${bet} P et gagne ${bet * 2} P !\n` +
+        `Nouveau solde: ${newBalance} P`
+    });
+  } else if (roll < 0.49) {
+    // Gagner = doubler la mise
     const winAmount = bet * 2;
     addMoney(userId, winAmount);
-    const newBalance = currentMoney + bet; // currentMoney - bet + (bet * 2) = currentMoney + bet
+    const newBalance = currentMoney + bet; // currentMoney - bet + (bet * 2)
 
     return interaction.reply({
       content: `🎉 **GAGNE !** Vous avez mise ${bet} P et gagne ${bet} P !\n` +
