@@ -19,6 +19,26 @@
     },
     "price": 500
   },
+  "3": {
+    "id": 3,
+    "name": "Éclair Supreme",
+    "totalCards": 57,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "4": {
+    "id": 4,
+    "name": "Puissance Psychique",
+    "totalCards": 57,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
   "promo_1": {
     "id": "promo_1",
     "name": "Promo",
