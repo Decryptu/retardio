@@ -340,7 +340,8 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
     raid.level,
     result.victory,
     participantIds,
-    result.battleLog
+    result.battleLog,
+    bonus
   );
   const attachment = new AttachmentBuilder(resultImageBuffer, { name: 'raid_result.png' });
 
