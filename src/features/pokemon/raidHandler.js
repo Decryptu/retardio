@@ -312,16 +312,25 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
   // Distribuer les recompenses si victoire
   const participantIds = Array.from(raid.participants.keys());
 
+  // Generate random bonus based on raid level
+  let bonus = 0;
   if (result.victory) {
-    const bonus = raid.level === 100 ? 0 : raid.level === 75 ? 100 : 250;
+    if (raid.level === 100) {
+      // legendary: 1-100
+      bonus = Math.floor(Math.random() * 100) + 1;
+    } else if (raid.level === 75) {
+      // rare: 100-250
+      bonus = Math.floor(Math.random() * 151) + 100;
+    } else {
+      // uncommon: 250-500
+      bonus = Math.floor(Math.random() * 251) + 250;
+    }
 
     for (const participantId of participantIds) {
       // Donner la carte du boss
       addCardToUser(participantId, raid.bossCard.id);
       // Donner le bonus en Poke Dollars
-      if (bonus > 0) {
-        addMoney(participantId, bonus);
-      }
+      addMoney(participantId, bonus);
     }
   }
 
@@ -344,8 +353,7 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
       `**Combat:**\n${result.battleLog}\n\n` +
       `**Participants:** ${raid.participants.size}\n` +
       (result.victory
-        ? `\n**Recompenses:** ${raid.bossCard.name}` +
-        (raid.level === 100 ? '' : ` + ${raid.level === 75 ? '100' : '250'} P`)
+        ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
         : '\nAucune recompense.')
     )
     .setImage('attachment://raid_result.png');
