@@ -116,7 +116,7 @@ function createCardSelectComponents(cards, tradeId, type, page, _boosterName) {
   // Menu de selection des cartes
   const cardOptions = pageCards.map(card => ({
     label: `${card.name} (x${card.quantity})`,
-    description: card.rarityName,
+    description: `#${card.id} - ${card.rarityName}`,
     value: `${type}_card_${card.id}`,
     emoji: card.quantity > 1 ? '🔄' : '🃏'
   }));
@@ -377,7 +377,7 @@ async function handleTradeSelectMenu(interaction) {
     const giveCard = getCardInfo(trade.giveCardId);
     await interaction.update({
       content: `📋 **Echange en cours**\n\n` +
-        `**Vous donnez:** ${giveCard?.name || trade.giveCardId}\n\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n\n` +
         `**Etape 3:** Selectionnez le booster contenant la carte que vous voulez recevoir`,
       components: [row]
     });
@@ -404,7 +404,7 @@ async function handleTradeSelectMenu(interaction) {
 
     await interaction.update({
       content: `📋 **Echange en cours**\n\n` +
-        `**Vous donnez:** ${giveCard?.name || trade.giveCardId}\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n` +
         `**Booster cible:** ${booster?.name || boosterId}\n` +
         `**Cartes disponibles:** ${totalCards} (triees par quantite)\n\n` +
         `**Etape 4:** Selectionnez la carte a recevoir`,
@@ -452,8 +452,8 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
     .setTitle('Confirmation d\'echange')
     .setDescription(
       `**${initiator.username}** propose un echange a **${target}**\n\n` +
-      `${initiator.username} donne: **${giveCard?.name || 'Carte inconnue'}** (${giveCard?.rarityName || 'Inconnue'})\n` +
-      `${target.username} donne: **${receiveCard?.name || 'Carte inconnue'}** (${receiveCard?.rarityName || 'Inconnue'})\n\n` +
+      `${initiator.username} donne: **${giveCard?.name || 'Carte inconnue'}** #${giveCard?.id || '?'} (${giveCard?.rarityName || 'Inconnue'})\n` +
+      `${target.username} donne: **${receiveCard?.name || 'Carte inconnue'}** #${receiveCard?.id || '?'} (${receiveCard?.rarityName || 'Inconnue'})\n\n` +
       `${target}, acceptez-vous cet echange ?\n` +
       `Expire <t:${expirationTimestamp}:R>`
     );
@@ -539,7 +539,7 @@ async function handleTradeButton(interaction) {
       if (canOffer.length > 0) {
         description += '**Vous pouvez offrir** (vos doublons):\n';
         for (const [boosterName, cards] of Object.entries(offerByBooster)) {
-          const cardList = cards.slice(0, 5).map(c => `${rarityEmoji(c.rarity)}${c.name} x${c.quantity}`).join(', ');
+          const cardList = cards.slice(0, 5).map(c => `${rarityEmoji(c.rarity)}${c.name} #${c.id} x${c.quantity}`).join(', ');
           const more = cards.length > 5 ? ` +${cards.length - 5}` : '';
           description += `📦 ${boosterName}: ${cardList}${more}\n`;
         }
@@ -550,7 +550,7 @@ async function handleTradeButton(interaction) {
       if (canReceive.length > 0) {
         description += '**Vous pouvez recevoir** (leurs doublons):\n';
         for (const [boosterName, cards] of Object.entries(receiveByBooster)) {
-          const cardList = cards.slice(0, 5).map(c => `${rarityEmoji(c.rarity)}${c.name} x${c.quantity}`).join(', ');
+          const cardList = cards.slice(0, 5).map(c => `${rarityEmoji(c.rarity)}${c.name} #${c.id} x${c.quantity}`).join(', ');
           const more = cards.length > 5 ? ` +${cards.length - 5}` : '';
           description += `📦 ${boosterName}: ${cardList}${more}\n`;
         }
@@ -615,7 +615,7 @@ async function handleTradeButton(interaction) {
     } else {
       const giveCard = getCardInfo(trade.giveCardId);
       content = `📋 **Echange en cours**\n\n` +
-        `**Vous donnez:** ${giveCard?.name || trade.giveCardId}\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n` +
         `**Booster cible:** ${booster?.name || boosterId}\n` +
         `**Cartes disponibles:** ${totalCards} (triees par quantite)\n\n` +
         `**Etape 4:** Selectionnez la carte a recevoir`;
@@ -688,8 +688,8 @@ async function handleTradeButton(interaction) {
       .setColor('#00FF00')
       .setTitle('Echange reussi !')
       .setDescription(
-        `${initiator} a recu **${receiveCard?.name || 'Carte'}**\n` +
-        `${target} a recu **${giveCard?.name || 'Carte'}**`
+        `${initiator} a recu **${receiveCard?.name || 'Carte'}** #${receiveCard?.id || '?'}\n` +
+        `${target} a recu **${giveCard?.name || 'Carte'}** #${giveCard?.id || '?'}`
       );
 
     await interaction.update({
