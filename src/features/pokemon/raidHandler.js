@@ -260,6 +260,7 @@ ${participantData.map(p => `- ${p.username}: ${p.team.map(t => t.name).join(', '
 REGLES:
 - Les noms sont en francais, refere-toi aux types Pokemon officiels
 - Les equipes peuvent contenir des cartes Dresseur/Objet qui aident au combat
+- Prends en compte les strategies Pokemon reelles (certains Pokemon faibles ont des strats viables)
 
 FACTEURS (a peser ensemble pour decider victoire/defaite):
 + Nombre de Pokemon des joueurs (${totalParticipantPokemon} contre 1)
