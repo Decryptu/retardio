@@ -266,6 +266,7 @@ FACTEURS (a peser ensemble pour decider victoire/defaite):
 + Nombre de Pokemon des joueurs (${totalParticipantPokemon} contre 1)
 + Avantages de types contre le boss
 + Cartes Dresseur/Objet de support
++ Synergies entre Pokemon de l'equipe
 - Niveau eleve du boss (Nv${raid.level})
 - Boss a un avantage de type
 
