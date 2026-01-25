@@ -257,11 +257,16 @@ Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.
 Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
 ${participantData.map(p => `- ${p.username}: ${p.team.map(t => t.name).join(', ')}`).join('\n')}
 
-REGLES IMPORTANTES:
-- C'est un combat ${totalParticipantPokemon} contre 1
-- Les equipes peuvent contenir des Pokemon, mais aussi des cartes Dresseur/Objet qui aident au combat
-- Les noms sont en francais mais refere-toi aux types officiels Pokemon
-- Equilibre: boss Nv100 seul contre 1-3 Pokemon = dur, mais contre 6+ Pokemon = avantage joueurs
+REGLES:
+- Les noms sont en francais, refere-toi aux types Pokemon officiels
+- Les equipes peuvent contenir des cartes Dresseur/Objet qui aident au combat
+
+FACTEURS (a peser ensemble pour decider victoire/defaite):
++ Nombre de Pokemon des joueurs (${totalParticipantPokemon} contre 1)
++ Avantages de types contre le boss
++ Cartes Dresseur/Objet de support
+- Niveau eleve du boss (Nv${raid.level})
+- Boss a un avantage de type
 
 FAIBLESSES DES TYPES (boss subit x2 degats):
 Psy: Insecte, Spectre, Tenebre | Eau: Plante, Electrik | Feu: Eau, Roche, Sol
