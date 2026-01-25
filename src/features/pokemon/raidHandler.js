@@ -257,13 +257,24 @@ Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.
 Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
 ${participantData.map(p => `- ${p.username}: ${p.team.map(t => t.name).join(', ')}`).join('\n')}
 
-REGLES IMPORTANTES:
-- C'est un combat ${totalParticipantPokemon} contre 1 (avantage numerique aux dresseurs)
-- Respecte les avantages de types Pokemon (Eau>Feu, Feu>Plante, Plante>Eau, Psy>Combat, Combat ne peut PAS toucher Spectre, etc)
-- Les noms sont en francais, identifie correctement les types de chaque Pokemon
-- Boss plus haut niveau = plus difficile (Nv100 legendaire = tres dur)
-- Plus de participants = meilleures chances
-- Garde le combat realiste selon la strategie Pokemon
+REGLES:
+- Les noms sont en francais, refere-toi aux types Pokemon officiels
+- Les equipes peuvent contenir des cartes Dresseur/Objet qui aident au combat
+- Prends en compte les strategies Pokemon reelles (certains Pokemon faibles ont des strats viables)
+
+FACTEURS (a peser ensemble pour decider victoire/defaite):
++ Nombre de Pokemon des joueurs (${totalParticipantPokemon} contre 1)
++ Avantages de types contre le boss
++ Cartes Dresseur/Objet de support
++ Synergies entre Pokemon de l'equipe
+- Niveau eleve du boss (Nv${raid.level})
+- Boss a un avantage de type
+
+FAIBLESSES DES TYPES (boss subit x2 degats):
+Psy: Insecte, Spectre, Tenebre | Eau: Plante, Electrik | Feu: Eau, Roche, Sol
+Plante: Feu, Glace, Vol, Poison, Insecte | Vol: Electrik, Glace, Roche | Combat: Vol, Psy, Fee
+Spectre: Spectre, Tenebre | Dragon: Glace, Dragon, Fee | Tenebre: Combat, Insecte, Fee
+Acier: Feu, Combat, Sol | Fee: Poison, Acier
 
 Genere un objet JSON avec:
 - "victory": boolean (les joueurs ont-ils gagne?)
