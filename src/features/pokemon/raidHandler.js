@@ -259,11 +259,23 @@ ${participantData.map(p => `- ${p.username}: ${p.team.map(t => t.name).join(', '
 
 REGLES IMPORTANTES:
 - C'est un combat ${totalParticipantPokemon} contre 1 (avantage numerique aux dresseurs)
-- Respecte les avantages de types Pokemon (Eau>Feu, Feu>Plante, Plante>Eau, Psy>Combat, Combat ne peut PAS toucher Spectre, etc)
-- Les noms sont en francais, identifie correctement les types de chaque Pokemon
+- Les noms sont en francais mais refere-toi aux types officiels Pokemon
 - Boss plus haut niveau = plus difficile (Nv100 legendaire = tres dur)
 - Plus de participants = meilleures chances
-- Garde le combat realiste selon la strategie Pokemon
+
+TYPES ET FAIBLESSES (le boss SUBIT des degats x2 de ces types):
+- Psy (Mew, Mewtwo, Abra...): faible contre Insecte, Spectre, Tenebre
+- Eau: faible contre Plante, Electrik
+- Feu: faible contre Eau, Roche, Sol
+- Plante: faible contre Feu, Glace, Vol, Poison, Insecte
+- Vol: faible contre Electrik, Glace, Roche
+- Combat: faible contre Vol, Psy, Fee
+- Spectre: faible contre Spectre, Tenebre
+- Dragon: faible contre Glace, Dragon, Fee
+- Tenebre: faible contre Combat, Insecte, Fee
+- Acier: faible contre Feu, Combat, Sol
+- Fee: faible contre Poison, Acier
+IMPORTANT: Insecte bat Psy (pas l'inverse!), Tenebre bat Psy, Spectre bat Psy
 
 Genere un objet JSON avec:
 - "victory": boolean (les joueurs ont-ils gagne?)
