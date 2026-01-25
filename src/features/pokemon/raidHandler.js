@@ -259,23 +259,16 @@ ${participantData.map(p => `- ${p.username}: ${p.team.map(t => t.name).join(', '
 
 REGLES IMPORTANTES:
 - C'est un combat ${totalParticipantPokemon} contre 1 (avantage numerique aux dresseurs)
+- Les equipes peuvent contenir des Pokemon, mais aussi des cartes Dresseur/Objet qui aident au combat
 - Les noms sont en francais mais refere-toi aux types officiels Pokemon
 - Boss plus haut niveau = plus difficile (Nv100 legendaire = tres dur)
 - Plus de participants = meilleures chances
 
-TYPES ET FAIBLESSES (le boss SUBIT des degats x2 de ces types):
-- Psy (Mew, Mewtwo, Abra...): faible contre Insecte, Spectre, Tenebre
-- Eau: faible contre Plante, Electrik
-- Feu: faible contre Eau, Roche, Sol
-- Plante: faible contre Feu, Glace, Vol, Poison, Insecte
-- Vol: faible contre Electrik, Glace, Roche
-- Combat: faible contre Vol, Psy, Fee
-- Spectre: faible contre Spectre, Tenebre
-- Dragon: faible contre Glace, Dragon, Fee
-- Tenebre: faible contre Combat, Insecte, Fee
-- Acier: faible contre Feu, Combat, Sol
-- Fee: faible contre Poison, Acier
-IMPORTANT: Insecte bat Psy (pas l'inverse!), Tenebre bat Psy, Spectre bat Psy
+FAIBLESSES DES TYPES (boss subit x2 degats):
+Psy: Insecte, Spectre, Tenebre | Eau: Plante, Electrik | Feu: Eau, Roche, Sol
+Plante: Feu, Glace, Vol, Poison, Insecte | Vol: Electrik, Glace, Roche | Combat: Vol, Psy, Fee
+Spectre: Spectre, Tenebre | Dragon: Glace, Dragon, Fee | Tenebre: Combat, Insecte, Fee
+Acier: Feu, Combat, Sol | Fee: Poison, Acier
 
 Genere un objet JSON avec:
 - "victory": boolean (les joueurs ont-ils gagne?)
