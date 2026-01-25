@@ -258,11 +258,10 @@ Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Po
 ${participantData.map(p => `- ${p.username}: ${p.team.map(t => t.name).join(', ')}`).join('\n')}
 
 REGLES IMPORTANTES:
-- C'est un combat ${totalParticipantPokemon} contre 1 (avantage numerique aux dresseurs)
+- C'est un combat ${totalParticipantPokemon} contre 1
 - Les equipes peuvent contenir des Pokemon, mais aussi des cartes Dresseur/Objet qui aident au combat
 - Les noms sont en francais mais refere-toi aux types officiels Pokemon
-- Boss plus haut niveau = plus difficile (Nv100 legendaire = tres dur)
-- Plus de participants = meilleures chances
+- Equilibre: boss Nv100 seul contre 1-3 Pokemon = dur, mais contre 6+ Pokemon = avantage joueurs
 
 FAIBLESSES DES TYPES (boss subit x2 degats):
 Psy: Insecte, Spectre, Tenebre | Eau: Plante, Electrik | Feu: Eau, Roche, Sol
