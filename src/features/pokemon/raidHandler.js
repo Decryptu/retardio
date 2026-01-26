@@ -7,30 +7,16 @@ const {
   MessageFlags,
 } = require("discord.js");
 const { getCardInfo } = require("../../services/cardGenerator");
-const {
-  getTeam,
-  hasTeamMember,
-  addCardToUser,
-  addMoney,
-} = require("../../services/userManager");
-const {
-  generateRaidBossImage,
-  generateRaidResultImage,
-} = require("../../services/imageGenerator");
+const { getTeam, hasTeamMember, addCardToUser, addMoney } = require("../../services/userManager");
+const { generateRaidBossImage, generateRaidResultImage } = require("../../services/imageGenerator");
 const config = require("../../config");
 const cards = require("../../../data/cards.json");
 const { ADMIN_WHITELIST } = require("./tradeHandler");
 
-// Raid actif (un seul a la fois)
 let activeRaid = null;
 
-// Duree du raid en ms (5 minutes)
 const RAID_DURATION = 0.16 * 60 * 1000;
 
-/**
- * Selectionne un boss de raid aleatoire
- * Probabilites: 50% uncommon, 40% rare, 10% legendary
- */
 function selectRaidBoss() {
   const rand = Math.random();
   let targetRarity;
@@ -47,7 +33,6 @@ function selectRaidBoss() {
     level = 100;
   }
 
-  // Collecter toutes les cartes de cette rarete (hors promo)
   const eligibleCards = Object.values(cards).filter((card) => {
     if (card.isPromo || String(card.id).includes("promo")) return false;
     return card.rarity === targetRarity;
@@ -57,19 +42,14 @@ function selectRaidBoss() {
     const fallbackCards = Object.values(cards).filter(
       (card) => !card.isPromo && !String(card.id).includes("promo")
     );
-    const randomCard =
-      fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
+    const randomCard = fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
     return { card: getCardInfo(randomCard.id), level: 50 };
   }
 
-  const randomCard =
-    eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
+  const randomCard = eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
   return { card: getCardInfo(randomCard.id), level };
 }
 
-/**
- * Demarre un raid
- */
 async function startRaid(client) {
   if (activeRaid) {
     console.log("Un raid est deja en cours");
@@ -84,13 +64,9 @@ async function startRaid(client) {
 
   const { card: bossCard, level } = selectRaidBoss();
 
-  // Generer l'image du boss
   const bossImageBuffer = await generateRaidBossImage(bossCard, level);
-  const attachment = new AttachmentBuilder(bossImageBuffer, {
-    name: "raid_boss.png",
-  });
+  const attachment = new AttachmentBuilder(bossImageBuffer, { name: "raid_boss.png" });
 
-  // Creer le bouton pour rejoindre
   const joinButton = new ButtonBuilder()
     .setCustomId("raid_join")
     .setLabel("Rejoindre le Raid")
@@ -115,11 +91,8 @@ async function startRaid(client) {
       `Rejoignez le raid avec votre equipe pour avoir une chance de capturer ce Pokemon !`
     )
     .setImage("attachment://raid_boss.png")
-    .setFooter({
-      text: "Utilisez /team pour configurer votre equipe avant de rejoindre !",
-    });
+    .setFooter({ text: "Utilisez /team pour configurer votre equipe avant de rejoindre !" });
 
-  // Send without content to avoid showing attachment twice
   const message = await channel.send({
     content: "<@&1464335798341206046>",
     embeds: [embed],
@@ -128,28 +101,23 @@ async function startRaid(client) {
     allowedMentions: { roles: ["1464335798341206046"] },
   });
 
-  // Stocker le raid actif
   activeRaid = {
     messageId: message.id,
     channelId: channel.id,
     bossCard,
     level,
-    participants: new Map(), // userId -> { username, team }
+    participants: new Map(),
     endTime,
     client,
     imageBuffer: bossImageBuffer,
   };
 
-  // Programmer la fin du raid
   setTimeout(() => executeRaid(), RAID_DURATION);
 
   console.log(`Raid demarre: ${bossCard.name} Nv.${level}`);
   return activeRaid;
 }
 
-/**
- * Gere le bouton pour rejoindre le raid
- */
 async function handleRaidJoin(interaction) {
   if (!activeRaid) {
     return interaction.reply({
@@ -160,7 +128,6 @@ async function handleRaidJoin(interaction) {
 
   const userId = interaction.user.id;
 
-  // Verifier si l'utilisateur a deja rejoint
   if (activeRaid.participants.has(userId)) {
     return interaction.reply({
       content: "✅ Vous avez deja rejoint ce raid !",
@@ -168,7 +135,6 @@ async function handleRaidJoin(interaction) {
     });
   }
 
-  // Verifier si l'utilisateur a une equipe
   if (!hasTeamMember(userId)) {
     return interaction.reply({
       content:
@@ -178,20 +144,17 @@ async function handleRaidJoin(interaction) {
     });
   }
 
-  // Obtenir l'equipe du joueur
   const team = getTeam(userId);
   const teamCards = team
     .filter((cardId) => cardId !== null)
     .map((cardId) => getCardInfo(cardId))
     .filter((card) => card !== null);
 
-  // Ajouter le participant
   activeRaid.participants.set(userId, {
     username: interaction.user.username,
     team: teamCards,
   });
 
-  // Mettre a jour le message avec le nombre de participants (content only)
   try {
     const channel = interaction.client.channels.cache.get(activeRaid.channelId);
     const message = await channel.messages.fetch(activeRaid.messageId);
@@ -201,7 +164,6 @@ async function handleRaidJoin(interaction) {
       .join(", ");
 
     const contentText = `**Participants (${activeRaid.participants.size}):** ${participantMentions}`;
-
     await message.edit({ content: contentText });
   } catch (error) {
     console.error("Erreur lors de la mise a jour du message de raid:", error);
@@ -215,9 +177,24 @@ async function handleRaidJoin(interaction) {
   });
 }
 
-/**
- * Execute le combat du raid via OpenAI (gpt-5-nano via Responses API)
- */
+function clampBattleLog(input, maxChars = 400, maxWords = 60) {
+  let text = String(input || "").trim();
+  if (!text) return "Le combat fut intense...";
+
+  text = text.replace(/\r\n/g, "\n");
+
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length > maxWords) text = words.slice(0, maxWords).join(" ");
+
+  if (text.length > maxChars) {
+    text = text.slice(0, maxChars);
+    const lastSpace = text.lastIndexOf(" ");
+    if (lastSpace > 200) text = text.slice(0, lastSpace);
+  }
+
+  return text.trim() || "Le combat fut intense...";
+}
+
 async function executeRaid() {
   if (!activeRaid) return;
 
@@ -231,9 +208,7 @@ async function executeRaid() {
     const embed = new EmbedBuilder()
       .setColor("#888888")
       .setTitle("Raid echoue...")
-      .setDescription(
-        `Le **${raid.bossCard.name}** s'est enfui car personne n'a rejoint le raid.`
-      );
+      .setDescription(`Le **${raid.bossCard.name}** s'est enfui car personne n'a rejoint le raid.`);
 
     try {
       const message = await channel.messages.fetch(raid.messageId);
@@ -255,39 +230,36 @@ async function executeRaid() {
     });
   }
 
-  const totalParticipantPokemon = participantData.reduce(
-    (sum, p) => sum + p.team.length,
-    0
-  );
+  const totalParticipantPokemon = participantData.reduce((sum, p) => sum + p.team.length, 0);
 
   const prompt = `Tu simules un combat de raid Pokemon.
 
 IMPORTANT:
-- Tu dois répondre UNIQUEMENT par un JSON valide sur UNE SEULE LIGNE.
-- Aucun texte avant ou après.
-- Aucun markdown.
-- Aucune explication.
-- Le JSON doit contenir exactement ces deux clés :
-  - "victory" (boolean)
-  - "battleLog" (string)
-- battleLog : 3 à 5 lignes max, séparées par \\n.
+- Tu dois repondre UNIQUEMENT par un JSON valide sur UNE SEULE LIGNE.
+- Aucun texte avant ou apres. Aucun markdown. Aucune explication.
+- Le JSON doit contenir exactement ces deux cles: "victory" (boolean) et "battleLog" (string).
+- battleLog doit respecter STRICTEMENT ces limites:
+  - maximum 400 caracteres
+  - maximum 60 mots
+- battleLog: 3 a 5 lignes max, separees par \\n.
+- Si tu depasses une limite, tu raccourcis toi-meme pour respecter 400 caracteres et 60 mots.
 
 Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
-Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokémon au total):
+Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
 ${participantData
       .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
       .join("\n")}
 
-RÈGLES:
-- Noms en français, types Pokémon officiels.
-- Les équipes peuvent contenir des cartes Dresseur / Objet.
-- Prends en compte les vraies stratégies Pokémon.
+REGLES:
+- Noms en francais, types Pokemon officiels.
+- Les equipes peuvent contenir des cartes Dresseur / Objet.
+- Prends en compte les strategies Pokemon.
 
 FACTEURS:
-+ Nombre de Pokémon des joueurs (${totalParticipantPokemon}) vs boss (1)
++ Nombre de Pokemon des joueurs (${totalParticipantPokemon}) vs boss (1)
 + Avantages de type
 + Synergies
-- Niveau élevé du boss (Nv${raid.level})
+- Niveau eleve du boss (Nv${raid.level})
 - Avantage de type du boss
 
 FAIBLESSES_DES_TYPES:
@@ -324,15 +296,10 @@ EXEMPLE STRICT:
             content:
               'Output ONLY a single-line JSON object with keys "victory" and "battleLog". No other text.',
           },
-          {
-            role: "user",
-            content: prompt,
-          },
+          { role: "user", content: prompt },
         ],
-
-        // IMPORTANT: give tokens to OUTPUT, not reasoning
-        max_completion_tokens: 800,
-        reasoning_effort: "none"
+        max_completion_tokens: 600,
+        reasoning_effort: "none",
       }),
     });
 
@@ -342,7 +309,6 @@ EXEMPLE STRICT:
     }
 
     const data = await response.json();
-
     const content = data?.choices?.[0]?.message?.content || "";
 
     if (!content.trim()) {
@@ -360,31 +326,23 @@ EXEMPLE STRICT:
     const parsed = JSON.parse(jsonStr);
 
     result.victory = !!parsed.victory;
-    result.battleLog = String(parsed.battleLog || "").replace(/\\n/g, "\n");
-
-    if (!result.battleLog.trim()) {
-      result.battleLog = "Le combat fut intense...";
-    }
-
+    result.battleLog = clampBattleLog(String(parsed.battleLog || "").replace(/\\n/g, "\n"), 400, 60);
   } catch (error) {
     console.error("Erreur OpenAI pour le raid:", error);
     result.victory = Math.random() < 0.6;
     result.battleLog = result.victory
       ? "Les dresseurs ont combine leurs forces...\nLe boss a ete vaincu !"
       : "Le boss etait trop puissant...\nLes dresseurs ont du battre en retraite.";
+    result.battleLog = clampBattleLog(result.battleLog, 400, 60);
   }
 
   const participantIds = Array.from(raid.participants.keys());
 
   let bonus = 0;
   if (result.victory) {
-    if (raid.level === 100) {
-      bonus = Math.floor(Math.random() * 501) + 500;
-    } else if (raid.level === 75) {
-      bonus = Math.floor(Math.random() * 251) + 250;
-    } else {
-      bonus = Math.floor(Math.random() * 151) + 100;
-    }
+    if (raid.level === 100) bonus = Math.floor(Math.random() * 501) + 500;
+    else if (raid.level === 75) bonus = Math.floor(Math.random() * 251) + 250;
+    else bonus = Math.floor(Math.random() * 151) + 100;
 
     for (const participantId of participantIds) {
       addCardToUser(participantId, raid.bossCard.id);
@@ -400,9 +358,7 @@ EXEMPLE STRICT:
     result.battleLog,
     bonus
   );
-  const attachment = new AttachmentBuilder(resultImageBuffer, {
-    name: "raid_result.png",
-  });
+  const attachment = new AttachmentBuilder(resultImageBuffer, { name: "raid_result.png" });
 
   const resultEmbed = new EmbedBuilder()
     .setColor(result.victory ? "#00FF00" : "#FF0000")
@@ -442,14 +398,10 @@ EXEMPLE STRICT:
   }
 
   console.log(
-    `Raid termine: ${raid.bossCard.name} - ${result.victory ? "Victoire" : "Defaite"
-    }`
+    `Raid termine: ${raid.bossCard.name} - ${result.victory ? "Victoire" : "Defaite"}`
   );
 }
 
-/**
- * Commande admin pour forcer un raid
- */
 async function handleForceRaidCommand(interaction) {
   const adminId = interaction.user.id;
 
@@ -475,9 +427,6 @@ async function handleForceRaidCommand(interaction) {
   await startRaid(interaction.client);
 }
 
-/**
- * Verifie si un raid doit etre declenche (appele a chaque message)
- */
 async function checkRaidTrigger(client) {
   if (activeRaid) return false;
 
@@ -490,9 +439,6 @@ async function checkRaidTrigger(client) {
   return false;
 }
 
-/**
- * Gere les boutons du raid
- */
 async function handleRaidButton(interaction) {
   const customId = interaction.customId;
 
@@ -501,9 +447,6 @@ async function handleRaidButton(interaction) {
   }
 }
 
-/**
- * Verifie s'il y a un raid actif
- */
 function hasActiveRaid() {
   return activeRaid !== null;
 }
