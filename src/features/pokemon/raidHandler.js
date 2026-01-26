@@ -278,7 +278,7 @@ Fée = [Poison, Acier]
 Insecte = [Feu, Vol, Roche]
 
 EXEMPLE STRICT:
-{"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
+{"victory":true,"battleLog":"Invente un scénario de combat Pokémon ici."}`;
 
   const result = { victory: false, battleLog: "Le combat fut intense..." };
 
