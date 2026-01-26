@@ -331,8 +331,8 @@ EXEMPLE STRICT:
         ],
 
         // IMPORTANT: give tokens to OUTPUT, not reasoning
-        max_completion_tokens: 800
-        // NO reasoning_effort here
+        max_completion_tokens: 800,
+        reasoning_effort: "none"
       }),
     });
 
