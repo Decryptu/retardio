@@ -398,7 +398,7 @@ async function showCardsShop(interaction, ownerId, page = 0) {
 /**
  * Affiche l'aperçu d'un booster avec image et option d'achat
  */
-async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
+async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quantity = 1) {
   const userMoney = getMoney(ownerId);
   const booster = boosters[boosterId];
 
@@ -410,25 +410,29 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
     });
   }
 
-  const canAfford = userMoney >= booster.price;
+  const totalPrice = booster.price * quantity;
+  const canAfford = userMoney >= totalPrice;
+  const maxAffordable = Math.floor(userMoney / booster.price);
 
   const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
   const files = [];
 
   let statusMessage = '';
   if (!canAfford) {
-    statusMessage = `\n\n🔒 **Fonds insuffisants.** (${userMoney.toLocaleString('fr-FR')} / ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL})`;
+    statusMessage = `\n\n🔒 **Fonds insuffisants.** (${userMoney.toLocaleString('fr-FR')} / ${totalPrice.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL})`;
   }
 
   const embed = new EmbedBuilder()
     .setColor('#3498DB')
     .setTitle(`${booster.name}`)
     .setDescription(
-      `**Prix:** ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
+      `**Prix unitaire:** ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
       `**Cartes par pack:** ${booster.cardsPerPack}\n` +
       `**Cartes totales:** ${booster.totalCards}\n` +
-      `**Garantie:** ${booster.guarantees?.minRarity || 'Aucune'}` +
-      (canAfford ? `\n\n**Solde après achat:** ${(userMoney - booster.price).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` : '') +
+      `**Garantie:** ${booster.guarantees?.minRarity || 'Aucune'}\n\n` +
+      `**Quantité:** ${quantity}\n` +
+      `**Total:** ${totalPrice.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` +
+      (canAfford ? `\n**Solde après achat:** ${(userMoney - totalPrice).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` : '') +
       statusMessage
     );
 
@@ -440,33 +444,43 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId) {
     embed.setFooter({ text: 'Image non disponible' });
   }
 
-  const buttons = [];
+  // Quantity buttons
+  const quantityRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`shop_qty_minus_${boosterId}_${ownerId}_${quantity}`)
+      .setLabel('-')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(quantity <= 1),
+    new ButtonBuilder()
+      .setCustomId(`shop_qty_display_${ownerId}`)
+      .setLabel(`${quantity}`)
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(true),
+    new ButtonBuilder()
+      .setCustomId(`shop_qty_plus_${boosterId}_${ownerId}_${quantity}`)
+      .setLabel('+')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(quantity >= maxAffordable || maxAffordable === 0)
+  );
 
-  const confirmButton = new ButtonBuilder()
-    .setCustomId(`shop_confirm_booster_${boosterId}_${ownerId}`)
-    .setLabel('Acheter')
-    .setStyle(canAfford ? ButtonStyle.Success : ButtonStyle.Secondary)
-    .setDisabled(!canAfford);
-
-  if (canAfford) {
-    confirmButton.setEmoji('💰');
-  }
-
-  buttons.push(confirmButton);
-
-  const backButton = new ButtonBuilder()
-    .setCustomId(`shop_category_boosters_${ownerId}`)
-    .setLabel('Retour')
-    .setStyle(ButtonStyle.Secondary)
-    .setEmoji('⬅️');
-
-  buttons.push(backButton);
-
-  const row = new ActionRowBuilder().addComponents(buttons);
+  // Action buttons
+  const actionRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`shop_confirm_booster_${boosterId}_${ownerId}_${quantity}`)
+      .setLabel(quantity > 1 ? `Acheter x${quantity}` : 'Acheter')
+      .setStyle(canAfford ? ButtonStyle.Success : ButtonStyle.Secondary)
+      .setEmoji(canAfford ? '💰' : undefined)
+      .setDisabled(!canAfford),
+    new ButtonBuilder()
+      .setCustomId(`shop_category_boosters_${ownerId}`)
+      .setLabel('Retour')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('⬅️')
+  );
 
   await interaction.update({
     embeds: [embed],
-    components: [row],
+    components: [quantityRow, actionRow],
     files: files
   });
 }
@@ -584,7 +598,7 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
 /**
  * Effectue l'achat d'un booster
  */
-async function purchaseBooster(interaction, boosterId, ownerId) {
+async function purchaseBooster(interaction, boosterId, ownerId, quantity = 1) {
   const userMoney = getMoney(ownerId);
   const booster = boosters[boosterId];
 
@@ -596,7 +610,9 @@ async function purchaseBooster(interaction, boosterId, ownerId) {
     });
   }
 
-  if (userMoney < booster.price) {
+  const totalPrice = booster.price * quantity;
+
+  if (userMoney < totalPrice) {
     return interaction.update({
       content: `❌ Vous n'avez pas assez de Poké Dollars !`,
       embeds: [],
@@ -604,7 +620,7 @@ async function purchaseBooster(interaction, boosterId, ownerId) {
     });
   }
 
-  const success = removeMoney(ownerId, booster.price);
+  const success = removeMoney(ownerId, totalPrice);
   if (!success) {
     return interaction.update({
       content: '❌ Erreur lors de la transaction.',
@@ -613,24 +629,32 @@ async function purchaseBooster(interaction, boosterId, ownerId) {
     });
   }
 
-  addBoosterToInventory(ownerId, boosterId);
+  addBoosterToInventory(ownerId, boosterId, quantity);
+
+  const quantityText = quantity > 1 ? `**${quantity}x** ` : '';
+  const boosterWord = quantity > 1 ? 'boosters ont été ajoutés' : 'booster a été ajouté';
 
   const embed = new EmbedBuilder()
     .setColor('#2ECC71')
     .setTitle('Achat réussi !')
     .setDescription(
-      `Vous avez acheté **${booster.name}** !\n\n` +
-      `**Coût:** ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
+      `Vous avez acheté ${quantityText}**${booster.name}** !\n\n` +
+      `**Coût:** ${totalPrice.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
       `**Nouveau solde:** ${getMoney(ownerId).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
-      `Le booster a été ajouté à votre inventaire.\nUtilisez \`/booster\` pour l'ouvrir !`
+      `Le${quantity > 1 ? 's' : ''} ${boosterWord} à votre inventaire.`
     );
 
-  const continueButton = new ButtonBuilder()
-    .setCustomId(`shop_back_main_${ownerId}`)
-    .setLabel('Continuer les achats')
-    .setStyle(ButtonStyle.Primary);
-
-  const row = new ActionRowBuilder().addComponents(continueButton);
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`booster_confirm_open_${boosterId}_${ownerId}`)
+      .setLabel('Ouvrir un booster')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🎴'),
+    new ButtonBuilder()
+      .setCustomId(`shop_back_main_${ownerId}`)
+      .setLabel('Continuer les achats')
+      .setStyle(ButtonStyle.Secondary)
+  );
 
   await interaction.update({
     embeds: [embed],
@@ -805,13 +829,17 @@ async function handleShopCommands(interaction) {
  */
 function extractOwnerId(customId) {
   const parts = customId.split('_');
-  // Pour les customIds avec page (pagination buttons ou select menus avec page)
+  // Pour les customIds avec page/quantity (pagination buttons, select menus avec page, ou qty buttons)
   // L'ownerId est l'avant-dernier element
   // Patterns: shop_booster_page_prev/next_ownerId_page, shop_card_page_prev/next_ownerId_page
   //           shop_booster_select_ownerId_page, shop_card_select_ownerId_page
+  //           shop_qty_{action}_{boosterId}_{ownerId}_{qty}
+  //           shop_confirm_booster_{boosterId}_{ownerId}_{qty}
   if (customId.includes('_page_') ||
       customId.startsWith('shop_booster_select_') ||
-      customId.startsWith('shop_card_select_')) {
+      customId.startsWith('shop_card_select_') ||
+      customId.startsWith('shop_qty_') ||
+      (customId.includes('_confirm_booster_') && parts.length === 6)) {
     return parts[parts.length - 2];
   }
   return parts[parts.length - 1];
@@ -864,10 +892,20 @@ async function handleShopInteraction(interaction) {
       const currentPage = parseInt(parts[5]);
       const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
       await showCardsShop(interaction, ownerId, newPage);
+    } else if (customId.startsWith('shop_qty_')) {
+      // Format: shop_qty_{action}_{boosterId}_{ownerId}_{currentQty}
+      const parts = customId.split('_');
+      const action = parts[2];
+      const boosterId = parts[3];
+      const currentQty = parseInt(parts[5]);
+      const newQty = action === 'plus' ? currentQty + 1 : currentQty - 1;
+      await showBoosterPurchaseConfirm(interaction, boosterId, ownerId, newQty);
     } else if (customId.includes('_confirm_booster_')) {
+      // Format: shop_confirm_booster_{boosterId}_{ownerId}_{quantity}
       const parts = customId.split('_');
       const boosterId = parts[3];
-      await purchaseBooster(interaction, boosterId, ownerId);
+      const quantity = parseInt(parts[5]) || 1;
+      await purchaseBooster(interaction, boosterId, ownerId, quantity);
     } else if (customId.includes('_confirm_card_')) {
       const parts = customId.split('_');
       const cardId = parts.slice(3, -1).join('_');
