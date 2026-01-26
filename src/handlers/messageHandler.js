@@ -2,6 +2,12 @@ const OpenAI = require("openai");
 const personalities = require("../utils/personalities.js");
 const { processMessageReward } = require("../services/userManager.js");
 
+// Channels where pokedollar rewards are disabled
+const REWARD_BLACKLIST_CHANNELS = [
+	"1284811914437988406",
+	"1359148815008923840",
+];
+
 class MessageHandler {
 	constructor(client, config) {
 		this.client = client;
@@ -63,7 +69,7 @@ class MessageHandler {
 		);
 
 		// Traiter les récompenses en Poké Dollars (silencieux)
-		if (!message.author.bot) {
+		if (!message.author.bot && !REWARD_BLACKLIST_CHANNELS.includes(message.channelId)) {
 			processMessageReward(message.author.id, message.content);
 		}
 
