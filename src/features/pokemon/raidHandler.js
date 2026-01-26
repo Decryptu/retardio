@@ -1,15 +1,30 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
-const OpenAI = require('openai');
-const { getCardInfo } = require('../../services/cardGenerator');
-const { getTeam, hasTeamMember, addCardToUser, addMoney } = require('../../services/userManager');
-const { generateRaidBossImage, generateRaidResultImage } = require('../../services/imageGenerator');
-const config = require('../../config');
-const cards = require('../../../data/cards.json');
-const { ADMIN_WHITELIST } = require('./tradeHandler');
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  AttachmentBuilder,
+  MessageFlags,
+} = require("discord.js");
+const OpenAI = require("openai");
+const { getCardInfo } = require("../../services/cardGenerator");
+const {
+  getTeam,
+  hasTeamMember,
+  addCardToUser,
+  addMoney,
+} = require("../../services/userManager");
+const {
+  generateRaidBossImage,
+  generateRaidResultImage,
+} = require("../../services/imageGenerator");
+const config = require("../../config");
+const cards = require("../../../data/cards.json");
+const { ADMIN_WHITELIST } = require("./tradeHandler");
 
 // OpenAI client
 const openai = new OpenAI({
-  apiKey: config.openaiApiKey
+  apiKey: config.openaiApiKey,
 });
 
 // Raid actif (un seul a la fois)
@@ -28,33 +43,33 @@ function selectRaidBoss() {
   let level;
 
   if (rand < 0.5) {
-    targetRarity = 'uncommon';
+    targetRarity = "uncommon";
     level = 50;
   } else if (rand < 0.9) {
-    targetRarity = 'rare';
+    targetRarity = "rare";
     level = 75;
   } else {
-    targetRarity = 'legendary';
+    targetRarity = "legendary";
     level = 100;
   }
 
   // Collecter toutes les cartes de cette rarete (hors promo)
-  const eligibleCards = Object.values(cards).filter(card => {
-    // Exclure les promos
-    if (card.isPromo || String(card.id).includes('promo')) return false;
+  const eligibleCards = Object.values(cards).filter((card) => {
+    if (card.isPromo || String(card.id).includes("promo")) return false;
     return card.rarity === targetRarity;
   });
 
   if (eligibleCards.length === 0) {
-    // Fallback sur n'importe quelle carte non-promo
-    const fallbackCards = Object.values(cards).filter(card =>
-      !card.isPromo && !String(card.id).includes('promo')
+    const fallbackCards = Object.values(cards).filter(
+      (card) => !card.isPromo && !String(card.id).includes("promo")
     );
-    const randomCard = fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
+    const randomCard =
+      fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
     return { card: getCardInfo(randomCard.id), level: 50 };
   }
 
-  const randomCard = eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
+  const randomCard =
+    eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
   return { card: getCardInfo(randomCard.id), level };
 }
 
@@ -63,13 +78,13 @@ function selectRaidBoss() {
  */
 async function startRaid(client) {
   if (activeRaid) {
-    console.log('Un raid est deja en cours');
+    console.log("Un raid est deja en cours");
     return null;
   }
 
   const channel = client.channels.cache.get(config.raidChannelId);
   if (!channel) {
-    console.error('Canal de raid introuvable:', config.raidChannelId);
+    console.error("Canal de raid introuvable:", config.raidChannelId);
     return null;
   }
 
@@ -77,47 +92,49 @@ async function startRaid(client) {
 
   // Generer l'image du boss
   const bossImageBuffer = await generateRaidBossImage(bossCard, level);
-  const attachment = new AttachmentBuilder(bossImageBuffer, { name: 'raid_boss.png' });
+  const attachment = new AttachmentBuilder(bossImageBuffer, {
+    name: "raid_boss.png",
+  });
 
   // Creer le bouton pour rejoindre
   const joinButton = new ButtonBuilder()
-    .setCustomId('raid_join')
-    .setLabel('Rejoindre le Raid')
+    .setCustomId("raid_join")
+    .setLabel("Rejoindre le Raid")
     .setStyle(ButtonStyle.Success)
-    .setEmoji('⚔️');
+    .setEmoji("⚔️");
 
   const row = new ActionRowBuilder().addComponents(joinButton);
 
-  const raidTypeText = level === 100 ? '**LEGENDAIRE**' :
-    level === 75 ? '**RARE**' :
-      '**PEU COMMUN**';
+  const raidTypeText =
+    level === 100 ? "**LEGENDAIRE**" : level === 75 ? "**RARE**" : "**PEU COMMUN**";
 
   const endTime = Date.now() + RAID_DURATION;
   const endTimestamp = Math.floor(endTime / 1000);
 
   const embed = new EmbedBuilder()
-    .setColor(level === 100 ? '#FF8000' : level === 75 ? '#2fd2ff' : '#1EFF00')
-    .setTitle('Un Raid est apparu !')
+    .setColor(level === 100 ? "#FF8000" : level === 75 ? "#2fd2ff" : "#1EFF00")
+    .setTitle("Un Raid est apparu !")
     .setDescription(
       `Un **${bossCard.name}** sauvage de niveau **${level}** est apparu !\n\n` +
       `Type de raid: ${raidTypeText}\n\n` +
       `Le combat commence <t:${endTimestamp}:R>\n\n` +
       `Rejoignez le raid avec votre equipe pour avoir une chance de capturer ce Pokemon !`
     )
-    .setImage('attachment://raid_boss.png')
-    .setFooter({ text: 'Utilisez /team pour configurer votre equipe avant de rejoindre !' });
+    .setImage("attachment://raid_boss.png")
+    .setFooter({
+      text: "Utilisez /team pour configurer votre equipe avant de rejoindre !",
+    });
 
   // Send without content to avoid showing attachment twice
   const message = await channel.send({
-    content: '<@&1464335798341206046>',
+    content: "<@&1464335798341206046>",
     embeds: [embed],
     files: [attachment],
     components: [row],
-    allowedMentions: { roles: ['1464335798341206046'] }
+    allowedMentions: { roles: ["1464335798341206046"] },
   });
 
-
-  // Stocker le raid actif (including the image buffer to avoid duplication on edits)
+  // Stocker le raid actif
   activeRaid = {
     messageId: message.id,
     channelId: channel.id,
@@ -126,7 +143,7 @@ async function startRaid(client) {
     participants: new Map(), // userId -> { username, team }
     endTime,
     client,
-    imageBuffer: bossImageBuffer // Store for potential re-use
+    imageBuffer: bossImageBuffer,
   };
 
   // Programmer la fin du raid
@@ -142,8 +159,8 @@ async function startRaid(client) {
 async function handleRaidJoin(interaction) {
   if (!activeRaid) {
     return interaction.reply({
-      content: '❌ Il n\'y a pas de raid en cours.',
-      flags: MessageFlags.Ephemeral
+      content: "❌ Il n'y a pas de raid en cours.",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -152,67 +169,66 @@ async function handleRaidJoin(interaction) {
   // Verifier si l'utilisateur a deja rejoint
   if (activeRaid.participants.has(userId)) {
     return interaction.reply({
-      content: '✅ Vous avez deja rejoint ce raid !',
-      flags: MessageFlags.Ephemeral
+      content: "✅ Vous avez deja rejoint ce raid !",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   // Verifier si l'utilisateur a une equipe
   if (!hasTeamMember(userId)) {
     return interaction.reply({
-      content: '❌ Vous devez avoir au moins un Pokemon dans votre equipe pour rejoindre un raid !\n' +
-        'Utilisez `/team` pour configurer votre equipe.',
-      flags: MessageFlags.Ephemeral
+      content:
+        "❌ Vous devez avoir au moins un Pokemon dans votre equipe pour rejoindre un raid !\n" +
+        "Utilisez `/team` pour configurer votre equipe.",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   // Obtenir l'equipe du joueur
   const team = getTeam(userId);
   const teamCards = team
-    .filter(cardId => cardId !== null)
-    .map(cardId => getCardInfo(cardId))
-    .filter(card => card !== null);
+    .filter((cardId) => cardId !== null)
+    .map((cardId) => getCardInfo(cardId))
+    .filter((card) => card !== null);
 
   // Ajouter le participant
   activeRaid.participants.set(userId, {
     username: interaction.user.username,
-    team: teamCards
+    team: teamCards,
   });
 
-  // Mettre a jour le message avec le nombre de participants
-  // We update the message content (not the embed) to avoid attachment duplication issues
+  // Mettre a jour le message avec le nombre de participants (content only)
   try {
     const channel = interaction.client.channels.cache.get(activeRaid.channelId);
     const message = await channel.messages.fetch(activeRaid.messageId);
 
-    // Build participants list with mentions
     const participantMentions = Array.from(activeRaid.participants.keys())
-      .map(id => `<@${id}>`)
-      .join(', ');
+      .map((id) => `<@${id}>`)
+      .join(", ");
 
     const contentText = `**Participants (${activeRaid.participants.size}):** ${participantMentions}`;
 
-    // Only edit the content, leave embed and attachments untouched
     await message.edit({ content: contentText });
   } catch (error) {
-    console.error('Erreur lors de la mise a jour du message de raid:', error);
+    console.error("Erreur lors de la mise a jour du message de raid:", error);
   }
 
   await interaction.reply({
-    content: `⚔️ Vous avez rejoint le raid avec ${teamCards.length} Pokemon !\n` +
-      `Equipe: ${teamCards.map(c => c.name).join(', ')}`,
-    flags: MessageFlags.Ephemeral
+    content:
+      `⚔️ Vous avez rejoint le raid avec ${teamCards.length} Pokemon !\n` +
+      `Equipe: ${teamCards.map((c) => c.name).join(", ")}`,
+    flags: MessageFlags.Ephemeral,
   });
 }
 
 /**
- * Execute le combat du raid via OpenAI
+ * Execute le combat du raid via OpenAI (gpt-5-nano via Responses API)
  */
 async function executeRaid() {
   if (!activeRaid) return;
 
   const raid = activeRaid;
-  activeRaid = null; // Liberer le slot
+  activeRaid = null;
 
   const channel = raid.client.channels.cache.get(raid.channelId);
   if (!channel) return;
@@ -220,18 +236,20 @@ async function executeRaid() {
   // Verifier s'il y a des participants
   if (raid.participants.size === 0) {
     const embed = new EmbedBuilder()
-      .setColor('#888888')
-      .setTitle('Raid echoue...')
-      .setDescription(`Le **${raid.bossCard.name}** s'est enfui car personne n'a rejoint le raid.`);
+      .setColor("#888888")
+      .setTitle("Raid echoue...")
+      .setDescription(
+        `Le **${raid.bossCard.name}** s'est enfui car personne n'a rejoint le raid.`
+      );
 
     try {
       const message = await channel.messages.fetch(raid.messageId);
       await message.edit({
         embeds: [embed],
-        components: []
+        components: [],
       });
     } catch (error) {
-      console.error('Erreur lors de la mise a jour du message de raid:', error);
+      console.error("Erreur lors de la mise a jour du message de raid:", error);
     }
     return;
   }
@@ -241,40 +259,52 @@ async function executeRaid() {
   for (const [, data] of raid.participants) {
     participantData.push({
       username: data.username,
-      team: data.team.map(card => ({
+      team: data.team.map((card) => ({
         name: card.name,
-        rarity: card.rarityName
-      }))
+        rarity: card.rarityName,
+      })),
     });
   }
 
-  // Compter le nombre total de Pokemon participants
-  const totalParticipantPokemon = participantData.reduce((sum, p) => sum + p.team.length, 0);
+  const totalParticipantPokemon = participantData.reduce(
+    (sum, p) => sum + p.team.length,
+    0
+  );
 
   const prompt = `Tu simules un combat de raid Pokemon. Reponds UNIQUEMENT avec du JSON brut, pas de markdown, pas de blocs de code, pas de texte supplementaire.
 
 Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
 Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
-${participantData.map(p => `- ${p.username}: ${p.team.map(t => t.name).join(', ')}`).join('\n')}
+${participantData
+      .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
+      .join("\n")}
 
 REGLES:
 - Les noms sont en francais, refere-toi aux types Pokemon officiels
-- Les equipes peuvent contenir des cartes Dresseur/Objet qui aident au combat
+- Les equipes peuvent contenir des cartes Dresseur/Objet qui aident au combat (Revive, Soin, Balls...)
 - Prends en compte les strategies Pokemon reelles (certains Pokemon faibles ont des strats viables)
 
 FACTEURS (a peser ensemble pour decider victoire/defaite):
-+ Nombre de Pokemon des joueurs (${totalParticipantPokemon} contre 1)
++ Nombre total de Pokemon côté joueurs (${totalParticipantPokemon}) vs boss (1)
 + Avantages de types contre le boss
 + Cartes Dresseur/Objet de support
 + Synergies entre Pokemon de l'equipe
 - Niveau eleve du boss (Nv${raid.level})
 - Boss a un avantage de type
 
-FAIBLESSES DES TYPES (boss subit x2 degats):
-Psy: Insecte, Spectre, Tenebre | Eau: Plante, Electrik | Feu: Eau, Roche, Sol
-Plante: Feu, Glace, Vol, Poison, Insecte | Vol: Electrik, Glace, Roche | Combat: Vol, Psy, Fee
-Spectre: Spectre, Tenebre | Dragon: Glace, Dragon, Fee | Tenebre: Combat, Insecte, Fee
-Acier: Feu, Combat, Sol | Fee: Poison, Acier
+FAIBLESSES_DES_TYPES (le boss subit x2 dégâts):
+Psy = [Insecte, Spectre, Ténèbre]
+Eau = [Plante, Électrik]
+Feu = [Eau, Roche, Sol]
+Plante = [Feu, Glace, Vol, Poison, Insecte]
+Vol = [Électrik, Glace, Roche]
+Combat = [Vol, Psy, Fée]
+Spectre = [Spectre, Ténèbre]
+Dragon = [Glace, Dragon, Fée]
+Ténèbre = [Combat, Insecte, Fée]
+Acier = [Feu, Combat, Sol]
+Fée = [Poison, Acier]
+Insecte = [Feu, Vol, Roche]
 
 Genere un objet JSON avec:
 - "victory": boolean (les joueurs ont-ils gagne?)
@@ -282,65 +312,69 @@ Genere un objet JSON avec:
 
 Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
 
-  let result = { victory: false, battleLog: 'Le combat fut intense...' };
+  let result = { victory: false, battleLog: "Le combat fut intense..." };
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'Tu reponds uniquement en JSON brut valide. Pas de markdown, pas de blocs de code, pas d\'explication. Le battleLog doit etre en francais.' },
-        { role: 'user', content: prompt }
+    const response = await openai.responses.create({
+      model: "gpt-5-nano",
+      input: [
+        {
+          role: "system",
+          content:
+            "Tu reponds uniquement en JSON brut valide. Pas de markdown, pas de blocs de code, pas d'explication. Le battleLog doit etre en francais.",
+        },
+        { role: "user", content: prompt },
       ],
-      max_tokens: 512,
-      temperature: 0.7
+      max_output_tokens: 512,
+      temperature: 0.7,
+      store: false,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "raid_result",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              victory: { type: "boolean" },
+              battleLog: { type: "string" },
+            },
+            required: ["victory", "battleLog"],
+          },
+        },
+      },
     });
 
-    const responseText = completion.choices[0].message.content.trim();
+    const responseText = (response.output_text || "").trim();
+    result = JSON.parse(responseText);
 
-    // Nettoyer la reponse (enlever les code blocks si presents)
-    let cleanJson = responseText;
-    if (cleanJson.startsWith('```')) {
-      cleanJson = cleanJson.replace(/```json?\n?/g, '').replace(/```/g, '');
-    }
-    cleanJson = cleanJson.trim();
-
-    result = JSON.parse(cleanJson);
-
-    // S'assurer que les \n dans le battleLog sont bien des retours a la ligne
     if (result.battleLog) {
-      // Remplacer les \n litteraux par de vrais retours a la ligne si necessaire
-      result.battleLog = result.battleLog.replace(/\\n/g, '\n');
+      result.battleLog = result.battleLog.replace(/\\n/g, "\n");
     }
   } catch (error) {
-    console.error('Erreur OpenAI pour le raid:', error);
-    // Resultat aleatoire en fallback
+    console.error("Erreur OpenAI pour le raid:", error);
     result.victory = Math.random() < 0.6;
     result.battleLog = result.victory
-      ? 'Les dresseurs ont combine leurs forces...\nLe boss a ete vaincu !'
-      : 'Le boss etait trop puissant...\nLes dresseurs ont du battre en retraite.';
+      ? "Les dresseurs ont combine leurs forces...\nLe boss a ete vaincu !"
+      : "Le boss etait trop puissant...\nLes dresseurs ont du battre en retraite.";
   }
 
   // Distribuer les recompenses si victoire
   const participantIds = Array.from(raid.participants.keys());
 
-  // Generate random bonus based on raid level
   let bonus = 0;
   if (result.victory) {
     if (raid.level === 100) {
-      // legendary: 500-1000
-      bonus = Math.floor(Math.random() * 501) + 500;
+      bonus = Math.floor(Math.random() * 501) + 500; // 500-1000
     } else if (raid.level === 75) {
-      // rare: 250-500
-      bonus = Math.floor(Math.random() * 251) + 250;
+      bonus = Math.floor(Math.random() * 251) + 250; // 250-500
     } else {
-      // uncommon: 100-250
-      bonus = Math.floor(Math.random() * 151) + 100;
+      bonus = Math.floor(Math.random() * 151) + 100; // 100-250
     }
 
     for (const participantId of participantIds) {
-      // Donner la carte du boss
       addCardToUser(participantId, raid.bossCard.id);
-      // Donner le bonus en Poke Dollars
       addMoney(participantId, bonus);
     }
   }
@@ -354,53 +388,50 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
     result.battleLog,
     bonus
   );
-  const attachment = new AttachmentBuilder(resultImageBuffer, { name: 'raid_result.png' });
+  const attachment = new AttachmentBuilder(resultImageBuffer, {
+    name: "raid_result.png",
+  });
 
-  // Creer l'embed de resultat
   const resultEmbed = new EmbedBuilder()
-    .setColor(result.victory ? '#00FF00' : '#FF0000')
-    .setTitle(result.victory ? 'Raid reussi !' : 'Raid echoue...')
+    .setColor(result.victory ? "#00FF00" : "#FF0000")
+    .setTitle(result.victory ? "Raid reussi !" : "Raid echoue...")
     .setDescription(
       `**${raid.bossCard.name}** (Nv.${raid.level})\n\n` +
       `**Combat:**\n${result.battleLog}\n\n` +
       `**Participants:** ${raid.participants.size}\n` +
       (result.victory
         ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
-        : '\nAucune recompense.')
+        : "\nAucune recompense.")
     )
-    .setImage('attachment://raid_result.png');
+    .setImage("attachment://raid_result.png");
 
-  // Mentionner les participants
-  const mentions = participantIds.map(id => `<@${id}>`).join(' ');
+  const mentions = participantIds.map((id) => `<@${id}>`).join(" ");
 
   try {
     const message = await channel.messages.fetch(raid.messageId);
-    // Remove components from original message (disable join button)
-    await message.edit({
-      components: []
-    });
+    await message.edit({ components: [] });
 
-    // Send result as a new message to avoid attachment duplication issue
     await channel.send({
       content: result.victory
         ? `${mentions}\nVictoire ! Vous avez vaincu le raid !`
         : `${mentions}\nDefaite... Le boss etait trop puissant.`,
       embeds: [resultEmbed],
-      files: [attachment]
+      files: [attachment],
     });
   } catch (error) {
-    console.error('Erreur lors de la mise a jour du message de raid:', error);
-    // Envoyer un nouveau message si l'edit echoue
+    console.error("Erreur lors de la mise a jour du message de raid:", error);
     await channel.send({
       content: result.victory
         ? `${mentions}\nVictoire ! Vous avez vaincu le raid !`
         : `${mentions}\nDefaite... Le boss etait trop puissant.`,
       embeds: [resultEmbed],
-      files: [attachment]
+      files: [attachment],
     });
   }
 
-  console.log(`Raid termine: ${raid.bossCard.name} - ${result.victory ? 'Victoire' : 'Defaite'}`);
+  console.log(
+    `Raid termine: ${raid.bossCard.name} - ${result.victory ? "Victoire" : "Defaite"}`
+  );
 }
 
 /**
@@ -411,21 +442,21 @@ async function handleForceRaidCommand(interaction) {
 
   if (!ADMIN_WHITELIST.includes(adminId)) {
     return interaction.reply({
-      content: '❌ Vous n\'avez pas la permission d\'utiliser cette commande.',
-      flags: MessageFlags.Ephemeral
+      content: "❌ Vous n'avez pas la permission d'utiliser cette commande.",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   if (activeRaid) {
     return interaction.reply({
-      content: '❌ Un raid est deja en cours !',
-      flags: MessageFlags.Ephemeral
+      content: "❌ Un raid est deja en cours !",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   await interaction.reply({
-    content: '⚔️ Declenchement d\'un raid...',
-    flags: MessageFlags.Ephemeral
+    content: "⚔️ Declenchement d'un raid...",
+    flags: MessageFlags.Ephemeral,
   });
 
   await startRaid(interaction.client);
@@ -452,7 +483,7 @@ async function checkRaidTrigger(client) {
 async function handleRaidButton(interaction) {
   const customId = interaction.customId;
 
-  if (customId === 'raid_join') {
+  if (customId === "raid_join") {
     await handleRaidJoin(interaction);
   }
 }
@@ -470,5 +501,5 @@ module.exports = {
   handleForceRaidCommand,
   checkRaidTrigger,
   handleRaidButton,
-  hasActiveRaid
+  hasActiveRaid,
 };
