@@ -128,13 +128,6 @@ async function handleRaidJoin(interaction) {
 
   const userId = interaction.user.id;
 
-  if (activeRaid.participants.has(userId)) {
-    return interaction.reply({
-      content: "✅ Vous avez deja rejoint ce raid !",
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
   if (!hasTeamMember(userId)) {
     return interaction.reply({
       content:
@@ -150,31 +143,46 @@ async function handleRaidJoin(interaction) {
     .map((cardId) => getCardInfo(cardId))
     .filter((card) => card !== null);
 
+  const alreadyJoined = activeRaid.participants.has(userId);
+
+  // Store/update participant - team will be refreshed at raid execution
   activeRaid.participants.set(userId, {
     username: interaction.user.username,
-    team: teamCards,
   });
 
-  try {
-    const channel = interaction.client.channels.cache.get(activeRaid.channelId);
-    const message = await channel.messages.fetch(activeRaid.messageId);
+  if (!alreadyJoined) {
+    try {
+      const channel = interaction.client.channels.cache.get(activeRaid.channelId);
+      const message = await channel.messages.fetch(activeRaid.messageId);
 
-    const participantMentions = Array.from(activeRaid.participants.keys())
-      .map((id) => `<@${id}>`)
-      .join(", ");
+      const participantMentions = Array.from(activeRaid.participants.keys())
+        .map((id) => `<@${id}>`)
+        .join(", ");
 
-    const contentText = `**Participants (${activeRaid.participants.size}):** ${participantMentions}`;
-    await message.edit({ content: contentText });
-  } catch (error) {
-    console.error("Erreur lors de la mise a jour du message de raid:", error);
+      const contentText = `**Participants (${activeRaid.participants.size}):** ${participantMentions}`;
+      await message.edit({ content: contentText });
+    } catch (error) {
+      console.error("Erreur lors de la mise a jour du message de raid:", error);
+    }
   }
 
-  await interaction.reply({
-    content:
-      `⚔️ Vous avez rejoint le raid avec ${teamCards.length} Pokemon !\n` +
-      `Equipe: ${teamCards.map((c) => c.name).join(", ")}`,
-    flags: MessageFlags.Ephemeral,
-  });
+  if (alreadyJoined) {
+    await interaction.reply({
+      content:
+        `✅ Votre equipe a ete mise a jour pour ce raid !\n` +
+        `Equipe actuelle: ${teamCards.map((c) => c.name).join(", ")}\n\n` +
+        `💡 Vous pouvez continuer a modifier votre equipe avec \`/team\` jusqu'au debut du combat.`,
+      flags: MessageFlags.Ephemeral,
+    });
+  } else {
+    await interaction.reply({
+      content:
+        `⚔️ Vous avez rejoint le raid avec ${teamCards.length} Pokemon !\n` +
+        `Equipe: ${teamCards.map((c) => c.name).join(", ")}\n\n` +
+        `💡 Vous pouvez modifier votre equipe avec \`/team\` jusqu'au debut du combat.`,
+      flags: MessageFlags.Ephemeral,
+    });
+  }
 }
 
 function clampBattleLog(input, maxChars = 400, maxWords = 60) {
@@ -220,10 +228,17 @@ async function executeRaid() {
   }
 
   const participantData = [];
-  for (const [, data] of raid.participants) {
+  for (const [odPId, data] of raid.participants) {
+    // Fetch fresh team data at raid execution time
+    const currentTeam = getTeam(odPId);
+    const teamCards = currentTeam
+      .filter((cardId) => cardId !== null)
+      .map((cardId) => getCardInfo(cardId))
+      .filter((card) => card !== null);
+
     participantData.push({
       username: data.username,
-      team: data.team.map((card) => ({
+      team: teamCards.map((card) => ({
         name: card.name,
         rarity: card.rarityName,
       })),

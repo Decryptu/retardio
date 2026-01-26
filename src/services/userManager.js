@@ -404,6 +404,35 @@ function hasTeamMember(userId) {
   return team.some(cardId => cardId !== null);
 }
 
+/**
+ * Retire une carte de l'équipe si l'utilisateur ne la possède plus
+ * @param {string} userId - ID Discord de l'utilisateur
+ * @param {string|number} cardId - ID de la carte
+ */
+function clearTeamSlotIfNotOwned(userId, cardId) {
+  const userData = loadUserData(userId);
+  const id = String(cardId);
+  const quantity = userData.cards[id] || 0;
+
+  // Only clear if user no longer owns this card
+  if (quantity > 0) return;
+
+  const team = userData.team || [null, null, null];
+  let changed = false;
+
+  for (let i = 0; i < 3; i++) {
+    if (team[i] === id) {
+      team[i] = null;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    userData.team = team;
+    saveUserData(userId, userData);
+  }
+}
+
 module.exports = {
   loadUserData,
   saveUserData,
@@ -425,5 +454,6 @@ module.exports = {
   getTeam,
   setTeamSlot,
   hasTeamMember,
+  clearTeamSlotIfNotOwned,
   ECONOMY_CONFIG
 };
