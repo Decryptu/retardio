@@ -233,7 +233,6 @@ async function executeRaid() {
   const channel = raid.client.channels.cache.get(raid.channelId);
   if (!channel) return;
 
-  // No participants
   if (raid.participants.size === 0) {
     const embed = new EmbedBuilder()
       .setColor("#888888")
@@ -244,17 +243,13 @@ async function executeRaid() {
 
     try {
       const message = await channel.messages.fetch(raid.messageId);
-      await message.edit({
-        embeds: [embed],
-        components: [],
-      });
+      await message.edit({ embeds: [embed], components: [] });
     } catch (error) {
       console.error("Erreur lors de la mise a jour du message de raid:", error);
     }
     return;
   }
 
-  // Build participants data
   const participantData = [];
   for (const [, data] of raid.participants) {
     participantData.push({
@@ -276,8 +271,8 @@ async function executeRaid() {
 Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
 Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
 ${participantData
-      .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
-      .join("\n")}
+  .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
+  .join("\n")}
 
 REGLES:
 - Les noms sont en francais, refere-toi aux types Pokemon officiels
@@ -314,6 +309,28 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
 
   const result = { victory: false, battleLog: "Le combat fut intense..." };
 
+  const extractTextFromResponses = (response) => {
+    if (typeof response?.output_text === "string" && response.output_text.trim()) {
+      return response.output_text.trim();
+    }
+
+    const out = response?.output;
+    if (!Array.isArray(out)) return "";
+
+    for (const item of out) {
+      const content = item?.content;
+      if (!Array.isArray(content)) continue;
+
+      for (const part of content) {
+        if (typeof part?.text === "string" && part.text.trim()) return part.text.trim();
+        if (typeof part?.content === "string" && part.content.trim()) return part.content.trim();
+        if (typeof part?.value === "string" && part.value.trim()) return part.value.trim();
+      }
+    }
+
+    return "";
+  };
+
   try {
     const response = await openai.responses.create({
       model: "gpt-5-nano",
@@ -346,11 +363,23 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
       },
     });
 
-    const responseText = (response.output_text || "").trim();
-    const parsed = JSON.parse(responseText);
+    const responseText = extractTextFromResponses(response);
+    if (!responseText) {
+      throw new Error("Empty model output (no text found in Responses payload)");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch (_e) {
+      throw new Error(
+        `Invalid JSON from model. First 200 chars: ${responseText.slice(0, 200)}`
+      );
+    }
 
     result.victory = !!parsed.victory;
     result.battleLog = String(parsed.battleLog || "").replace(/\\n/g, "\n");
+    if (!result.battleLog.trim()) result.battleLog = "Le combat fut intense...";
   } catch (error) {
     console.error("Erreur OpenAI pour le raid:", error);
     result.victory = Math.random() < 0.6;
@@ -359,7 +388,6 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
       : "Le boss etait trop puissant...\nLes dresseurs ont du battre en retraite.";
   }
 
-  // Rewards
   const participantIds = Array.from(raid.participants.keys());
 
   let bonus = 0;
@@ -378,7 +406,6 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
     }
   }
 
-  // Result image
   const resultImageBuffer = await generateRaidResultImage(
     raid.bossCard,
     raid.level,
@@ -396,11 +423,11 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
     .setTitle(result.victory ? "Raid reussi !" : "Raid echoue...")
     .setDescription(
       `**${raid.bossCard.name}** (Nv.${raid.level})\n\n` +
-      `**Combat:**\n${result.battleLog}\n\n` +
-      `**Participants:** ${raid.participants.size}\n` +
-      (result.victory
-        ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
-        : "\nAucune recompense.")
+        `**Combat:**\n${result.battleLog}\n\n` +
+        `**Participants:** ${raid.participants.size}\n` +
+        (result.victory
+          ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
+          : "\nAucune recompense.")
     )
     .setImage("attachment://raid_result.png");
 
