@@ -271,8 +271,8 @@ async function executeRaid() {
 Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
 Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
 ${participantData
-  .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
-  .join("\n")}
+      .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
+      .join("\n")}
 
 REGLES:
 - Les noms sont en francais, refere-toi aux types Pokemon officiels
@@ -309,32 +309,25 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
 
   const result = { victory: false, battleLog: "Le combat fut intense..." };
 
-  const extractTextFromResponses = (response) => {
-    if (typeof response?.output_text === "string" && response.output_text.trim()) {
-      return response.output_text.trim();
+  const extractJsonObjectString = (text) => {
+    if (!text) return "";
+    let t = String(text).trim();
+
+    if (t.startsWith("```")) {
+      t = t.replace(/```json\s*/i, "```").replace(/```/g, "").trim();
     }
 
-    const out = response?.output;
-    if (!Array.isArray(out)) return "";
+    const start = t.indexOf("{");
+    const end = t.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) return "";
 
-    for (const item of out) {
-      const content = item?.content;
-      if (!Array.isArray(content)) continue;
-
-      for (const part of content) {
-        if (typeof part?.text === "string" && part.text.trim()) return part.text.trim();
-        if (typeof part?.content === "string" && part.content.trim()) return part.content.trim();
-        if (typeof part?.value === "string" && part.value.trim()) return part.value.trim();
-      }
-    }
-
-    return "";
+    return t.slice(start, end + 1).trim();
   };
 
   try {
-    const response = await openai.responses.create({
+    const completion = await openai.chat.completions.create({
       model: "gpt-5-nano",
-      input: [
+      messages: [
         {
           role: "system",
           content:
@@ -342,40 +335,25 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
         },
         { role: "user", content: prompt },
       ],
-      max_output_tokens: 512,
-      store: false,
-      text: {
-        verbosity: "low",
-        format: {
-          type: "json_schema",
-          name: "raid_result",
-          strict: true,
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              victory: { type: "boolean" },
-              battleLog: { type: "string" },
-            },
-            required: ["victory", "battleLog"],
-          },
-        },
-      },
+
+      // GPT-5 models: use max_completion_tokens + reasoning_effort, no temperature
+      max_completion_tokens: 512,
+      reasoning_effort: "low",
+
+      // Force JSON object mode on chat/completions
+      response_format: { type: "json_object" },
     });
 
-    const responseText = extractTextFromResponses(response);
-    if (!responseText) {
-      throw new Error("Empty model output (no text found in Responses payload)");
-    }
+    const content = completion?.choices?.[0]?.message?.content || "";
+    const jsonStr = extractJsonObjectString(content);
 
-    let parsed;
-    try {
-      parsed = JSON.parse(responseText);
-    } catch (_e) {
+    if (!jsonStr) {
       throw new Error(
-        `Invalid JSON from model. First 200 chars: ${responseText.slice(0, 200)}`
+        `Empty/invalid JSON from model. First 200 chars: ${String(content).slice(0, 200)}`
       );
     }
+
+    const parsed = JSON.parse(jsonStr);
 
     result.victory = !!parsed.victory;
     result.battleLog = String(parsed.battleLog || "").replace(/\\n/g, "\n");
@@ -423,11 +401,11 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
     .setTitle(result.victory ? "Raid reussi !" : "Raid echoue...")
     .setDescription(
       `**${raid.bossCard.name}** (Nv.${raid.level})\n\n` +
-        `**Combat:**\n${result.battleLog}\n\n` +
-        `**Participants:** ${raid.participants.size}\n` +
-        (result.victory
-          ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
-          : "\nAucune recompense.")
+      `**Combat:**\n${result.battleLog}\n\n` +
+      `**Participants:** ${raid.participants.size}\n` +
+      (result.victory
+        ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
+        : "\nAucune recompense.")
     )
     .setImage("attachment://raid_result.png");
 
