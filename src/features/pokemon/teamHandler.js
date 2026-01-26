@@ -334,10 +334,15 @@ async function handleTeamButton(interaction) {
 
     const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, 0);
 
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
     await interaction.update({
       content: `**Modification du Slot ${slot + 1}**\n\n` +
         `Choisissez un booster parmi vos ${totalBoosters} booster${totalBoosters > 1 ? 's' : ''} avec des cartes.`,
-      files: [],
+      files: [attachment],
       components
     });
   }
@@ -358,9 +363,15 @@ async function handleTeamButton(interaction) {
 
     const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, newPage);
 
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
     await interaction.update({
       content: `**Modification du Slot ${slot + 1}**\n\n` +
         `Choisissez un booster parmi vos ${totalBoosters} booster${totalBoosters > 1 ? 's' : ''} avec des cartes.`,
+      files: [attachment],
       components
     });
   }
@@ -381,9 +392,15 @@ async function handleTeamButton(interaction) {
 
     const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, newPage);
 
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
     await interaction.update({
       content: `**Modification du Slot ${slot + 1}**\n\n` +
         `Choisissez un booster parmi vos ${totalBoosters} booster${totalBoosters > 1 ? 's' : ''} avec des cartes.`,
+      files: [attachment],
       components
     });
   }
@@ -407,9 +424,15 @@ async function handleTeamButton(interaction) {
     const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, newPage);
     const boosterName = boosters[boosterId]?.name || 'Booster';
 
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
     await interaction.update({
       content: `**Modification du Slot ${slot + 1}**\n\n` +
         `**${boosterName}** - ${totalCards} carte${totalCards > 1 ? 's' : ''} disponible${totalCards > 1 ? 's' : ''}.`,
+      files: [attachment],
       components
     });
   }
@@ -433,9 +456,15 @@ async function handleTeamButton(interaction) {
     const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, newPage);
     const boosterName = boosters[boosterId]?.name || 'Booster';
 
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
     await interaction.update({
       content: `**Modification du Slot ${slot + 1}**\n\n` +
         `**${boosterName}** - ${totalCards} carte${totalCards > 1 ? 's' : ''} disponible${totalCards > 1 ? 's' : ''}.`,
+      files: [attachment],
       components
     });
   }
@@ -455,9 +484,15 @@ async function handleTeamButton(interaction) {
 
     const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, 0);
 
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
     await interaction.update({
       content: `**Modification du Slot ${slot + 1}**\n\n` +
         `Choisissez un booster parmi vos ${totalBoosters} booster${totalBoosters > 1 ? 's' : ''} avec des cartes.`,
+      files: [attachment],
       components
     });
   }
@@ -525,9 +560,15 @@ async function handleTeamSelectMenu(interaction) {
     const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, 0);
     const boosterName = boosters[boosterId]?.name || 'Booster';
 
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
     await interaction.update({
       content: `**Modification du Slot ${slot + 1}**\n\n` +
         `**${boosterName}** - ${totalCards} carte${totalCards > 1 ? 's' : ''} disponible${totalCards > 1 ? 's' : ''}.`,
+      files: [attachment],
       components
     });
   }

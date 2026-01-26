@@ -564,10 +564,17 @@ async function generateCardDetailImage(cardId, quantity = 1, boosterId = null) {
   ctx.shadowOffsetX = 2;
   ctx.shadowOffsetY = 2;
 
-  // Nom de la carte
+  // Nom de la carte - adjust font size for long names
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = `bold 20px ${PIXEL_FONT}`;
   ctx.textAlign = 'center';
+  const maxNameChars = 20;
+  const baseFontSize = 20;
+  const minFontSize = 12;
+  let nameFontSize = baseFontSize;
+  if (cardInfo.name.length > maxNameChars) {
+    nameFontSize = Math.max(minFontSize, Math.floor(baseFontSize * maxNameChars / cardInfo.name.length));
+  }
+  ctx.font = `bold ${nameFontSize}px ${PIXEL_FONT}`;
   ctx.fillText(cardInfo.name, totalWidth / 2, textY);
 
   // Rareté

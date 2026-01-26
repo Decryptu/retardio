@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
-const { loadUserData, removeCardFromUser, addCardsToUser, saveUserData } = require('../../services/userManager');
+const { loadUserData, removeCardFromUser, addCardsToUser, saveUserData, clearTeamSlotIfNotOwned } = require('../../services/userManager');
 const boosters = require('../../../data/boosters.json');
 
 // Map pour stocker les echanges en cours
@@ -678,6 +678,10 @@ async function handleTradeButton(interaction) {
 
     addCardsToUser(trade.initiatorId, [trade.receiveCardId]);
     addCardsToUser(trade.targetId, [trade.giveCardId]);
+
+    // Clear team slots if the traded card was the last copy
+    clearTeamSlotIfNotOwned(trade.initiatorId, trade.giveCardId);
+    clearTeamSlotIfNotOwned(trade.targetId, trade.receiveCardId);
 
     activeTrades.delete(tradeId);
 
