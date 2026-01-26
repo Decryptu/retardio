@@ -266,7 +266,15 @@ async function executeRaid() {
     0
   );
 
-  const prompt = `Tu simules un combat de raid Pokemon. Reponds UNIQUEMENT avec du JSON brut, pas de markdown, pas de blocs de code, pas de texte supplementaire.
+  const prompt = `Tu simules un combat de raid Pokemon.
+
+IMPORTANT:
+- Tu dois repondre UNIQUEMENT par un JSON valide sur UNE SEULE LIGNE.
+- Aucun texte avant ou apres.
+- Aucun markdown, aucun bloc de code.
+- Aucune explication.
+- Le JSON doit contenir exactement ces 2 cles: "victory" (boolean) et "battleLog" (string).
+- battleLog: 3 a 5 lignes max, separees par \\n.
 
 Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
 Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
@@ -301,73 +309,45 @@ Acier = [Feu, Combat, Sol]
 Fée = [Poison, Acier]
 Insecte = [Feu, Vol, Roche]
 
-Genere un objet JSON avec:
-- "victory": boolean
-- "battleLog": string (3-5 lignes max, utilise \\n pour les retours a la ligne)
-
-Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
+EXEMPLE EXACT (respecte ce format):
+{"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
 
   const result = { victory: false, battleLog: "Le combat fut intense..." };
 
   const extractJsonObjectString = (text) => {
     if (!text) return "";
-    let t = String(text).trim();
-
-    if (t.startsWith("```")) {
-      t = t.replace(/```json\s*/i, "```").replace(/```/g, "").trim();
-    }
-
+    const t = String(text).trim();
     const start = t.indexOf("{");
     const end = t.lastIndexOf("}");
     if (start === -1 || end === -1 || end <= start) return "";
-
     return t.slice(start, end + 1).trim();
   };
 
-  const callModelOnce = async (userPrompt, systemPrompt) => {
+  try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5-nano",
       messages: [
         {
           role: "system",
-          content: systemPrompt,
+          content:
+            'You output only a single-line JSON object with keys "victory" and "battleLog". No other text.',
         },
-        { role: "user", content: userPrompt },
+        { role: "user", content: prompt },
       ],
       max_completion_tokens: 512,
       reasoning_effort: "low",
     });
 
-    return completion?.choices?.[0]?.message?.content || "";
-  };
-
-  try {
-    const system1 =
-      "Tu reponds uniquement en JSON brut valide. Aucun markdown. Aucun bloc de code. Aucun texte en dehors du JSON. Le champ battleLog doit etre en francais et contenir 3 a 5 lignes avec \\n.";
-    const system2 =
-      "Retourne strictement un seul objet JSON sur une seule ligne. Aucun autre caractere avant ou apres. Clés attendues: victory (boolean), battleLog (string).";
-
-    let content = await callModelOnce(prompt, system1);
-
-    if (!content || !content.trim()) {
-      content = await callModelOnce(prompt + "\n\nReponds maintenant en JSON.", system2);
-    }
-
+    const content = completion?.choices?.[0]?.message?.content || "";
     const jsonStr = extractJsonObjectString(content);
+
     if (!jsonStr) {
       throw new Error(
         `Empty/invalid JSON from model. First 400 chars: ${String(content).slice(0, 400)}`
       );
     }
 
-    let parsed;
-    try {
-      parsed = JSON.parse(jsonStr);
-    } catch (_err) {
-      throw new Error(
-        `Invalid JSON from model. Extracted first 400 chars: ${jsonStr.slice(0, 400)}`
-      );
-    }
+    const parsed = JSON.parse(jsonStr);
 
     result.victory = !!parsed.victory;
     result.battleLog = String(parsed.battleLog || "").replace(/\\n/g, "\n");
