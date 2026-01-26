@@ -327,14 +327,14 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
   let bonus = 0;
   if (result.victory) {
     if (raid.level === 100) {
-      // legendary: 1-100
-      bonus = Math.floor(Math.random() * 100) + 1;
+      // legendary: 500-1000
+      bonus = Math.floor(Math.random() * 501) + 500;
     } else if (raid.level === 75) {
-      // rare: 100-250
-      bonus = Math.floor(Math.random() * 151) + 100;
-    } else {
-      // uncommon: 250-500
+      // rare: 250-500
       bonus = Math.floor(Math.random() * 251) + 250;
+    } else {
+      // uncommon: 100-250
+      bonus = Math.floor(Math.random() * 151) + 100;
     }
 
     for (const participantId of participantIds) {
