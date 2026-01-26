@@ -8,6 +8,11 @@ const REWARD_BLACKLIST_CHANNELS = [
 	"1359148815008923840",
 ];
 
+// Channels where bot responses are disabled
+const RESPONSE_BLACKLIST_CHANNELS = [
+	"1272543925286211606",
+];
+
 class MessageHandler {
 	constructor(client, config) {
 		this.client = client;
@@ -71,6 +76,11 @@ class MessageHandler {
 		// Traiter les récompenses en Poké Dollars (silencieux)
 		if (!message.author.bot && !REWARD_BLACKLIST_CHANNELS.includes(message.channelId)) {
 			processMessageReward(message.author.id, message.content);
+		}
+
+		// Skip all bot responses in blacklisted channels
+		if (RESPONSE_BLACKLIST_CHANNELS.includes(message.channelId)) {
+			return;
 		}
 
 		// Handle "$p" trigger (100% chance)
