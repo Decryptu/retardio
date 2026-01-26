@@ -324,36 +324,50 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
     return t.slice(start, end + 1).trim();
   };
 
-  try {
+  const callModelOnce = async (userPrompt, systemPrompt) => {
     const completion = await openai.chat.completions.create({
       model: "gpt-5-nano",
       messages: [
         {
           role: "system",
-          content:
-            "Tu reponds uniquement en JSON brut valide. Pas de markdown, pas de blocs de code, pas d'explication. Le battleLog doit etre en francais.",
+          content: systemPrompt,
         },
-        { role: "user", content: prompt },
+        { role: "user", content: userPrompt },
       ],
-
-      // GPT-5 models: use max_completion_tokens + reasoning_effort, no temperature
       max_completion_tokens: 512,
       reasoning_effort: "low",
-
-      // Force JSON object mode on chat/completions
-      response_format: { type: "json_object" },
     });
 
-    const content = completion?.choices?.[0]?.message?.content || "";
-    const jsonStr = extractJsonObjectString(content);
+    return completion?.choices?.[0]?.message?.content || "";
+  };
 
+  try {
+    const system1 =
+      "Tu reponds uniquement en JSON brut valide. Aucun markdown. Aucun bloc de code. Aucun texte en dehors du JSON. Le champ battleLog doit etre en francais et contenir 3 a 5 lignes avec \\n.";
+    const system2 =
+      "Retourne strictement un seul objet JSON sur une seule ligne. Aucun autre caractere avant ou apres. Clés attendues: victory (boolean), battleLog (string).";
+
+    let content = await callModelOnce(prompt, system1);
+
+    if (!content || !content.trim()) {
+      content = await callModelOnce(prompt + "\n\nReponds maintenant en JSON.", system2);
+    }
+
+    const jsonStr = extractJsonObjectString(content);
     if (!jsonStr) {
       throw new Error(
-        `Empty/invalid JSON from model. First 200 chars: ${String(content).slice(0, 200)}`
+        `Empty/invalid JSON from model. First 400 chars: ${String(content).slice(0, 400)}`
       );
     }
 
-    const parsed = JSON.parse(jsonStr);
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (_err) {
+      throw new Error(
+        `Invalid JSON from model. Extracted first 400 chars: ${jsonStr.slice(0, 400)}`
+      );
+    }
 
     result.victory = !!parsed.victory;
     result.battleLog = String(parsed.battleLog || "").replace(/\\n/g, "\n");
