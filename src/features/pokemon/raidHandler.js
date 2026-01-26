@@ -15,7 +15,7 @@ const { ADMIN_WHITELIST } = require("./tradeHandler");
 
 let activeRaid = null;
 
-const RAID_DURATION = 0.16 * 60 * 1000;
+const RAID_DURATION = 5 * 60 * 1000;
 
 function selectRaidBoss() {
   const rand = Math.random();
@@ -241,8 +241,9 @@ IMPORTANT:
 - battleLog doit respecter STRICTEMENT ces limites:
   - maximum 400 caracteres
   - maximum 60 mots
-- battleLog: 3 a 5 lignes max, separees par \\n.
-- Si tu depasses une limite, tu raccourcis toi-meme pour respecter 400 caracteres et 60 mots.
+- battleLog doit etre un texte simple (pas besoin de \\n, pas de retours a la ligne forces).
+- Discord gerera l'affichage automatiquement.
+- Si tu depasses une limite, tu raccourcis toi-meme pour respecter 400 caracteres et 60 mots maximum.
 
 Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
 Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
