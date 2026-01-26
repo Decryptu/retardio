@@ -233,7 +233,7 @@ async function executeRaid() {
   const channel = raid.client.channels.cache.get(raid.channelId);
   if (!channel) return;
 
-  // Verifier s'il y a des participants
+  // No participants
   if (raid.participants.size === 0) {
     const embed = new EmbedBuilder()
       .setColor("#888888")
@@ -254,7 +254,7 @@ async function executeRaid() {
     return;
   }
 
-  // Construire les donnees pour OpenAI
+  // Build participants data
   const participantData = [];
   for (const [, data] of raid.participants) {
     participantData.push({
@@ -307,12 +307,12 @@ Fée = [Poison, Acier]
 Insecte = [Feu, Vol, Roche]
 
 Genere un objet JSON avec:
-- "victory": boolean (les joueurs ont-ils gagne?)
-- "battleLog": string (resume du combat en francais, 3-5 lignes max, utilise \\n pour les retours a la ligne)
+- "victory": boolean
+- "battleLog": string (3-5 lignes max, utilise \\n pour les retours a la ligne)
 
 Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
 
-  let result = { victory: false, battleLog: "Le combat fut intense..." };
+  const result = { victory: false, battleLog: "Le combat fut intense..." };
 
   try {
     const response = await openai.responses.create({
@@ -326,9 +326,9 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
         { role: "user", content: prompt },
       ],
       max_output_tokens: 512,
-      temperature: 0.7,
       store: false,
       text: {
+        verbosity: "low",
         format: {
           type: "json_schema",
           name: "raid_result",
@@ -347,11 +347,10 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
     });
 
     const responseText = (response.output_text || "").trim();
-    result = JSON.parse(responseText);
+    const parsed = JSON.parse(responseText);
 
-    if (result.battleLog) {
-      result.battleLog = result.battleLog.replace(/\\n/g, "\n");
-    }
+    result.victory = !!parsed.victory;
+    result.battleLog = String(parsed.battleLog || "").replace(/\\n/g, "\n");
   } catch (error) {
     console.error("Erreur OpenAI pour le raid:", error);
     result.victory = Math.random() < 0.6;
@@ -360,17 +359,17 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
       : "Le boss etait trop puissant...\nLes dresseurs ont du battre en retraite.";
   }
 
-  // Distribuer les recompenses si victoire
+  // Rewards
   const participantIds = Array.from(raid.participants.keys());
 
   let bonus = 0;
   if (result.victory) {
     if (raid.level === 100) {
-      bonus = Math.floor(Math.random() * 501) + 500; // 500-1000
+      bonus = Math.floor(Math.random() * 501) + 500;
     } else if (raid.level === 75) {
-      bonus = Math.floor(Math.random() * 251) + 250; // 250-500
+      bonus = Math.floor(Math.random() * 251) + 250;
     } else {
-      bonus = Math.floor(Math.random() * 151) + 100; // 100-250
+      bonus = Math.floor(Math.random() * 151) + 100;
     }
 
     for (const participantId of participantIds) {
@@ -379,7 +378,7 @@ Format exemple: {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
     }
   }
 
-  // Generer l'image de resultat
+  // Result image
   const resultImageBuffer = await generateRaidResultImage(
     raid.bossCard,
     raid.level,
