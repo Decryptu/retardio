@@ -317,7 +317,7 @@ EXEMPLE STRICT:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-nano",
+        model: "gpt-5.1",
         messages: [
           {
             role: "system",
