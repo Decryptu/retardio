@@ -31,7 +31,7 @@ const openai = new OpenAI({
 let activeRaid = null;
 
 // Duree du raid en ms (5 minutes)
-const RAID_DURATION = 5 * 60 * 1000;
+const RAID_DURATION = 0.16 * 60 * 1000;
 
 /**
  * Selectionne un boss de raid aleatoire
