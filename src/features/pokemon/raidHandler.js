@@ -269,33 +269,34 @@ async function executeRaid() {
   const prompt = `Tu simules un combat de raid Pokemon.
 
 IMPORTANT:
-- Tu dois repondre UNIQUEMENT par un JSON valide sur UNE SEULE LIGNE.
-- Aucun texte avant ou apres.
-- Aucun markdown, aucun bloc de code.
+- Tu dois répondre UNIQUEMENT par un JSON valide sur UNE SEULE LIGNE.
+- Aucun texte avant ou après.
+- Aucun markdown.
 - Aucune explication.
-- Le JSON doit contenir exactement ces 2 cles: "victory" (boolean) et "battleLog" (string).
-- battleLog: 3 a 5 lignes max, separees par \\n.
+- Le JSON doit contenir exactement ces deux clés :
+  - "victory" (boolean)
+  - "battleLog" (string)
+- battleLog : 3 à 5 lignes max, séparées par \\n.
 
 Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
-Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokemon au total):
+Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokémon au total):
 ${participantData
-      .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
-      .join("\n")}
+  .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
+  .join("\n")}
 
-REGLES:
-- Les noms sont en francais, refere-toi aux types Pokemon officiels
-- Les equipes peuvent contenir des cartes Dresseur/Objet qui aident au combat (Revive, Soin, Balls...)
-- Prends en compte les strategies Pokemon reelles (certains Pokemon faibles ont des strats viables)
+RÈGLES:
+- Noms en français, types Pokémon officiels.
+- Les équipes peuvent contenir des cartes Dresseur / Objet.
+- Prends en compte les vraies stratégies Pokémon.
 
-FACTEURS (a peser ensemble pour decider victoire/defaite):
-+ Nombre total de Pokemon côté joueurs (${totalParticipantPokemon}) vs boss (1)
-+ Avantages de types contre le boss
-+ Cartes Dresseur/Objet de support
-+ Synergies entre Pokemon de l'equipe
-- Niveau eleve du boss (Nv${raid.level})
-- Boss a un avantage de type
+FACTEURS:
++ Nombre de Pokémon des joueurs (${totalParticipantPokemon}) vs boss (1)
++ Avantages de type
++ Synergies
+- Niveau élevé du boss (Nv${raid.level})
+- Avantage de type du boss
 
-FAIBLESSES_DES_TYPES (le boss subit x2 dégâts):
+FAIBLESSES_DES_TYPES:
 Psy = [Insecte, Spectre, Ténèbre]
 Eau = [Plante, Électrik]
 Feu = [Eau, Roche, Sol]
@@ -309,49 +310,66 @@ Acier = [Feu, Combat, Sol]
 Fée = [Poison, Acier]
 Insecte = [Feu, Vol, Roche]
 
-EXEMPLE EXACT (respecte ce format):
+EXEMPLE STRICT:
 {"victory":true,"battleLog":"Ligne1\\nLigne2\\nLigne3"}`;
 
   const result = { victory: false, battleLog: "Le combat fut intense..." };
 
-  const extractJsonObjectString = (text) => {
-    if (!text) return "";
-    const t = String(text).trim();
-    const start = t.indexOf("{");
-    const end = t.lastIndexOf("}");
-    if (start === -1 || end === -1 || end <= start) return "";
-    return t.slice(start, end + 1).trim();
-  };
-
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5-nano",
-      messages: [
-        {
-          role: "system",
-          content:
-            'You output only a single-line JSON object with keys "victory" and "battleLog". No other text.',
-        },
-        { role: "user", content: prompt },
-      ],
-      max_completion_tokens: 512,
-      reasoning_effort: "low",
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.openaiApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-5-nano",
+        messages: [
+          {
+            role: "system",
+            content:
+              'You must output only one single-line JSON object with keys "victory" and "battleLog". No other text.',
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        max_completion_tokens: 512,
+        reasoning_effort: "low",
+      }),
     });
 
-    const content = completion?.choices?.[0]?.message?.content || "";
-    const jsonStr = extractJsonObjectString(content);
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`OpenAI API error ${response.status}: ${err}`);
+    }
 
-    if (!jsonStr) {
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content || "";
+
+    if (!content.trim()) {
+      console.error("OpenAI full response:", JSON.stringify(data, null, 2));
+      throw new Error("Empty model output");
+    }
+
+    const start = content.indexOf("{");
+    const end = content.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) {
       throw new Error(
-        `Empty/invalid JSON from model. First 400 chars: ${String(content).slice(0, 400)}`
+        `No JSON object found. First 400 chars:\n${content.slice(0, 400)}`
       );
     }
 
+    const jsonStr = content.slice(start, end + 1).trim();
     const parsed = JSON.parse(jsonStr);
 
     result.victory = !!parsed.victory;
     result.battleLog = String(parsed.battleLog || "").replace(/\\n/g, "\n");
-    if (!result.battleLog.trim()) result.battleLog = "Le combat fut intense...";
+
+    if (!result.battleLog.trim()) {
+      result.battleLog = "Le combat fut intense...";
+    }
   } catch (error) {
     console.error("Erreur OpenAI pour le raid:", error);
     result.victory = Math.random() < 0.6;
@@ -395,11 +413,11 @@ EXEMPLE EXACT (respecte ce format):
     .setTitle(result.victory ? "Raid reussi !" : "Raid echoue...")
     .setDescription(
       `**${raid.bossCard.name}** (Nv.${raid.level})\n\n` +
-      `**Combat:**\n${result.battleLog}\n\n` +
-      `**Participants:** ${raid.participants.size}\n` +
-      (result.victory
-        ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
-        : "\nAucune recompense.")
+        `**Combat:**\n${result.battleLog}\n\n` +
+        `**Participants:** ${raid.participants.size}\n` +
+        (result.victory
+          ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
+          : "\nAucune recompense.")
     )
     .setImage("attachment://raid_result.png");
 
@@ -428,7 +446,9 @@ EXEMPLE EXACT (respecte ce format):
   }
 
   console.log(
-    `Raid termine: ${raid.bossCard.name} - ${result.victory ? "Victoire" : "Defaite"}`
+    `Raid termine: ${raid.bossCard.name} - ${
+      result.victory ? "Victoire" : "Defaite"
+    }`
   );
 }
 
