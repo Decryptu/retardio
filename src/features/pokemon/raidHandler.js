@@ -6,7 +6,6 @@ const {
   AttachmentBuilder,
   MessageFlags,
 } = require("discord.js");
-const OpenAI = require("openai");
 const { getCardInfo } = require("../../services/cardGenerator");
 const {
   getTeam,
@@ -21,11 +20,6 @@ const {
 const config = require("../../config");
 const cards = require("../../../data/cards.json");
 const { ADMIN_WHITELIST } = require("./tradeHandler");
-
-// OpenAI client
-const openai = new OpenAI({
-  apiKey: config.openaiApiKey,
-});
 
 // Raid actif (un seul a la fois)
 let activeRaid = null;
@@ -281,8 +275,8 @@ IMPORTANT:
 Boss du raid: ${raid.bossCard.name} (${raid.bossCard.rarityName}, Niveau ${raid.level})
 Participants (${raid.participants.size} dresseurs, ${totalParticipantPokemon} Pokémon au total):
 ${participantData
-  .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
-  .join("\n")}
+      .map((p) => `- ${p.username}: ${p.team.map((t) => t.name).join(", ")}`)
+      .join("\n")}
 
 RÈGLES:
 - Noms en français, types Pokémon officiels.
@@ -328,15 +322,17 @@ EXEMPLE STRICT:
           {
             role: "system",
             content:
-              'You must output only one single-line JSON object with keys "victory" and "battleLog". No other text.',
+              'Output ONLY a single-line JSON object with keys "victory" and "battleLog". No other text.',
           },
           {
             role: "user",
             content: prompt,
           },
         ],
-        max_completion_tokens: 512,
-        reasoning_effort: "low",
+
+        // IMPORTANT: give tokens to OUTPUT, not reasoning
+        max_completion_tokens: 800
+        // NO reasoning_effort here
       }),
     });
 
@@ -346,6 +342,7 @@ EXEMPLE STRICT:
     }
 
     const data = await response.json();
+
     const content = data?.choices?.[0]?.message?.content || "";
 
     if (!content.trim()) {
@@ -356,12 +353,10 @@ EXEMPLE STRICT:
     const start = content.indexOf("{");
     const end = content.lastIndexOf("}");
     if (start === -1 || end === -1 || end <= start) {
-      throw new Error(
-        `No JSON object found. First 400 chars:\n${content.slice(0, 400)}`
-      );
+      throw new Error(`No JSON found. First 400 chars:\n${content.slice(0, 400)}`);
     }
 
-    const jsonStr = content.slice(start, end + 1).trim();
+    const jsonStr = content.slice(start, end + 1);
     const parsed = JSON.parse(jsonStr);
 
     result.victory = !!parsed.victory;
@@ -370,6 +365,7 @@ EXEMPLE STRICT:
     if (!result.battleLog.trim()) {
       result.battleLog = "Le combat fut intense...";
     }
+
   } catch (error) {
     console.error("Erreur OpenAI pour le raid:", error);
     result.victory = Math.random() < 0.6;
@@ -413,11 +409,11 @@ EXEMPLE STRICT:
     .setTitle(result.victory ? "Raid reussi !" : "Raid echoue...")
     .setDescription(
       `**${raid.bossCard.name}** (Nv.${raid.level})\n\n` +
-        `**Combat:**\n${result.battleLog}\n\n` +
-        `**Participants:** ${raid.participants.size}\n` +
-        (result.victory
-          ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
-          : "\nAucune recompense.")
+      `**Combat:**\n${result.battleLog}\n\n` +
+      `**Participants:** ${raid.participants.size}\n` +
+      (result.victory
+        ? `\n**Recompenses:** ${raid.bossCard.name} + ${bonus} P`
+        : "\nAucune recompense.")
     )
     .setImage("attachment://raid_result.png");
 
@@ -446,8 +442,7 @@ EXEMPLE STRICT:
   }
 
   console.log(
-    `Raid termine: ${raid.bossCard.name} - ${
-      result.victory ? "Victoire" : "Defaite"
+    `Raid termine: ${raid.bossCard.name} - ${result.victory ? "Victoire" : "Defaite"
     }`
   );
 }
