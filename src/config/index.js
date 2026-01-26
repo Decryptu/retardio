@@ -15,7 +15,7 @@ const config = {
         haikuChance: 0.001, // 0.1% de chance de faire un haiku
         raidChance: 0.001 // 0.1% de chance de declencher un raid
     },
-    raidChannelId: '1334106680778035210' // Canal pour les raids
+    raidChannelId: '1266727276259835946' // Canal pour les raids
 };
 
 module.exports = config;
