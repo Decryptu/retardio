@@ -108,9 +108,15 @@ async function handleBoosterCommand(interaction) {
 
   const row = new ActionRowBuilder().addComponents(selectMenu);
 
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${userId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  const closeRow = new ActionRowBuilder().addComponents(closeButton);
+
   await interaction.reply({
     embeds: [embed],
-    components: [row]
+    components: [row, closeRow]
   });
 }
 
@@ -171,7 +177,12 @@ async function showBoosterPreview(interaction, boosterId, ownerId) {
     .setLabel('Retour')
     .setStyle(ButtonStyle.Secondary);
 
-  const row = new ActionRowBuilder().addComponents(confirmButton, backButton);
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+
+  const row = new ActionRowBuilder().addComponents(confirmButton, backButton, closeButton);
 
   await interaction.update({
     embeds: [embed],
@@ -391,9 +402,15 @@ async function handleBoosterButton(interaction) {
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
 
+    const closeBtn = new ButtonBuilder()
+      .setCustomId(`close_${ownerId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger);
+    const closeRow = new ActionRowBuilder().addComponents(closeBtn);
+
     await interaction.update({
       embeds: [embed],
-      components: [row],
+      components: [row, closeRow],
       files: []
     });
   }

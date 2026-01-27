@@ -122,9 +122,15 @@ async function handleShopCommand(interaction) {
 
   const row = new ActionRowBuilder().addComponents(selectMenu);
 
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${userId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  const closeRow = new ActionRowBuilder().addComponents(closeButton);
+
   await interaction.reply({
     embeds: [embed],
-    components: [row]
+    components: [row, closeRow]
   });
 }
 
@@ -256,6 +262,13 @@ async function showBoostersShop(interaction, ownerId, page = 0) {
     .setEmoji('⬅️');
 
   navButtons.push(backButton);
+
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  navButtons.push(closeButton);
+
   components.push(new ActionRowBuilder().addComponents(navButtons));
 
   await interaction.update({
@@ -387,6 +400,13 @@ async function showCardsShop(interaction, ownerId, page = 0) {
     .setEmoji('⬅️');
 
   navButtons.push(backButton);
+
+  const closeButton2 = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  navButtons.push(closeButton2);
+
   components.push(new ActionRowBuilder().addComponents(navButtons));
 
   await interaction.update({
@@ -475,7 +495,11 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
       .setCustomId(`shop_category_boosters_${ownerId}`)
       .setLabel('Retour')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji('⬅️')
+      .setEmoji('⬅️'),
+    new ButtonBuilder()
+      .setCustomId(`close_${ownerId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger)
   );
 
   await interaction.update({
@@ -585,6 +609,12 @@ async function showCardPurchaseConfirm(interaction, cardId, ownerId) {
     .setEmoji('⬅️');
 
   buttons.push(backButton);
+
+  const closeBtn = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  buttons.push(closeBtn);
 
   const row = new ActionRowBuilder().addComponents(buttons);
 
@@ -802,9 +832,15 @@ async function showMainShop(interaction, ownerId) {
 
   const row = new ActionRowBuilder().addComponents(selectMenu);
 
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  const closeRow = new ActionRowBuilder().addComponents(closeButton);
+
   await interaction.update({
     embeds: [embed],
-    components: [row],
+    components: [row, closeRow],
     files: []
   });
 }

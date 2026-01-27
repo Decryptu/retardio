@@ -85,7 +85,7 @@ function getCardEmoji(rarity) {
 /**
  * Cree les composants de selection de booster avec pagination
  */
-function createBoosterSelectComponents(userBoosters, sessionId, slot, page) {
+function createBoosterSelectComponents(userBoosters, sessionId, slot, page, userId) {
   const totalPages = Math.ceil(userBoosters.length / 25);
   const startIndex = page * 25;
   const pageBoosters = userBoosters.slice(startIndex, startIndex + 25);
@@ -141,14 +141,19 @@ function createBoosterSelectComponents(userBoosters, sessionId, slot, page) {
     components.push(new ActionRowBuilder().addComponents(prevButton, pageIndicator, nextButton));
   }
 
-  // Bouton retour
+  // Bouton retour + close
   const backButton = new ButtonBuilder()
     .setCustomId(`team_back_${sessionId}`)
     .setLabel('Retour')
-    .setStyle(ButtonStyle.Danger)
+    .setStyle(ButtonStyle.Secondary)
     .setEmoji('↩️');
 
-  components.push(new ActionRowBuilder().addComponents(backButton));
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${userId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+
+  components.push(new ActionRowBuilder().addComponents(backButton, closeButton));
 
   return { components, totalBoosters: userBoosters.length, totalPages };
 }
@@ -156,7 +161,7 @@ function createBoosterSelectComponents(userBoosters, sessionId, slot, page) {
 /**
  * Cree les composants de selection de carte avec pagination
  */
-function createCardSelectComponents(cards, sessionId, slot, boosterId, page) {
+function createCardSelectComponents(cards, sessionId, slot, boosterId, page, userId) {
   const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
   const startIndex = page * CARDS_PER_PAGE;
   const pageCards = cards.slice(startIndex, startIndex + CARDS_PER_PAGE);
@@ -206,20 +211,30 @@ function createCardSelectComponents(cards, sessionId, slot, boosterId, page) {
     components.push(new ActionRowBuilder().addComponents(prevButton, pageIndicator, nextButton));
   }
 
-  // Boutons retour (vers boosters) et annuler (vers equipe)
+  // Boutons retour (vers boosters), recherche, annuler, close
   const backToBoostersButton = new ButtonBuilder()
     .setCustomId(`team_back_boosters_${sessionId}_${slot}`)
     .setLabel('Changer de booster')
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('📦');
 
+  const searchButton = new ButtonBuilder()
+    .setCustomId(`search_team_${sessionId}_${slot}_${boosterId}`)
+    .setEmoji('🔍')
+    .setStyle(ButtonStyle.Primary);
+
   const cancelButton = new ButtonBuilder()
     .setCustomId(`team_back_${sessionId}`)
     .setLabel('Annuler')
-    .setStyle(ButtonStyle.Danger)
+    .setStyle(ButtonStyle.Secondary)
     .setEmoji('↩️');
 
-  components.push(new ActionRowBuilder().addComponents(backToBoostersButton, cancelButton));
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${userId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+
+  components.push(new ActionRowBuilder().addComponents(backToBoostersButton, searchButton, cancelButton, closeButton));
 
   return { components, totalCards: cards.length, totalPages };
 }
@@ -246,6 +261,12 @@ async function generateMainTeamView(session, sessionId) {
 
     slotButtons.push(button);
   }
+
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${session.userId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  slotButtons.push(closeButton);
 
   const row = new ActionRowBuilder().addComponents(slotButtons);
   const teamCount = team.filter(c => c !== null).length;
@@ -332,7 +353,7 @@ async function handleTeamButton(interaction) {
     session.currentSlot = slot;
     session.boosterPage = 0;
 
-    const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, 0);
+    const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, 0, session.userId);
 
     // Keep team image visible
     const team = getTeam(session.userId);
@@ -361,7 +382,7 @@ async function handleTeamButton(interaction) {
     const newPage = currentPage - 1;
     session.boosterPage = newPage;
 
-    const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, newPage);
+    const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, newPage, session.userId);
 
     // Keep team image visible
     const team = getTeam(session.userId);
@@ -390,7 +411,7 @@ async function handleTeamButton(interaction) {
     const newPage = currentPage + 1;
     session.boosterPage = newPage;
 
-    const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, newPage);
+    const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, newPage, session.userId);
 
     // Keep team image visible
     const team = getTeam(session.userId);
@@ -421,7 +442,7 @@ async function handleTeamButton(interaction) {
     session.cardPage = newPage;
 
     const boosterCards = getUserCardsFromBooster(session.userId, boosterId);
-    const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, newPage);
+    const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, newPage, session.userId);
     const boosterName = boosters[boosterId]?.name || 'Booster';
 
     // Keep team image visible
@@ -453,7 +474,7 @@ async function handleTeamButton(interaction) {
     session.cardPage = newPage;
 
     const boosterCards = getUserCardsFromBooster(session.userId, boosterId);
-    const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, newPage);
+    const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, newPage, session.userId);
     const boosterName = boosters[boosterId]?.name || 'Booster';
 
     // Keep team image visible
@@ -482,7 +503,7 @@ async function handleTeamButton(interaction) {
     session.boosterPage = 0;
     session.currentBooster = null;
 
-    const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, 0);
+    const { components, totalBoosters } = createBoosterSelectComponents(session.userBoosters, sessionId, slot, 0, session.userId);
 
     // Keep team image visible
     const team = getTeam(session.userId);
@@ -557,7 +578,7 @@ async function handleTeamSelectMenu(interaction) {
     session.cardPage = 0;
 
     const boosterCards = getUserCardsFromBooster(session.userId, boosterId);
-    const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, 0);
+    const { components, totalCards } = createCardSelectComponents(boosterCards, sessionId, slot, boosterId, 0, session.userId);
     const boosterName = boosters[boosterId]?.name || 'Booster';
 
     // Keep team image visible
@@ -615,8 +636,64 @@ async function handleTeamSelectMenu(interaction) {
   }
 }
 
+/**
+ * Gere le modal de recherche dans l'equipe
+ */
+async function handleTeamSearchModal(interaction) {
+  const searchTerm = interaction.fields.getTextInputValue('search_input').toLowerCase();
+  const parts = interaction.customId.split('_');
+  // search_team_sessionId_slot_boosterId
+  const sessionId = parts[2];
+  const slot = parseInt(parts[3]);
+  const boosterId = parts[4];
+
+  const session = activeTeamSessions.get(sessionId);
+  if (!session) {
+    return interaction.reply({
+      content: '❌ Cette session a expire. Utilisez `/team` a nouveau.',
+      flags: MessageFlags.Ephemeral
+    });
+  }
+
+  if (interaction.user.id !== session.userId) {
+    return interaction.reply({
+      content: '❌ Cette interaction ne vous appartient pas.',
+      flags: MessageFlags.Ephemeral
+    });
+  }
+
+  const allCards = getUserCardsFromBooster(session.userId, boosterId);
+  const filteredCards = allCards.filter(card =>
+    card.name.toLowerCase().includes(searchTerm)
+  );
+
+  if (filteredCards.length === 0) {
+    return interaction.reply({
+      content: `❌ Aucune carte trouvee pour "${searchTerm}".`,
+      flags: MessageFlags.Ephemeral
+    });
+  }
+
+  await interaction.deferUpdate();
+
+  const { components, totalCards } = createCardSelectComponents(filteredCards, sessionId, slot, boosterId, 0, session.userId);
+  const boosterName = boosters[boosterId]?.name || 'Booster';
+
+  const team = getTeam(session.userId);
+  const teamImageBuffer = await generateTeamImage(session.userId, team);
+  const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
+  await interaction.editReply({
+    content: `**Modification du Slot ${slot + 1}**\n\n` +
+      `**${boosterName}** - 🔍 "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})`,
+    files: [attachment],
+    components
+  });
+}
+
 module.exports = {
   handleTeamCommand,
   handleTeamButton,
-  handleTeamSelectMenu
+  handleTeamSelectMenu,
+  handleTeamSearchModal
 };
