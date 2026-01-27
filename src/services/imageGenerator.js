@@ -1238,17 +1238,16 @@ async function generateExpeditionProgressImage(biome, avatarData, progress, time
   }
 
   // Fetch and draw participant avatars at progress point
-  const avatarRadius = 18;
+  const avatarRadius = 16;
   const progressX = barX + barWidth * progress;
-  const avatarY = barY - 40; // Above the bar
-  const maxAvatars = 10;
+  const avatarY = barY - 38; // Above the bar
+  const maxAvatars = 12;
   const displayAvatars = avatarData.slice(0, maxAvatars);
   const overflow = avatarData.length - maxAvatars;
 
   if (displayAvatars.length > 0) {
-    // Tighter spacing: overlap avatars slightly when many players
-    const baseSpacing = 30;
-    const avatarSpacing = Math.min(baseSpacing, (barWidth * 0.4) / Math.max(displayAvatars.length, 1));
+    // Stack avatars closely - overlap them like a pile
+    const avatarSpacing = Math.min(22, 200 / Math.max(displayAvatars.length, 1));
     const groupWidth = (displayAvatars.length - 1) * avatarSpacing;
     const startAvatarX = Math.max(
       barX + avatarRadius,
@@ -1275,7 +1274,7 @@ async function generateExpeditionProgressImage(biome, avatarData, progress, time
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = `bold 12px ${PIXEL_FONT}`;
+      ctx.font = `bold 11px ${PIXEL_FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(`+${overflow}`, overflowX, avatarY);

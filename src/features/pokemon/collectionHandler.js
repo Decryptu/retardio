@@ -28,7 +28,7 @@ function getOwnedCardsFromBooster(userId, boosterId) {
 /**
  * Cree les composants de la collection (booster select + card select avec pagination)
  */
-function createCollectionComponents(targetUserId, boosterId, ownedCards, page = 0) {
+function createCollectionComponents(targetUserId, boosterId, ownedCards, page = 0, callerId = null) {
   const components = [];
 
   // Menu de selection de booster
@@ -95,6 +95,25 @@ function createCollectionComponents(targetUserId, boosterId, ownedCards, page = 
     }
   }
 
+  // Utility row: search + close
+  const utilityButtons = [];
+
+  if (ownedCards.length > 0) {
+    const searchButton = new ButtonBuilder()
+      .setCustomId(`search_collection_${targetUserId}_${boosterId}`)
+      .setEmoji('🔍')
+      .setStyle(ButtonStyle.Primary);
+    utilityButtons.push(searchButton);
+  }
+
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${callerId || targetUserId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  utilityButtons.push(closeButton);
+
+  components.push(new ActionRowBuilder().addComponents(utilityButtons));
+
   return components;
 }
 
@@ -142,7 +161,7 @@ async function handleCollectionCommand(interaction) {
     }
 
     const ownedCards = getOwnedCardsFromBooster(userId, boosterId);
-    const components = createCollectionComponents(targetUser.id, boosterId, ownedCards, 0);
+    const components = createCollectionComponents(targetUser.id, boosterId, ownedCards, 0, interaction.user.id);
 
     await interaction.editReply({
       embeds: [embed],
@@ -199,7 +218,7 @@ async function handleCollectionSelectMenu(interaction) {
     }
 
     const ownedCards = getOwnedCardsFromBooster(targetUserId, selectedBoosterId);
-    const components = createCollectionComponents(targetUserId, selectedBoosterId, ownedCards, 0);
+    const components = createCollectionComponents(targetUserId, selectedBoosterId, ownedCards, 0, interaction.user.id);
 
     await interaction.editReply({
       embeds: [embed],
@@ -254,7 +273,12 @@ async function handleCardDetailSelectMenu(interaction) {
       .setStyle(ButtonStyle.Secondary)
       .setEmoji('◀️');
 
-    const row = new ActionRowBuilder().addComponents(backButton);
+    const closeButton = new ButtonBuilder()
+      .setCustomId(`close_${interaction.user.id}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger);
+
+    const row = new ActionRowBuilder().addComponents(backButton, closeButton);
 
     await interaction.editReply({
       embeds: [embed],
@@ -315,7 +339,7 @@ async function handleCollectionButton(interaction) {
       }
 
       const ownedCards = getOwnedCardsFromBooster(targetUserId, boosterId);
-      const components = createCollectionComponents(targetUserId, boosterId, ownedCards, newPage);
+      const components = createCollectionComponents(targetUserId, boosterId, ownedCards, newPage, interaction.user.id);
 
       await interaction.editReply({
         embeds: [embed],
@@ -368,7 +392,7 @@ async function handleCollectionButton(interaction) {
       }
 
       const ownedCards = getOwnedCardsFromBooster(targetUserId, boosterId);
-      const components = createCollectionComponents(targetUserId, boosterId, ownedCards, page);
+      const components = createCollectionComponents(targetUserId, boosterId, ownedCards, page, interaction.user.id);
 
       await interaction.editReply({
         embeds: [embed],
@@ -386,9 +410,78 @@ async function handleCollectionButton(interaction) {
   }
 }
 
+/**
+ * Gere le modal de recherche dans la collection
+ */
+async function handleCollectionSearchModal(interaction) {
+  const searchTerm = interaction.fields.getTextInputValue('search_input').toLowerCase();
+  const parts = interaction.customId.split('_');
+  // search_collection_targetUserId_boosterId
+  const targetUserId = parts[2];
+  const boosterId = parts[3];
+
+  const allOwnedCards = getOwnedCardsFromBooster(targetUserId, boosterId);
+  const filteredCards = allOwnedCards.filter(card =>
+    card.name.toLowerCase().includes(searchTerm)
+  );
+
+  if (filteredCards.length === 0) {
+    return interaction.reply({
+      content: `❌ Aucune carte trouvee pour "${searchTerm}".`,
+      ephemeral: true
+    });
+  }
+
+  await interaction.deferUpdate();
+
+  try {
+    const targetUser = await interaction.client.users.fetch(targetUserId);
+
+    const imageBuffer = await generateCollectionImage(targetUserId, boosterId);
+    const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
+
+    const { owned, total } = getBoosterCompletion(targetUserId, boosterId);
+    const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
+
+    const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
+    const files = [attachment];
+
+    const embed = new EmbedBuilder()
+      .setColor('#0099ff')
+      .setTitle(`Collection de ${targetUser.username}`)
+      .setDescription(
+        `**${boosters[boosterId].name}**\n${owned}/${total} cartes (${percentage}%)\n` +
+        `🔍 Recherche: "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})`
+      )
+      .setImage('attachment://collection.png');
+
+    if (fs.existsSync(boosterImagePath)) {
+      const boosterAttachment = new AttachmentBuilder(boosterImagePath, { name: 'booster_thumb.png' });
+      files.push(boosterAttachment);
+      embed.setThumbnail('attachment://booster_thumb.png');
+    }
+
+    const components = createCollectionComponents(targetUserId, boosterId, filteredCards, 0, interaction.user.id);
+
+    await interaction.editReply({
+      embeds: [embed],
+      files: files,
+      components: components
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de la recherche collection:', error);
+    await interaction.followUp({
+      content: '❌ Une erreur est survenue lors de la recherche.',
+      ephemeral: true
+    });
+  }
+}
+
 module.exports = {
   handleCollectionCommand,
   handleCollectionSelectMenu,
   handleCardDetailSelectMenu,
-  handleCollectionButton
+  handleCollectionButton,
+  handleCollectionSearchModal
 };

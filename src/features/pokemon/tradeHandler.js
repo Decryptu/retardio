@@ -106,7 +106,7 @@ function getUserCardsFromBooster(userId, boosterId) {
 /**
  * Cree les composants pour la selection de carte avec pagination
  */
-function createCardSelectComponents(cards, tradeId, type, page, _boosterName) {
+function createCardSelectComponents(cards, tradeId, type, page, _boosterName, userId) {
   const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
   const startIndex = page * CARDS_PER_PAGE;
   const pageCards = cards.slice(startIndex, startIndex + CARDS_PER_PAGE);
@@ -155,6 +155,25 @@ function createCardSelectComponents(cards, tradeId, type, page, _boosterName) {
 
     components.push(new ActionRowBuilder().addComponents(prevButton, pageIndicator, nextButton));
   }
+
+  // Utility row: search + close
+  const utilityButtons = [];
+
+  const searchButton = new ButtonBuilder()
+    .setCustomId(`search_trade_${tradeId}_${type}`)
+    .setEmoji('🔍')
+    .setStyle(ButtonStyle.Primary);
+  utilityButtons.push(searchButton);
+
+  if (userId) {
+    const closeButton = new ButtonBuilder()
+      .setCustomId(`close_${userId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger);
+    utilityButtons.push(closeButton);
+  }
+
+  components.push(new ActionRowBuilder().addComponents(utilityButtons));
 
   return { components, totalCards: cards.length, totalPages };
 }
@@ -223,7 +242,12 @@ async function handleTradeCommand(interaction) {
     .setStyle(ButtonStyle.Primary)
     .setEmoji('💡');
 
-  const row2 = new ActionRowBuilder().addComponents(opportunitiesButton);
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${initiator.id}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+
+  const row2 = new ActionRowBuilder().addComponents(opportunitiesButton, closeButton);
 
   activeTrades.set(interaction.id, {
     initiatorId: initiator.id,
@@ -340,7 +364,7 @@ async function handleTradeSelectMenu(interaction) {
     }
 
     const booster = boosters[boosterId];
-    const { components, totalCards } = createCardSelectComponents(userCards, tradeId, 'give', 0, booster?.name);
+    const { components, totalCards } = createCardSelectComponents(userCards, tradeId, 'give', 0, booster?.name, trade.initiatorId);
 
     await interaction.update({
       content: `📋 **Echange en cours**\n\n` +
@@ -400,7 +424,7 @@ async function handleTradeSelectMenu(interaction) {
 
     const giveCard = getCardInfo(trade.giveCardId);
     const booster = boosters[boosterId];
-    const { components, totalCards } = createCardSelectComponents(targetCards, tradeId, 'receive', 0, booster?.name);
+    const { components, totalCards } = createCardSelectComponents(targetCards, tradeId, 'receive', 0, booster?.name, trade.initiatorId);
 
     await interaction.update({
       content: `📋 **Echange en cours**\n\n` +
@@ -604,7 +628,7 @@ async function handleTradeButton(interaction) {
       trade.receivePage = newPage;
     }
 
-    const { components, totalCards } = createCardSelectComponents(cards, tradeId, type, newPage, booster?.name);
+    const { components, totalCards } = createCardSelectComponents(cards, tradeId, type, newPage, booster?.name, trade.initiatorId);
 
     let content;
     if (type === 'give') {
@@ -713,10 +737,76 @@ async function handleTradeButton(interaction) {
   }
 }
 
+/**
+ * Gere le modal de recherche dans l'echange
+ */
+async function handleTradeSearchModal(interaction) {
+  const searchTerm = interaction.fields.getTextInputValue('search_input').toLowerCase();
+  const parts = interaction.customId.split('_');
+  // search_trade_tradeId_type
+  const tradeId = parts[2];
+  const type = parts[3]; // 'give' or 'receive'
+
+  const trade = activeTrades.get(tradeId);
+  if (!trade) {
+    return interaction.reply({
+      content: '❌ Cet echange n\'est plus valide.',
+      ephemeral: true
+    });
+  }
+
+  if (interaction.user.id !== trade.initiatorId) {
+    return interaction.reply({
+      content: '❌ Seul l\'initiateur peut rechercher.',
+      ephemeral: true
+    });
+  }
+
+  const allCards = type === 'give' ? trade.giveCards : trade.receiveCards;
+
+  const filteredCards = allCards.filter(card =>
+    card.name.toLowerCase().includes(searchTerm)
+  );
+
+  if (filteredCards.length === 0) {
+    return interaction.reply({
+      content: `❌ Aucune carte trouvee pour "${searchTerm}".`,
+      ephemeral: true
+    });
+  }
+
+  await interaction.deferUpdate();
+
+  const boosterId = type === 'give' ? trade.giveBoosterId : trade.receiveBoosterId;
+  const booster = boosters[boosterId];
+  const { components } = createCardSelectComponents(filteredCards, tradeId, type, 0, booster?.name, trade.initiatorId);
+
+  let content;
+  if (type === 'give') {
+    content = `📋 **Echange en cours**\n\n` +
+      `**Booster:** ${booster?.name || boosterId}\n` +
+      `🔍 "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})\n\n` +
+      `**Etape 2:** Selectionnez la carte a donner`;
+  } else {
+    const giveCard = getCardInfo(trade.giveCardId);
+    content = `📋 **Echange en cours**\n\n` +
+      `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n` +
+      `**Booster cible:** ${booster?.name || boosterId}\n` +
+      `🔍 "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})\n\n` +
+      `**Etape 4:** Selectionnez la carte a recevoir`;
+  }
+
+  await interaction.editReply({
+    content,
+    components
+  });
+}
+
 module.exports = {
   handleTradeCommand,
   handleGiftBoosterCommand,
   handleTradeSelectMenu,
   handleTradeButton,
+  handleTradeSearchModal,
   ADMIN_WHITELIST
 };

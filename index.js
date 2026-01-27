@@ -91,14 +91,35 @@ client.on("interactionCreate", async (interaction) => {
 		} else {
 			await handleCommand(interaction);
 		}
-	} else if (interaction.isStringSelectMenu() || interaction.isButton()) {
+	} else if (interaction.isStringSelectMenu() || interaction.isButton() || interaction.isModalSubmit()) {
 		// Vérifier le customId pour router vers le bon handler
 		const customId = interaction.customId;
+
+		// Universal close button handler
+		if (interaction.isButton() && customId?.startsWith("close_")) {
+			const closeUserId = customId.split("_")[1];
+			if (interaction.user.id !== closeUserId) {
+				await interaction.reply({
+					content: "❌ Cette interaction ne vous appartient pas.",
+					ephemeral: true,
+				});
+				return;
+			}
+			try {
+				await interaction.message.delete();
+			} catch (_err) {
+				await interaction.reply({
+					content: "Message supprime.",
+					ephemeral: true,
+				});
+			}
+			return;
+		}
 
 		if (customId?.startsWith("shop_")) {
 			await handleShopInteraction(interaction);
 		} else {
-			// Gérer les interactions Pokémon (menus et boutons)
+			// Gérer les interactions Pokémon (menus, boutons, modals)
 			await handlePokemonInteraction(interaction);
 		}
 	}
