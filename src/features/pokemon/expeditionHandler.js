@@ -280,7 +280,7 @@ async function updateExpeditionProgress() {
   if (!activeExpedition) return;
 
   const elapsed = Date.now() - activeExpedition.startTime;
-  const progress = Math.min(elapsed / EXPEDITION_DURATION, 0.99);
+  const progress = Math.min(elapsed / EXPEDITION_DURATION, 1.0);
   const timeRemaining = Math.max(0, Math.ceil((EXPEDITION_DURATION - elapsed) / 60000));
 
   const avatarData = [];
@@ -508,13 +508,13 @@ EXEMPLE STRICT:
     successTier = "TRIOMPHE";
     successColor = "#FFD700";
   } else if (result.reward >= 601) {
-    successTier = "RÉUSSITE";
+    successTier = "REUSSITE";
     successColor = "#2ECC71";
   } else if (result.reward >= 401) {
     successTier = "CORRECT";
     successColor = "#F39C12";
   } else if (result.reward >= 201) {
-    successTier = "MITIGÉ";
+    successTier = "MITIGE";
     successColor = "#E67E22";
   } else {
     successTier = "CATASTROPHE";
