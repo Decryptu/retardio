@@ -13,9 +13,10 @@ const config = {
         randomInterventionChance: 0.005, // 0.5% de chance d'intervenir random
         waterReminderChance: 0.001, // 0.1% de chance de rappeler de boire de l'eau
         haikuChance: 0.001, // 0.1% de chance de faire un haiku
-        raidChance: 0.001 // 0.1% de chance de declencher un raid
+        raidChance: 0.001, // 0.1% de chance de declencher un raid
+        expeditionChance: 0.001 // 0.1% de chance de declencher une expedition
     },
-    raidChannelId: '1334106680778035210' // Canal pour les raids
+    raidChannelId: '1334106680778035210' // Canal pour les raids et expeditions
 };
 
 module.exports = config;

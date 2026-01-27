@@ -55,7 +55,11 @@ const pokemonCommands = [
         .setRequired(true)
         .setMinValue(1)
         .setMaxValue(100)
-    )
+    ),
+
+  new SlashCommandBuilder()
+    .setName('forceexpedition')
+    .setDescription('[ADMIN] Declencher une expedition aleatoire')
 ];
 
 module.exports = { pokemonCommands };
