@@ -966,11 +966,516 @@ async function generateRaidResultImage(bossCard, level, victory, participants, b
   return canvas.toBuffer('image/png');
 }
 
+/**
+ * Draw a circle-cropped avatar on canvas
+ */
+function drawCircleAvatar(ctx, image, centerX, centerY, radius) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(image, centerX - radius, centerY - radius, radius * 2, radius * 2);
+  ctx.restore();
+
+  // White border
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+/**
+ * Draw a fallback colored circle with initial
+ */
+function drawFallbackAvatar(ctx, centerX, centerY, radius, initial) {
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.fillStyle = '#5865F2';
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold ${radius}px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(initial.toUpperCase(), centerX, centerY);
+  ctx.textBaseline = 'alphabetic';
+}
+
+/**
+ * Biome gradient colors for fallback backgrounds
+ */
+const BIOME_GRADIENTS = {
+  mystic_forest: ['#0a3a0a', '#1a5a1a', '#0a3a0a'],
+  deep_ocean: ['#0a1a3a', '#1a3a6a', '#0a1a3a'],
+  burning_volcano: ['#3a0a0a', '#6a1a0a', '#3a0a0a'],
+  dark_cave: ['#1a0a2a', '#2a1a3a', '#1a0a2a'],
+  frozen_tundra: ['#1a2a3a', '#2a4a5a', '#1a2a3a'],
+  stormy_sky: ['#2a2a1a', '#4a3a1a', '#2a2a1a'],
+  toxic_swamp: ['#1a0a2a', '#2a1a3a', '#1a0a2a'],
+  ancient_ruins: ['#2a1a0a', '#4a2a1a', '#2a1a0a'],
+  fairy_meadow: ['#2a0a1a', '#4a1a2a', '#2a0a1a'],
+  sand_desert: ['#2a2a0a', '#4a3a1a', '#2a2a0a'],
+};
+
+/**
+ * Draw a biome gradient background
+ */
+function drawBiomeGradient(ctx, biomeId, width, height) {
+  const colors = BIOME_GRADIENTS[biomeId] || ['#1a1a2e', '#16213e', '#1a1a2e'];
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, colors[0]);
+  gradient.addColorStop(0.5, colors[1]);
+  gradient.addColorStop(1, colors[2]);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+}
+
+/**
+ * Genere l'image d'annonce d'une expedition (biome)
+ * @param {Object} biome - Biome de l'expedition
+ * @returns {Buffer} Buffer PNG
+ */
+async function generateExpeditionStartImage(biome) {
+  const totalWidth = 800;
+  const totalHeight = 400;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bgImage = await loadBackgroundImage('expedition');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+    // Biome color overlay
+    ctx.fillStyle = biome.color.replace(')', ', 0.2)').replace('rgb', 'rgba').replace('#', '');
+    // Simple hex overlay
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = biome.color;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+    ctx.globalAlpha = 1.0;
+  } else {
+    drawBiomeGradient(ctx, biome.id, totalWidth, totalHeight);
+  }
+
+  // Dark overlay for text readability
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+  // Title with shadow
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  // Emoji + title
+  ctx.fillStyle = biome.color;
+  ctx.font = `bold 48px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`EXPEDITION`, totalWidth / 2, 70);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 36px ${PIXEL_FONT}`;
+  ctx.fillText(`${biome.emoji} ${biome.name}`, totalWidth / 2, 120);
+
+  // Description
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `18px ${PIXEL_FONT}`;
+  const descLines = wrapText(ctx, biome.description, totalWidth - 100);
+  let descY = 170;
+  for (const line of descLines) {
+    ctx.fillText(line, totalWidth / 2, descY);
+    descY += 24;
+  }
+
+  // Type info boxes
+  const boxY = 240;
+  const boxWidth = 230;
+  const boxHeight = 100;
+  const boxSpacing = 20;
+  const startX = (totalWidth - (boxWidth * 3 + boxSpacing * 2)) / 2;
+
+  // Dominant types box
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  fillRoundedRect(ctx, startX, boxY, boxWidth, boxHeight, 8);
+  ctx.fillStyle = '#FF6B6B';
+  ctx.font = `bold 14px ${PIXEL_FONT}`;
+  ctx.fillText('TYPES DOMINANTS', startX + boxWidth / 2, boxY + 25);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `16px ${PIXEL_FONT}`;
+  const domLines = wrapText(ctx, biome.dominantTypes.join(', '), boxWidth - 20);
+  let domY = boxY + 50;
+  for (const line of domLines) {
+    ctx.fillText(line, startX + boxWidth / 2, domY);
+    domY += 20;
+  }
+
+  // Recommended types box
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  fillRoundedRect(ctx, startX + boxWidth + boxSpacing, boxY, boxWidth, boxHeight, 8);
+  ctx.fillStyle = '#51CF66';
+  ctx.font = `bold 14px ${PIXEL_FONT}`;
+  ctx.fillText('RECOMMANDÉS', startX + boxWidth + boxSpacing + boxWidth / 2, boxY + 25);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `16px ${PIXEL_FONT}`;
+  const recLines = wrapText(ctx, biome.recommendedTypes.join(', '), boxWidth - 20);
+  let recY = boxY + 50;
+  for (const line of recLines) {
+    ctx.fillText(line, startX + boxWidth + boxSpacing + boxWidth / 2, recY);
+    recY += 20;
+  }
+
+  // Avoid types box
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  fillRoundedRect(ctx, startX + (boxWidth + boxSpacing) * 2, boxY, boxWidth, boxHeight, 8);
+  ctx.fillStyle = '#FF922B';
+  ctx.font = `bold 14px ${PIXEL_FONT}`;
+  ctx.fillText('À ÉVITER', startX + (boxWidth + boxSpacing) * 2 + boxWidth / 2, boxY + 25);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `16px ${PIXEL_FONT}`;
+  const avoidLines = wrapText(ctx, biome.avoidTypes.join(', '), boxWidth - 20);
+  let avoidY = boxY + 50;
+  for (const line of avoidLines) {
+    ctx.fillText(line, startX + (boxWidth + boxSpacing) * 2 + boxWidth / 2, avoidY);
+    avoidY += 20;
+  }
+
+  // Footer
+  ctx.fillStyle = '#888888';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.fillText('Utilisez /team pour préparer votre équipe !', totalWidth / 2, totalHeight - 20);
+
+  ctx.shadowColor = 'transparent';
+
+  return canvas.toBuffer('image/png');
+}
+
+/**
+ * Genere l'image de progression d'une expedition
+ * @param {Object} biome - Biome
+ * @param {Array} avatarData - [{username, avatarURL}]
+ * @param {number} progress - 0 to 1
+ * @param {number} timeRemaining - minutes restantes
+ * @returns {Buffer} Buffer PNG
+ */
+async function generateExpeditionProgressImage(biome, avatarData, progress, timeRemaining) {
+  const totalWidth = 800;
+  const totalHeight = 250;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bgImage = await loadBackgroundImage('expedition');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = biome.color;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+    ctx.globalAlpha = 1.0;
+  } else {
+    drawBiomeGradient(ctx, biome.id, totalWidth, totalHeight);
+  }
+
+  // Dark overlay
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+  // Title
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+
+  ctx.fillStyle = biome.color;
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${biome.emoji} ${biome.name} — Expédition en cours`, totalWidth / 2, 35);
+
+  ctx.shadowColor = 'transparent';
+
+  // Timeline bar
+  const barX = 60;
+  const barY = 150;
+  const barWidth = totalWidth - 120;
+  const barHeight = 14;
+
+  // Bar background
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+  fillRoundedRect(ctx, barX, barY, barWidth, barHeight, 7);
+
+  // Bar fill
+  const fillWidth = barWidth * progress;
+  if (fillWidth > 0) {
+    ctx.fillStyle = biome.color;
+    fillRoundedRect(ctx, barX, barY, Math.max(fillWidth, 14), barHeight, 7);
+  }
+
+  // Step markers at 0%, 25%, 50%, 75%, 100%
+  const steps = [0, 0.25, 0.5, 0.75, 1.0];
+  const stepLabels = ['Départ', '25%', '50%', '75%', 'Arrivée'];
+  for (let i = 0; i < steps.length; i++) {
+    const sx = barX + barWidth * steps[i];
+    const reached = progress >= steps[i];
+
+    ctx.beginPath();
+    ctx.arc(sx, barY + barHeight / 2, 8, 0, Math.PI * 2);
+    ctx.fillStyle = reached ? biome.color : 'rgba(255, 255, 255, 0.3)';
+    ctx.fill();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Step label below
+    ctx.fillStyle = reached ? '#FFFFFF' : '#888888';
+    ctx.font = `10px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(stepLabels[i], sx, barY + barHeight + 20);
+  }
+
+  // Fetch and draw participant avatars at progress point
+  const avatarRadius = 20;
+  const progressX = barX + barWidth * progress;
+  const avatarY = barY - 45; // Above the bar
+  const maxAvatars = 8;
+  const displayAvatars = avatarData.slice(0, maxAvatars);
+  const overflow = avatarData.length - maxAvatars;
+
+  if (displayAvatars.length > 0) {
+    // Calculate avatar positions centered on progress point
+    const avatarSpacing = Math.min(44, (barWidth * 0.3) / Math.max(displayAvatars.length, 1));
+    const groupWidth = (displayAvatars.length - 1) * avatarSpacing;
+    const startAvatarX = Math.max(
+      barX + avatarRadius,
+      Math.min(progressX - groupWidth / 2, barX + barWidth - avatarRadius - groupWidth)
+    );
+
+    for (let i = 0; i < displayAvatars.length; i++) {
+      const ax = startAvatarX + i * avatarSpacing;
+      try {
+        const avatarImg = await loadImage(displayAvatars[i].avatarURL);
+        drawCircleAvatar(ctx, avatarImg, ax, avatarY, avatarRadius);
+      } catch {
+        drawFallbackAvatar(ctx, ax, avatarY, avatarRadius, displayAvatars[i].username[0]);
+      }
+    }
+
+    if (overflow > 0) {
+      const overflowX = startAvatarX + displayAvatars.length * avatarSpacing;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.beginPath();
+      ctx.arc(overflowX, avatarY, avatarRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `bold 14px ${PIXEL_FONT}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`+${overflow}`, overflowX, avatarY);
+      ctx.textBaseline = 'alphabetic';
+    }
+  }
+
+  // Bottom info
+  const progressPct = Math.round(progress * 100);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 18px ${PIXEL_FONT}`;
+  ctx.textAlign = 'left';
+  ctx.fillText(`${progressPct}%`, barX, totalHeight - 20);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `16px ${PIXEL_FONT}`;
+  ctx.fillText(`${avatarData.length} explorateur${avatarData.length > 1 ? 's' : ''}`, totalWidth / 2, totalHeight - 20);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 18px ${PIXEL_FONT}`;
+  ctx.fillText(`${timeRemaining} min restante${timeRemaining > 1 ? 's' : ''}`, barX + barWidth, totalHeight - 20);
+
+  return canvas.toBuffer('image/png');
+}
+
+/**
+ * Genere l'image des resultats d'une expedition
+ * @param {Object} biome - Biome
+ * @param {Array} participants - Liste des participant IDs
+ * @param {string} expeditionLog - Recit de l'expedition
+ * @param {number} reward - Recompense en P
+ * @param {string} successTier - Tier de succes
+ * @returns {Buffer} Buffer PNG
+ */
+async function generateExpeditionResultImage(biome, participants, expeditionLog, reward, successTier) {
+  const totalWidth = 800;
+  const totalHeight = 500;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bgImage = await loadBackgroundImage('expedition');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+  } else {
+    drawBiomeGradient(ctx, biome.id, totalWidth, totalHeight);
+  }
+
+  // Success-based overlay
+  let overlayColor;
+  if (reward >= 601) {
+    overlayColor = 'rgba(0, 100, 0, 0.5)';
+  } else if (reward >= 201) {
+    overlayColor = 'rgba(80, 80, 0, 0.5)';
+  } else {
+    overlayColor = 'rgba(100, 0, 0, 0.5)';
+  }
+  ctx.fillStyle = overlayColor;
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+  // Title
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  let titleColor;
+  if (reward >= 801) titleColor = '#FFD700';
+  else if (reward >= 601) titleColor = '#2ECC71';
+  else if (reward >= 401) titleColor = '#F39C12';
+  else if (reward >= 201) titleColor = '#E67E22';
+  else titleColor = '#E74C3C';
+
+  ctx.fillStyle = titleColor;
+  ctx.font = `bold 42px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(successTier, totalWidth / 2, 55);
+
+  // Biome name
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `24px ${PIXEL_FONT}`;
+  ctx.fillText(`${biome.emoji} ${biome.name}`, totalWidth / 2, 90);
+
+  ctx.shadowColor = 'transparent';
+
+  // Reward display (left side)
+  const rewardBoxX = 30;
+  const rewardBoxY = 120;
+  const rewardBoxW = 220;
+  const rewardBoxH = 250;
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  fillRoundedRect(ctx, rewardBoxX, rewardBoxY, rewardBoxW, rewardBoxH, 10);
+  ctx.strokeStyle = titleColor;
+  ctx.lineWidth = 2;
+  strokeRoundedRect(ctx, rewardBoxX, rewardBoxY, rewardBoxW, rewardBoxH, 10);
+
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `bold 16px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('RÉCOMPENSE', rewardBoxX + rewardBoxW / 2, rewardBoxY + 35);
+
+  ctx.fillStyle = titleColor;
+  ctx.font = `bold 48px ${PIXEL_FONT}`;
+  ctx.fillText(`${reward}`, rewardBoxX + rewardBoxW / 2, rewardBoxY + 95);
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.fillText('Poké $', rewardBoxX + rewardBoxW / 2, rewardBoxY + 125);
+
+  // Success stars
+  const maxStars = 5;
+  const filledStars = Math.ceil((reward / 1000) * maxStars);
+  ctx.font = `24px ${PIXEL_FONT}`;
+  let starsText = '';
+  for (let i = 0; i < maxStars; i++) {
+    starsText += i < filledStars ? '★' : '☆';
+  }
+  ctx.fillStyle = '#FFD700';
+  ctx.fillText(starsText, rewardBoxX + rewardBoxW / 2, rewardBoxY + 170);
+
+  // Per participant
+  ctx.fillStyle = '#AAAAAA';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.fillText('par explorateur', rewardBoxX + rewardBoxW / 2, rewardBoxY + 200);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 16px ${PIXEL_FONT}`;
+  ctx.fillText(`${participants.length} participant${participants.length > 1 ? 's' : ''}`, rewardBoxX + rewardBoxW / 2, rewardBoxY + 230);
+
+  // Expedition log (right side)
+  const logX = rewardBoxX + rewardBoxW + 20;
+  const logY = 120;
+  const logWidth = totalWidth - logX - 30;
+  const logHeight = 250;
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  fillRoundedRect(ctx, logX, logY, logWidth, logHeight, 10);
+
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `bold 16px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('RÉCIT DE L\'EXPÉDITION', logX + logWidth / 2, logY + 30);
+
+  // Log text with wrapping
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.textAlign = 'left';
+
+  const paragraphs = expeditionLog.split('\n');
+  const allLines = [];
+  for (const paragraph of paragraphs) {
+    if (paragraph.trim()) {
+      const wrappedLines = wrapText(ctx, paragraph.trim(), logWidth - 30);
+      allLines.push(...wrappedLines);
+    }
+  }
+
+  let lineY = logY + 55;
+  const maxLines = Math.floor((logHeight - 60) / 18);
+  for (let i = 0; i < Math.min(allLines.length, maxLines); i++) {
+    ctx.fillText(allLines[i], logX + 15, lineY);
+    lineY += 18;
+  }
+
+  // Bottom bar - biome types summary
+  const bottomY = 400;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.fillRect(0, bottomY, totalWidth, totalHeight - bottomY);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = biome.color;
+  ctx.font = `bold 16px ${PIXEL_FONT}`;
+  ctx.fillText(
+    `Biome: ${biome.name} | Types dominants: ${biome.dominantTypes.join(', ')}`,
+    totalWidth / 2,
+    bottomY + 30
+  );
+
+  ctx.fillStyle = '#888888';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.fillText(
+    `Types recommandés: ${biome.recommendedTypes.join(', ')} | À éviter: ${biome.avoidTypes.join(', ')}`,
+    totalWidth / 2,
+    bottomY + 55
+  );
+
+  return canvas.toBuffer('image/png');
+}
+
 module.exports = {
   generateBoosterOpeningImage,
   generateCollectionImage,
   generateCardDetailImage,
   generateTeamImage,
   generateRaidBossImage,
-  generateRaidResultImage
+  generateRaidResultImage,
+  generateExpeditionStartImage,
+  generateExpeditionProgressImage,
+  generateExpeditionResultImage
 };

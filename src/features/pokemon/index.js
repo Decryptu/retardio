@@ -3,7 +3,8 @@ const { handleBoosterCommand, handleBoosterSelectMenu, handleBoosterButton } = r
 const { handleCollectionCommand, handleCollectionSelectMenu, handleCardDetailSelectMenu, handleCollectionButton } = require('./collectionHandler');
 const { handleTradeCommand, handleGiftBoosterCommand, handleTradeSelectMenu, handleTradeButton } = require('./tradeHandler');
 const { handleTeamCommand, handleTeamButton, handleTeamSelectMenu } = require('./teamHandler');
-const { handleForceRaidCommand, handleRaidButton, checkRaidTrigger } = require('./raidHandler');
+const { handleForceRaidCommand, handleRaidButton, checkRaidTrigger, hasActiveRaid } = require('./raidHandler');
+const { handleForceExpeditionCommand, handleExpeditionButton, checkExpeditionTrigger, hasActiveExpedition } = require('./expeditionHandler');
 const { handleFlipCommand } = require('./flipHandler');
 
 /**
@@ -24,6 +25,8 @@ async function handlePokemonCommand(interaction) {
     await handleTeamCommand(interaction);
   } else if (commandName === 'forceraid') {
     await handleForceRaidCommand(interaction);
+  } else if (commandName === 'forceexpedition') {
+    await handleForceExpeditionCommand(interaction);
   } else if (commandName === 'flip') {
     await handleFlipCommand(interaction);
   }
@@ -56,6 +59,8 @@ async function handlePokemonInteraction(interaction) {
       await handleTeamButton(interaction);
     } else if (interaction.customId.startsWith('raid_')) {
       await handleRaidButton(interaction);
+    } else if (interaction.customId.startsWith('expedition_')) {
+      await handleExpeditionButton(interaction);
     }
   }
 }
@@ -64,5 +69,8 @@ module.exports = {
   pokemonCommands,
   handlePokemonCommand,
   handlePokemonInteraction,
-  checkRaidTrigger
+  checkRaidTrigger,
+  hasActiveRaid,
+  checkExpeditionTrigger,
+  hasActiveExpedition
 };

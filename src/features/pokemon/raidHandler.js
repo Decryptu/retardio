@@ -51,8 +51,16 @@ function selectRaidBoss() {
 }
 
 async function startRaid(client) {
+  // Lazy require to avoid circular dependency
+  const { hasActiveExpedition } = require("./expeditionHandler");
+
   if (activeRaid) {
     console.log("Un raid est deja en cours");
+    return null;
+  }
+
+  if (hasActiveExpedition()) {
+    console.log("Une expedition est en cours, raid annule");
     return null;
   }
 
@@ -428,9 +436,18 @@ async function handleForceRaidCommand(interaction) {
     });
   }
 
+  const { hasActiveExpedition } = require("./expeditionHandler");
+
   if (activeRaid) {
     return interaction.reply({
-      content: "❌ Un raid est deja en cours !",
+      content: "❌ Un raid est déjà en cours !",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  if (hasActiveExpedition()) {
+    return interaction.reply({
+      content: "❌ Une expédition est en cours ! Attendez qu'elle se termine.",
       flags: MessageFlags.Ephemeral,
     });
   }
