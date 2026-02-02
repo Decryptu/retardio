@@ -35,11 +35,14 @@ class MessageHandler {
 	async getAIResponse(prompt, channel, context = "") {
 		try {
 			if (channel) await channel.sendTyping();
+			const userContent = context
+				? `Voici la conversation récente :\n${context}\n\nRéponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format "nom: message".`
+				: "";
 			const completion = await this.openai.chat.completions.create({
 				model: "gpt-4o-mini",
 				messages: [
 					{ role: "system", content: prompt },
-					{ role: "user", content: context },
+					{ role: "user", content: userContent },
 				],
 				max_tokens: 1024,
 				temperature: 0.8,
