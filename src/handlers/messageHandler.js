@@ -64,6 +64,20 @@ class MessageHandler {
 		return channelHistory;
 	}
 
+	// Fetch context around a message for replies (grabs recent channel messages)
+	async getReplyContext(message) {
+		try {
+			const messages = await message.channel.messages.fetch({ limit: 15, before: message.id });
+			const sorted = [...messages.values()].reverse();
+			return sorted
+				.map((msg) => `${msg.author.username}: ${msg.content}`)
+				.join("\n");
+		} catch (error) {
+			console.error("Erreur fetch reply context:", error);
+			return "";
+		}
+	}
+
 	// Main message handling function
 	async handleMessage(message) {
 		// Update message history
@@ -83,6 +97,28 @@ class MessageHandler {
 			return;
 		}
 
+		// Handle direct replies to the bot's messages
+		if (message.reference && !message.author.bot) {
+			try {
+				const repliedTo = await message.channel.messages.fetch(message.reference.messageId);
+				if (repliedTo.author.id === this.client.user.id) {
+					const replyContext = await this.getReplyContext(message);
+					const fullContext = replyContext + "\n" + message.author.username + ": " + message.content;
+					const response = await this.getAIResponse(
+						personalities.randomTalker.prompt,
+						message.channel,
+						fullContext,
+					);
+					if (response) {
+						message.reply(response);
+						return;
+					}
+				}
+			} catch (error) {
+				console.error("Erreur traitement reply:", error);
+			}
+		}
+
 		// Handle "$p" trigger (100% chance)
 		if (message.content === "$p") {
 			const response = await this.getAIResponse(
@@ -97,10 +133,13 @@ class MessageHandler {
 
 		// Handle direct mentions
 		if (message.mentions.has(this.client.user)) {
+			const replyContext = await this.getReplyContext(message);
+			const userMessage = message.content.replace(`<@${this.client.user.id}>`, "").trim();
+			const fullContext = replyContext + "\n" + message.author.username + ": " + userMessage;
 			const response = await this.getAIResponse(
 				personalities.randomTalker.prompt,
 				message.channel,
-				message.content.replace(`<@${this.client.user.id}>`, "").trim(),
+				fullContext,
 			);
 			if (response) {
 				message.reply(response);
@@ -190,6 +229,21 @@ class MessageHandler {
 				personalities.haikuMaker.prompt,
 				message.channel,
 				message.content,
+			);
+			if (response) message.channel.send(response);
+		} else if (
+			randomValue <
+			this.config.triggers.mockChance +
+				this.config.triggers.randomInterventionChance +
+				this.config.triggers.waterReminderChance +
+				this.config.triggers.haikuChance +
+				this.config.triggers.linkedinChance
+		) {
+			// LinkedIn influencer post
+			const response = await this.getAIResponse(
+				personalities.linkedinInfluencer.prompt,
+				message.channel,
+				context,
 			);
 			if (response) message.channel.send(response);
 		}
