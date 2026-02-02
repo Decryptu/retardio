@@ -32,18 +32,25 @@ class MessageHandler {
 	}
 
 	// Function to get OpenAI response
-	async getAIResponse(prompt, channel, context = "") {
+	async getAIResponse(prompt, channel, userMessage = "", history = "") {
 		try {
 			if (channel) await channel.sendTyping();
-			const userContent = context
-				? `Voici la conversation récente :\n${context}\n\nRéponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format "nom: message".`
-				: "";
+			const messages = [{ role: "system", content: prompt }];
+			if (history) {
+				messages.push({
+					role: "system",
+					content: `Tu as accès à l'historique de conversation suivant. Ce sont des données que tu possèdes et que tu peux afficher, citer ou référencer si on te le demande :\n${history}`,
+				});
+			}
+			messages.push({
+				role: "user",
+				content: userMessage
+					? `${userMessage}\n\nRéponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format "nom: message".`
+					: "Réponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format \"nom: message\".",
+			});
 			const completion = await this.openai.chat.completions.create({
 				model: "gpt-4o-mini",
-				messages: [
-					{ role: "system", content: prompt },
-					{ role: "user", content: userContent },
-				],
+				messages,
 				max_tokens: 1024,
 				temperature: 0.8,
 			});
@@ -106,11 +113,11 @@ class MessageHandler {
 				const repliedTo = await message.channel.messages.fetch(message.reference.messageId);
 				if (repliedTo.author.id === this.client.user.id) {
 					const replyContext = await this.getReplyContext(message);
-					const fullContext = replyContext + "\n" + message.author.username + ": " + message.content;
 					const response = await this.getAIResponse(
 						personalities.randomTalker.prompt,
 						message.channel,
-						fullContext,
+						message.content,
+						replyContext,
 					);
 					if (response) {
 						message.reply(response);
@@ -138,11 +145,11 @@ class MessageHandler {
 		if (message.mentions.has(this.client.user)) {
 			const replyContext = await this.getReplyContext(message);
 			const userMessage = message.content.replace(`<@${this.client.user.id}>`, "").trim();
-			const fullContext = replyContext + "\n" + message.author.username + ": " + userMessage;
 			const response = await this.getAIResponse(
 				personalities.randomTalker.prompt,
 				message.channel,
-				fullContext,
+				userMessage,
+				replyContext,
 			);
 			if (response) {
 				message.reply(response);
@@ -205,6 +212,7 @@ class MessageHandler {
 			const response = await this.getAIResponse(
 				personalities.randomTalker.prompt,
 				message.channel,
+				"",
 				context,
 			);
 			if (response) message.channel.send(response);
@@ -246,6 +254,7 @@ class MessageHandler {
 			const response = await this.getAIResponse(
 				personalities.linkedinInfluencer.prompt,
 				message.channel,
+				"",
 				context,
 			);
 			if (response) message.channel.send(response);
