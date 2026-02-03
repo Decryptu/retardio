@@ -13,7 +13,7 @@ const config = {
         randomInterventionChance: 0.005, // 0.5% de chance d'intervenir random
         waterReminderChance: 0.001, // 0.1% de chance de rappeler de boire de l'eau
         haikuChance: 0.001, // 0.1% de chance de faire un haiku
-        linkedinChance: 0.003, // 0.3% de chance de poster un message LinkedIn débile
+        linkedinChance: 0.0005, // 0.3% de chance de poster un message LinkedIn débile
         raidChance: 0.001, // 0.1% de chance de declencher un raid
         expeditionChance: 0.001 // 0.1% de chance de declencher une expedition
     },
