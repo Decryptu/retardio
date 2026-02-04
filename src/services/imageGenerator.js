@@ -1481,6 +1481,293 @@ async function generateExpeditionResultImage(biome, participants, expeditionLog,
   return canvas.toBuffer('image/png');
 }
 
+/**
+ * Genere l'image de proposition d'echange
+ * @param {Object} giveCard - Carte proposee par l'initiateur
+ * @param {Object} receiveCard - Carte demandee a la cible
+ * @param {string} initiatorUsername - Username de l'initiateur
+ * @param {string} targetUsername - Username de la cible
+ * @returns {Buffer} Buffer PNG
+ */
+async function generateTradeProposalImage(giveCard, receiveCard, initiatorUsername, targetUsername) {
+  const padding = 40;
+  const cardSpacing = 60;
+  const totalWidth = (CARD_WIDTH * 2) + cardSpacing + (padding * 2);
+  const totalHeight = CARD_HEIGHT + (padding * 2) + 120; // +120 pour usernames et fleche
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bgImage = await loadBackgroundImage('opening');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  // Title
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = '#FFA500';
+  ctx.font = `bold 28px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('ECHANGE PROPOSE', totalWidth / 2, 50);
+
+  ctx.shadowColor = 'transparent';
+
+  // Card positions
+  const card1X = padding;
+  const card2X = padding + CARD_WIDTH + cardSpacing;
+  const cardY = 80;
+
+  // Draw arrow between cards
+  const arrowY = cardY + CARD_HEIGHT / 2;
+  const arrowStartX = card1X + CARD_WIDTH + 10;
+  const arrowEndX = card2X - 10;
+  const arrowMidX = (arrowStartX + arrowEndX) / 2;
+
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(arrowStartX, arrowY);
+  ctx.lineTo(arrowMidX - 15, arrowY);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(arrowMidX + 15, arrowY);
+  ctx.lineTo(arrowEndX, arrowY);
+  ctx.stroke();
+
+  // Arrow heads
+  ctx.fillStyle = '#FFD700';
+  ctx.beginPath();
+  ctx.moveTo(arrowEndX, arrowY);
+  ctx.lineTo(arrowEndX - 12, arrowY - 8);
+  ctx.lineTo(arrowEndX - 12, arrowY + 8);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(arrowStartX, arrowY);
+  ctx.lineTo(arrowStartX + 12, arrowY - 8);
+  ctx.lineTo(arrowStartX + 12, arrowY + 8);
+  ctx.closePath();
+  ctx.fill();
+
+  // Draw "VS" in the middle
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('<->', arrowMidX, arrowY + 8);
+
+  // Draw cards
+  const cards = [
+    { card: giveCard, x: card1X, username: initiatorUsername, label: 'DONNE' },
+    { card: receiveCard, x: card2X, username: targetUsername, label: 'DONNE' }
+  ];
+
+  for (const { card, x, username, label } of cards) {
+    const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${card.id}.png`);
+    try {
+      const cardImage = await loadImage(cardImagePath);
+
+      // Glow effect
+      const hasGlow = GLOW_RARITIES.includes(card.rarity);
+      if (hasGlow) {
+        drawCardGlow(ctx, x, cardY, CARD_WIDTH, CARD_HEIGHT, card.rarityColor);
+      }
+
+      ctx.drawImage(cardImage, x, cardY, CARD_WIDTH, CARD_HEIGHT);
+
+      // Border
+      ctx.strokeStyle = card.rarityColor;
+      ctx.lineWidth = 4;
+      strokeRoundedRect(ctx, x - 2, cardY - 2, CARD_WIDTH + 4, CARD_HEIGHT + 4, BORDER_RADIUS);
+
+    } catch (error) {
+      console.error(`Erreur chargement carte ${card.id}:`, error);
+      ctx.fillStyle = '#333333';
+      ctx.fillRect(x, cardY, CARD_WIDTH, CARD_HEIGHT);
+    }
+
+    // Username above card with shadow
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+
+    ctx.fillStyle = '#FFD700';
+    ctx.font = `bold 18px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(username, x + CARD_WIDTH / 2, cardY - 30);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `14px ${PIXEL_FONT}`;
+    ctx.fillText(label, x + CARD_WIDTH / 2, cardY - 10);
+
+    ctx.shadowColor = 'transparent';
+
+    // Card name below
+    ctx.shadowColor = '#000000';
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `bold 16px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(card.name, x + CARD_WIDTH / 2, cardY + CARD_HEIGHT + 25);
+
+    ctx.fillStyle = card.rarityColor;
+    ctx.font = `14px ${PIXEL_FONT}`;
+    ctx.fillText(`#${card.id} - ${card.rarityName}`, x + CARD_WIDTH / 2, cardY + CARD_HEIGHT + 45);
+
+    ctx.shadowColor = 'transparent';
+  }
+
+  return canvas.toBuffer('image/png');
+}
+
+/**
+ * Genere l'image d'echange complete
+ * @param {Object} giveCard - Carte donnee par l'initiateur
+ * @param {Object} receiveCard - Carte recue par l'initiateur
+ * @param {string} initiatorUsername - Username de l'initiateur
+ * @param {string} targetUsername - Username de la cible
+ * @returns {Buffer} Buffer PNG
+ */
+async function generateTradeCompletedImage(giveCard, receiveCard, initiatorUsername, targetUsername) {
+  const padding = 40;
+  const cardSpacing = 60;
+  const totalWidth = (CARD_WIDTH * 2) + cardSpacing + (padding * 2);
+  const totalHeight = CARD_HEIGHT + (padding * 2) + 120;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Background with green tint
+  const bgImage = await loadBackgroundImage('opening');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+    ctx.fillStyle = 'rgba(0, 100, 0, 0.2)';
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#0a3a0a');
+    gradient.addColorStop(1, '#1a4a1a');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  // Title
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = '#00FF00';
+  ctx.font = `bold 32px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('ECHANGE REUSSI !', totalWidth / 2, 50);
+
+  ctx.shadowColor = 'transparent';
+
+  // Card positions
+  const card1X = padding;
+  const card2X = padding + CARD_WIDTH + cardSpacing;
+  const cardY = 80;
+
+  // Draw checkmark in the middle
+  const checkX = (card1X + CARD_WIDTH + card2X) / 2;
+  const checkY = cardY + CARD_HEIGHT / 2;
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.beginPath();
+  ctx.arc(checkX, checkY, 30, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#00FF00';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(checkX - 12, checkY);
+  ctx.lineTo(checkX - 4, checkY + 10);
+  ctx.lineTo(checkX + 12, checkY - 10);
+  ctx.stroke();
+
+  // Draw cards with NEW OWNERS
+  const cards = [
+    { card: giveCard, x: card1X, newOwner: targetUsername, label: 'NOUVEAU' },
+    { card: receiveCard, x: card2X, newOwner: initiatorUsername, label: 'NOUVEAU' }
+  ];
+
+  for (const { card, x, newOwner, label } of cards) {
+    const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${card.id}.png`);
+    try {
+      const cardImage = await loadImage(cardImagePath);
+
+      // Glow effect
+      const hasGlow = GLOW_RARITIES.includes(card.rarity);
+      if (hasGlow) {
+        drawCardGlow(ctx, x, cardY, CARD_WIDTH, CARD_HEIGHT, card.rarityColor);
+      }
+
+      ctx.drawImage(cardImage, x, cardY, CARD_WIDTH, CARD_HEIGHT);
+
+      // Green border for success
+      ctx.strokeStyle = '#00FF00';
+      ctx.lineWidth = 4;
+      strokeRoundedRect(ctx, x - 2, cardY - 2, CARD_WIDTH + 4, CARD_HEIGHT + 4, BORDER_RADIUS);
+
+    } catch (error) {
+      console.error(`Erreur chargement carte ${card.id}:`, error);
+      ctx.fillStyle = '#333333';
+      ctx.fillRect(x, cardY, CARD_WIDTH, CARD_HEIGHT);
+    }
+
+    // New owner above card
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+
+    ctx.fillStyle = '#00FF00';
+    ctx.font = `bold 18px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(newOwner, x + CARD_WIDTH / 2, cardY - 30);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `14px ${PIXEL_FONT}`;
+    ctx.fillText(label, x + CARD_WIDTH / 2, cardY - 10);
+
+    ctx.shadowColor = 'transparent';
+
+    // Card name below
+    ctx.shadowColor = '#000000';
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `bold 16px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(card.name, x + CARD_WIDTH / 2, cardY + CARD_HEIGHT + 25);
+
+    ctx.fillStyle = card.rarityColor;
+    ctx.font = `14px ${PIXEL_FONT}`;
+    ctx.fillText(`#${card.id} - ${card.rarityName}`, x + CARD_WIDTH / 2, cardY + CARD_HEIGHT + 45);
+
+    ctx.shadowColor = 'transparent';
+  }
+
+  return canvas.toBuffer('image/png');
+}
+
 module.exports = {
   generateBoosterOpeningImage,
   generateCollectionImage,
@@ -1490,5 +1777,7 @@ module.exports = {
   generateRaidResultImage,
   generateExpeditionStartImage,
   generateExpeditionProgressImage,
-  generateExpeditionResultImage
+  generateExpeditionResultImage,
+  generateTradeProposalImage,
+  generateTradeCompletedImage
 };

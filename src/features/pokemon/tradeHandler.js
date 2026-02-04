@@ -1,6 +1,7 @@
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
 const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, removeCardFromUser, addCardsToUser, saveUserData, clearTeamSlotIfNotOwned } = require('../../services/userManager');
+const { generateTradeProposalImage, generateTradeCompletedImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
 
 // Map pour stocker les echanges en cours
@@ -471,6 +472,16 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
   // Timestamp d'expiration (5 minutes)
   const expirationTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
 
+  // Generate trade proposal image
+  const imageBuffer = await generateTradeProposalImage(
+    giveCard,
+    receiveCard,
+    initiator.username,
+    target.username
+  );
+
+  const attachment = new AttachmentBuilder(imageBuffer, { name: 'trade_proposal.png' });
+
   const embed = new EmbedBuilder()
     .setColor('#FFA500')
     .setTitle('Confirmation d\'echange')
@@ -480,12 +491,14 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
       `${target.username} donne: **${receiveCard?.name || 'Carte inconnue'}** #${receiveCard?.id || '?'} (${receiveCard?.rarityName || 'Inconnue'})\n\n` +
       `${target}, acceptez-vous cet echange ?\n` +
       `Expire <t:${expirationTimestamp}:R>`
-    );
+    )
+    .setImage('attachment://trade_proposal.png');
 
   await interaction.update({
     content: null,
     embeds: [embed],
-    components: [row]
+    components: [row],
+    files: [attachment]
   });
 
   setTimeout(() => {
@@ -712,18 +725,30 @@ async function handleTradeButton(interaction) {
     const giveCard = getCardInfo(trade.giveCardId);
     const receiveCard = getCardInfo(trade.receiveCardId);
 
+    // Generate trade completed image
+    const imageBuffer = await generateTradeCompletedImage(
+      giveCard,
+      receiveCard,
+      initiator.username,
+      target.username
+    );
+
+    const attachment = new AttachmentBuilder(imageBuffer, { name: 'trade_completed.png' });
+
     const embed = new EmbedBuilder()
       .setColor('#00FF00')
       .setTitle('Echange reussi !')
       .setDescription(
         `${initiator} a recu **${receiveCard?.name || 'Carte'}** #${receiveCard?.id || '?'}\n` +
         `${target} a recu **${giveCard?.name || 'Carte'}** #${giveCard?.id || '?'}`
-      );
+      )
+      .setImage('attachment://trade_completed.png');
 
     await interaction.update({
       content: null,
       embeds: [embed],
-      components: []
+      components: [],
+      files: [attachment]
     });
 
   } catch (error) {
