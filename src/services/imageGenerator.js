@@ -1526,7 +1526,7 @@ async function generateTradeProposalImage(giveCard, receiveCard, initiatorUserna
   // Card positions
   const card1X = padding;
   const card2X = padding + CARD_WIDTH + cardSpacing;
-  const cardY = 80;
+  const cardY = 125;
 
   // Draw arrow between cards
   const arrowY = cardY + CARD_HEIGHT / 2;
@@ -1682,7 +1682,7 @@ async function generateTradeCompletedImage(giveCard, receiveCard, initiatorUsern
   // Card positions
   const card1X = padding;
   const card2X = padding + CARD_WIDTH + cardSpacing;
-  const cardY = 80;
+  const cardY = 125;
 
   // Draw checkmark in the middle
   const checkX = (card1X + CARD_WIDTH + card2X) / 2;
