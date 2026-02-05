@@ -175,7 +175,6 @@ function createBoosterSelectComponents(userBoosters, sessionId, slot, page, user
 
   const globalSearchButton = new ButtonBuilder()
     .setCustomId(`search_team_global_${sessionId}_${slot}`)
-    .setLabel('Recherche globale')
     .setStyle(ButtonStyle.Primary)
     .setEmoji('🔍');
 

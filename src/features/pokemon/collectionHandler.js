@@ -203,7 +203,6 @@ function createCollectionComponents(targetUserId, boosterId, ownedCards, page = 
   if (ownedCards.length > 0) {
     const searchButton = new ButtonBuilder()
       .setCustomId(`search_collection_${targetUserId}_${boosterId}`)
-      .setLabel('Recherche')
       .setEmoji('🔍')
       .setStyle(ButtonStyle.Primary);
     utilityButtons.push(searchButton);
@@ -216,7 +215,6 @@ function createCollectionComponents(targetUserId, boosterId, ownedCards, page = 
   if (hasAnyCards) {
     const globalSearchButton = new ButtonBuilder()
       .setCustomId(`search_collection_global_${targetUserId}`)
-      .setLabel('Recherche globale')
       .setEmoji('🌐')
       .setStyle(ButtonStyle.Success);
     utilityButtons.push(globalSearchButton);
