@@ -341,7 +341,6 @@ async function handleTradeCommand(interaction) {
 
   const globalSearchButton = new ButtonBuilder()
     .setCustomId(`search_trade_global_${interaction.id}_give`)
-    .setLabel('Recherche globale')
     .setStyle(ButtonStyle.Success)
     .setEmoji('🔍');
 
@@ -504,7 +503,6 @@ async function handleTradeSelectMenu(interaction) {
     // Bouton recherche globale
     const globalSearchButton = new ButtonBuilder()
       .setCustomId(`search_trade_global_${tradeId}_receive`)
-      .setLabel('Recherche globale')
       .setStyle(ButtonStyle.Success)
       .setEmoji('🔍');
 
@@ -550,7 +548,6 @@ async function handleTradeSelectMenu(interaction) {
     // Bouton recherche globale
     const globalSearchButton = new ButtonBuilder()
       .setCustomId(`search_trade_global_${tradeId}_receive`)
-      .setLabel('Recherche globale')
       .setStyle(ButtonStyle.Success)
       .setEmoji('🔍');
 
