@@ -105,6 +105,102 @@ function getUserCardsFromBooster(userId, boosterId) {
 }
 
 /**
+ * Obtient toutes les cartes d'un utilisateur (tous boosters confondus)
+ */
+function getAllUserCards(userId) {
+  const userData = loadUserData(userId);
+  const userCards = [];
+
+  for (const [cardId, quantity] of Object.entries(userData.cards)) {
+    if (quantity > 0) {
+      const cardInfo = getCardInfo(cardId);
+      if (cardInfo) {
+        userCards.push({
+          ...cardInfo,
+          quantity,
+          boosterName: boosters[cardInfo.boosterPackId]?.name || 'Unknown'
+        });
+      }
+    }
+  }
+
+  // Trier par quantite decroissante puis par nom
+  return userCards.sort((a, b) => {
+    if (b.quantity !== a.quantity) return b.quantity - a.quantity;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+/**
+ * Cree les composants pour la selection de carte globale avec pagination
+ */
+function createGlobalCardSelectComponents(cards, tradeId, type, page, userId) {
+  const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
+  const startIndex = page * CARDS_PER_PAGE;
+  const pageCards = cards.slice(startIndex, startIndex + CARDS_PER_PAGE);
+
+  const components = [];
+
+  // Menu de selection des cartes avec nom du booster
+  const cardOptions = pageCards.map(card => ({
+    label: `${card.name} (x${card.quantity})`,
+    description: `${card.boosterName} - ${card.rarityName}`,
+    value: `${type}_card_${card.id}`,
+    emoji: card.quantity > 1 ? '🔄' : '🃏'
+  }));
+
+  const stepNum = type === 'give' ? '2' : '4';
+  const placeholder = totalPages > 1
+    ? `${stepNum}. Recherche globale (${page + 1}/${totalPages})`
+    : `${stepNum}. Choisissez la carte a ${type === 'give' ? 'donner' : 'recevoir'}`;
+
+  const cardSelect = new StringSelectMenuBuilder()
+    .setCustomId(`trade_${type}_card_global_${tradeId}`)
+    .setPlaceholder(placeholder)
+    .addOptions(cardOptions);
+
+  components.push(new ActionRowBuilder().addComponents(cardSelect));
+
+  // Boutons de pagination si necessaire
+  if (totalPages > 1) {
+    const prevButton = new ButtonBuilder()
+      .setCustomId(`trade_page_global_${type}_prev_${page}_${tradeId}`)
+      .setLabel('◀ Precedent')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page === 0);
+
+    const pageIndicator = new ButtonBuilder()
+      .setCustomId(`trade_page_indicator_${tradeId}`)
+      .setLabel(`${page + 1} / ${totalPages}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true);
+
+    const nextButton = new ButtonBuilder()
+      .setCustomId(`trade_page_global_${type}_next_${page}_${tradeId}`)
+      .setLabel('Suivant ▶')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page >= totalPages - 1);
+
+    components.push(new ActionRowBuilder().addComponents(prevButton, pageIndicator, nextButton));
+  }
+
+  // Utility row: close
+  const utilityButtons = [];
+
+  if (userId) {
+    const closeButton = new ButtonBuilder()
+      .setCustomId(`close_${userId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger);
+    utilityButtons.push(closeButton);
+  }
+
+  components.push(new ActionRowBuilder().addComponents(utilityButtons));
+
+  return { components, totalCards: cards.length, totalPages };
+}
+
+/**
  * Cree les composants pour la selection de carte avec pagination
  */
 function createCardSelectComponents(cards, tradeId, type, page, _boosterName, userId) {
@@ -236,19 +332,25 @@ async function handleTradeCommand(interaction) {
 
   const row1 = new ActionRowBuilder().addComponents(giveBoosterSelect);
 
-  // Bouton pour voir les opportunites d'echange
+  // Boutons: opportunites, recherche globale, close
   const opportunitiesButton = new ButtonBuilder()
     .setCustomId(`trade_opportunities_${interaction.id}`)
     .setLabel('Opportunites')
     .setStyle(ButtonStyle.Primary)
     .setEmoji('💡');
 
+  const globalSearchButton = new ButtonBuilder()
+    .setCustomId(`search_trade_global_${interaction.id}_give`)
+    .setLabel('Recherche globale')
+    .setStyle(ButtonStyle.Success)
+    .setEmoji('🔍');
+
   const closeButton = new ButtonBuilder()
     .setCustomId(`close_${initiator.id}`)
     .setLabel('X')
     .setStyle(ButtonStyle.Danger);
 
-  const row2 = new ActionRowBuilder().addComponents(opportunitiesButton, closeButton);
+  const row2 = new ActionRowBuilder().addComponents(opportunitiesButton, globalSearchButton, closeButton);
 
   activeTrades.set(interaction.id, {
     initiatorId: initiator.id,
@@ -375,6 +477,52 @@ async function handleTradeSelectMenu(interaction) {
       components
     });
   }
+  // Selection de la carte a donner (recherche globale)
+  else if (customId.startsWith('trade_give_card_global_')) {
+    const cardId = selectedValue.replace('give_card_', '');
+    trade.giveCardId = cardId;
+
+    const targetBoosterOptions = [];
+    for (const [boosterId, data] of trade.targetBoosters) {
+      if (data.booster) {
+        targetBoosterOptions.push({
+          label: data.booster.name,
+          description: `${data.count} carte${data.count > 1 ? 's' : ''} disponible${data.count > 1 ? 's' : ''}`,
+          value: `receive_booster_${boosterId}`,
+          emoji: '📦'
+        });
+      }
+    }
+
+    const receiveBoosterSelect = new StringSelectMenuBuilder()
+      .setCustomId(`trade_receive_booster_${tradeId}`)
+      .setPlaceholder('3. Choisissez le booster de la carte a recevoir')
+      .addOptions(targetBoosterOptions.slice(0, 25));
+
+    const row1 = new ActionRowBuilder().addComponents(receiveBoosterSelect);
+
+    // Bouton recherche globale
+    const globalSearchButton = new ButtonBuilder()
+      .setCustomId(`search_trade_global_${tradeId}_receive`)
+      .setLabel('Recherche globale')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🔍');
+
+    const closeButton = new ButtonBuilder()
+      .setCustomId(`close_${trade.initiatorId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger);
+
+    const row2 = new ActionRowBuilder().addComponents(globalSearchButton, closeButton);
+
+    const giveCard = getCardInfo(trade.giveCardId);
+    await interaction.update({
+      content: `📋 **Echange en cours**\n\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n\n` +
+        `**Etape 3:** Selectionnez le booster contenant la carte que vous voulez recevoir`,
+      components: [row1, row2]
+    });
+  }
   // Selection de la carte a donner
   else if (customId.startsWith('trade_give_card_')) {
     const cardId = selectedValue.replace('give_card_', '');
@@ -397,14 +545,28 @@ async function handleTradeSelectMenu(interaction) {
       .setPlaceholder('3. Choisissez le booster de la carte a recevoir')
       .addOptions(targetBoosterOptions.slice(0, 25));
 
-    const row = new ActionRowBuilder().addComponents(receiveBoosterSelect);
+    const row1 = new ActionRowBuilder().addComponents(receiveBoosterSelect);
+
+    // Bouton recherche globale
+    const globalSearchButton = new ButtonBuilder()
+      .setCustomId(`search_trade_global_${tradeId}_receive`)
+      .setLabel('Recherche globale')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🔍');
+
+    const closeButton = new ButtonBuilder()
+      .setCustomId(`close_${trade.initiatorId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger);
+
+    const row2 = new ActionRowBuilder().addComponents(globalSearchButton, closeButton);
 
     const giveCard = getCardInfo(trade.giveCardId);
     await interaction.update({
       content: `📋 **Echange en cours**\n\n` +
         `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n\n` +
         `**Etape 3:** Selectionnez le booster contenant la carte que vous voulez recevoir`,
-      components: [row]
+      components: [row1, row2]
     });
   }
   // Selection du booster pour les cartes a recevoir
@@ -435,6 +597,13 @@ async function handleTradeSelectMenu(interaction) {
         `**Etape 4:** Selectionnez la carte a recevoir`,
       components
     });
+  }
+  // Selection de la carte a recevoir (recherche globale)
+  else if (customId.startsWith('trade_receive_card_global_')) {
+    const cardId = selectedValue.replace('receive_card_', '');
+    trade.receiveCardId = cardId;
+
+    await showTradeConfirmation(interaction, trade, tradeId);
   }
   // Selection de la carte a recevoir
   else if (customId.startsWith('trade_receive_card_')) {
@@ -606,6 +775,58 @@ async function handleTradeButton(interaction) {
     });
   }
 
+  // Gestion de la pagination globale
+  if (customId.startsWith('trade_page_global_')) {
+    const parts = customId.split('_');
+    // Format: trade_page_global_give/receive_prev/next_currentPage_tradeId
+    const type = parts[3]; // give ou receive
+    const direction = parts[4]; // prev ou next
+    const currentPage = parseInt(parts[5]);
+    const tradeId = parts[6];
+
+    const trade = activeTrades.get(tradeId);
+    if (!trade) {
+      return interaction.reply({
+        content: '❌ Cet echange n\'est plus valide.',
+        ephemeral: true
+      });
+    }
+
+    if (interaction.user.id !== trade.initiatorId) {
+      return interaction.reply({
+        content: '❌ Seul l\'initiateur peut naviguer dans les pages.',
+        ephemeral: true
+      });
+    }
+
+    const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
+    const userId = type === 'give' ? trade.initiatorId : trade.targetId;
+    const cards = getAllUserCards(userId);
+
+    const { components, totalCards } = createGlobalCardSelectComponents(cards, tradeId, type, newPage, trade.initiatorId);
+
+    let content;
+    if (type === 'give') {
+      content = `📋 **Echange en cours**\n\n` +
+        `🔍 Recherche globale\n` +
+        `**Cartes disponibles:** ${totalCards}\n\n` +
+        `**Etape 2:** Selectionnez la carte a donner`;
+    } else {
+      const giveCard = getCardInfo(trade.giveCardId);
+      content = `📋 **Echange en cours**\n\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n` +
+        `🔍 Recherche globale\n` +
+        `**Cartes disponibles:** ${totalCards}\n\n` +
+        `**Etape 4:** Selectionnez la carte a recevoir`;
+    }
+
+    await interaction.update({
+      content,
+      components
+    });
+    return;
+  }
+
   // Gestion de la pagination
   if (customId.startsWith('trade_page_')) {
     const parts = customId.split('_');
@@ -768,9 +989,10 @@ async function handleTradeButton(interaction) {
 async function handleTradeSearchModal(interaction) {
   const searchTerm = interaction.fields.getTextInputValue('search_input').toLowerCase();
   const parts = interaction.customId.split('_');
-  // search_trade_tradeId_type
-  const tradeId = parts[2];
-  const type = parts[3]; // 'give' or 'receive'
+  // search_trade_tradeId_type OR search_trade_global_tradeId_type
+  const isGlobal = parts[2] === 'global';
+  const tradeId = isGlobal ? parts[3] : parts[2];
+  const type = isGlobal ? parts[4] : parts[3]; // 'give' or 'receive'
 
   const trade = activeTrades.get(tradeId);
   if (!trade) {
@@ -787,11 +1009,22 @@ async function handleTradeSearchModal(interaction) {
     });
   }
 
-  const allCards = type === 'give' ? trade.giveCards : trade.receiveCards;
+  let allCards, filteredCards;
 
-  const filteredCards = allCards.filter(card =>
-    card.name.toLowerCase().includes(searchTerm)
-  );
+  if (isGlobal) {
+    // Recherche globale
+    const userId = type === 'give' ? trade.initiatorId : trade.targetId;
+    allCards = getAllUserCards(userId);
+    filteredCards = allCards.filter(card =>
+      card.name.toLowerCase().includes(searchTerm)
+    );
+  } else {
+    // Recherche dans un booster specifique
+    allCards = type === 'give' ? trade.giveCards : trade.receiveCards;
+    filteredCards = allCards.filter(card =>
+      card.name.toLowerCase().includes(searchTerm)
+    );
+  }
 
   if (filteredCards.length === 0) {
     return interaction.reply({
@@ -802,23 +1035,45 @@ async function handleTradeSearchModal(interaction) {
 
   await interaction.deferUpdate();
 
-  const boosterId = type === 'give' ? trade.giveBoosterId : trade.receiveBoosterId;
-  const booster = boosters[boosterId];
-  const { components } = createCardSelectComponents(filteredCards, tradeId, type, 0, booster?.name, trade.initiatorId);
-
   let content;
-  if (type === 'give') {
-    content = `📋 **Echange en cours**\n\n` +
-      `**Booster:** ${booster?.name || boosterId}\n` +
-      `🔍 "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})\n\n` +
-      `**Etape 2:** Selectionnez la carte a donner`;
+  let components;
+
+  if (isGlobal) {
+    // Recherche globale
+    const result = createGlobalCardSelectComponents(filteredCards, tradeId, type, 0, trade.initiatorId);
+    components = result.components;
+
+    if (type === 'give') {
+      content = `📋 **Echange en cours**\n\n` +
+        `🔍 Recherche globale: "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})\n\n` +
+        `**Etape 2:** Selectionnez la carte a donner`;
+    } else {
+      const giveCard = getCardInfo(trade.giveCardId);
+      content = `📋 **Echange en cours**\n\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n` +
+        `🔍 Recherche globale: "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})\n\n` +
+        `**Etape 4:** Selectionnez la carte a recevoir`;
+    }
   } else {
-    const giveCard = getCardInfo(trade.giveCardId);
-    content = `📋 **Echange en cours**\n\n` +
-      `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n` +
-      `**Booster cible:** ${booster?.name || boosterId}\n` +
-      `🔍 "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})\n\n` +
-      `**Etape 4:** Selectionnez la carte a recevoir`;
+    // Recherche dans un booster
+    const boosterId = type === 'give' ? trade.giveBoosterId : trade.receiveBoosterId;
+    const booster = boosters[boosterId];
+    const result = createCardSelectComponents(filteredCards, tradeId, type, 0, booster?.name, trade.initiatorId);
+    components = result.components;
+
+    if (type === 'give') {
+      content = `📋 **Echange en cours**\n\n` +
+        `**Booster:** ${booster?.name || boosterId}\n` +
+        `🔍 "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})\n\n` +
+        `**Etape 2:** Selectionnez la carte a donner`;
+    } else {
+      const giveCard = getCardInfo(trade.giveCardId);
+      content = `📋 **Echange en cours**\n\n` +
+        `**Vous donnez:** ${giveCard?.name || trade.giveCardId} #${giveCard?.id || trade.giveCardId}\n` +
+        `**Booster cible:** ${booster?.name || boosterId}\n` +
+        `🔍 "${searchTerm}" (${filteredCards.length > 1 ? 's' : ''})\n\n` +
+        `**Etape 4:** Selectionnez la carte a recevoir`;
+    }
   }
 
   await interaction.editReply({

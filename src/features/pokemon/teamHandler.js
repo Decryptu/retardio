@@ -69,6 +69,31 @@ function getUserCardsFromBooster(userId, boosterId) {
 }
 
 /**
+ * Obtient toutes les cartes possedees par un utilisateur (tous boosters confondus)
+ */
+function getAllUserCards(userId) {
+  const userData = loadUserData(userId);
+  const userCards = [];
+
+  for (const [cardId, quantity] of Object.entries(userData.cards)) {
+    if (quantity > 0) {
+      const cardInfo = getCardInfo(cardId);
+      if (cardInfo) {
+        userCards.push({
+          ...cardInfo,
+          quantity,
+          boosterName: boosters[cardInfo.boosterPackId]?.name || 'Unknown'
+        });
+      }
+    }
+  }
+
+  // Trier par nom
+  userCards.sort((a, b) => a.name.localeCompare(b.name));
+  return userCards;
+}
+
+/**
  * Retourne l'emoji correspondant a la rarete
  */
 function getCardEmoji(rarity) {
@@ -141,19 +166,25 @@ function createBoosterSelectComponents(userBoosters, sessionId, slot, page, user
     components.push(new ActionRowBuilder().addComponents(prevButton, pageIndicator, nextButton));
   }
 
-  // Bouton retour + close
+  // Boutons retour, recherche globale, close
   const backButton = new ButtonBuilder()
     .setCustomId(`team_back_${sessionId}`)
     .setLabel('Retour')
     .setStyle(ButtonStyle.Secondary)
     .setEmoji('↩️');
 
+  const globalSearchButton = new ButtonBuilder()
+    .setCustomId(`search_team_global_${sessionId}_${slot}`)
+    .setLabel('Recherche globale')
+    .setStyle(ButtonStyle.Primary)
+    .setEmoji('🔍');
+
   const closeButton = new ButtonBuilder()
     .setCustomId(`close_${userId}`)
     .setLabel('X')
     .setStyle(ButtonStyle.Danger);
 
-  components.push(new ActionRowBuilder().addComponents(backButton, closeButton));
+  components.push(new ActionRowBuilder().addComponents(backButton, globalSearchButton, closeButton));
 
   return { components, totalBoosters: userBoosters.length, totalPages };
 }
@@ -235,6 +266,81 @@ function createCardSelectComponents(cards, sessionId, slot, boosterId, page, use
     .setStyle(ButtonStyle.Danger);
 
   components.push(new ActionRowBuilder().addComponents(backToBoostersButton, searchButton, cancelButton, closeButton));
+
+  return { components, totalCards: cards.length, totalPages };
+}
+
+/**
+ * Cree les composants de selection de carte pour la recherche globale avec pagination
+ */
+function createGlobalCardSelectComponents(cards, sessionId, slot, page, userId) {
+  const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
+  const startIndex = page * CARDS_PER_PAGE;
+  const pageCards = cards.slice(startIndex, startIndex + CARDS_PER_PAGE);
+
+  const components = [];
+
+  // Menu de selection des cartes avec nom du booster dans la description
+  const cardOptions = pageCards.map(card => ({
+    label: card.name,
+    description: `${card.boosterName} - ${card.rarityName} (x${card.quantity})`,
+    value: `team_card_${card.id}`,
+    emoji: getCardEmoji(card.rarity)
+  }));
+
+  const placeholder = totalPages > 1
+    ? `Recherche globale - Page ${page + 1}/${totalPages}`
+    : `Choisir un Pokemon`;
+
+  const cardSelect = new StringSelectMenuBuilder()
+    .setCustomId(`team_select_card_global_${sessionId}_${slot}_${page}`)
+    .setPlaceholder(placeholder)
+    .addOptions(cardOptions.slice(0, 25));
+
+  components.push(new ActionRowBuilder().addComponents(cardSelect));
+
+  // Boutons de pagination si necessaire
+  if (totalPages > 1) {
+    const prevButton = new ButtonBuilder()
+      .setCustomId(`team_card_global_prev_${sessionId}_${slot}_${page}`)
+      .setLabel('< Precedent')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page === 0);
+
+    const pageIndicator = new ButtonBuilder()
+      .setCustomId(`team_card_indicator_${sessionId}`)
+      .setLabel(`${page + 1} / ${totalPages}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true);
+
+    const nextButton = new ButtonBuilder()
+      .setCustomId(`team_card_global_next_${sessionId}_${slot}_${page}`)
+      .setLabel('Suivant >')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(page >= totalPages - 1);
+
+    components.push(new ActionRowBuilder().addComponents(prevButton, pageIndicator, nextButton));
+  }
+
+  // Boutons retour, annuler, close
+  const backToBoostersButton = new ButtonBuilder()
+    .setCustomId(`team_back_boosters_${sessionId}_${slot}`)
+    .setLabel('Retour aux boosters')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('📦');
+
+  const cancelButton = new ButtonBuilder()
+    .setCustomId(`team_back_${sessionId}`)
+    .setLabel('Annuler')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('↩️');
+
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${userId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+
+  components.push(new ActionRowBuilder().addComponents(backToBoostersButton, cancelButton, closeButton));
 
   return { components, totalCards: cards.length, totalPages };
 }
@@ -425,6 +531,62 @@ async function handleTeamButton(interaction) {
       components
     });
   }
+  // Pagination cartes globale - precedent
+  else if (customId.startsWith('team_card_global_prev_')) {
+    const parts = customId.split('_');
+    const sessionId = parts[4];
+    const slot = parseInt(parts[5]);
+    const currentPage = parseInt(parts[6]);
+
+    const session = activeTeamSessions.get(sessionId);
+    if (!session || interaction.user.id !== session.userId) {
+      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+    }
+
+    const newPage = currentPage - 1;
+    const allCards = getAllUserCards(session.userId);
+    const { components } = createGlobalCardSelectComponents(allCards, sessionId, slot, newPage, session.userId);
+
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
+    await interaction.update({
+      content: `**Modification du Slot ${slot + 1}**\n\n` +
+        `🔍 Recherche globale - ${allCards.length} carte${allCards.length > 1 ? 's' : ''} disponible${allCards.length > 1 ? 's' : ''}.`,
+      files: [attachment],
+      components
+    });
+  }
+  // Pagination cartes globale - suivant
+  else if (customId.startsWith('team_card_global_next_')) {
+    const parts = customId.split('_');
+    const sessionId = parts[4];
+    const slot = parseInt(parts[5]);
+    const currentPage = parseInt(parts[6]);
+
+    const session = activeTeamSessions.get(sessionId);
+    if (!session || interaction.user.id !== session.userId) {
+      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+    }
+
+    const newPage = currentPage + 1;
+    const allCards = getAllUserCards(session.userId);
+    const { components } = createGlobalCardSelectComponents(allCards, sessionId, slot, newPage, session.userId);
+
+    // Keep team image visible
+    const team = getTeam(session.userId);
+    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
+
+    await interaction.update({
+      content: `**Modification du Slot ${slot + 1}**\n\n` +
+        `🔍 Recherche globale - ${allCards.length} carte${allCards.length > 1 ? 's' : ''} disponible${allCards.length > 1 ? 's' : ''}.`,
+      files: [attachment],
+      components
+    });
+  }
   // Pagination cartes - precedent
   else if (customId.startsWith('team_card_prev_')) {
     const parts = customId.split('_');
@@ -593,6 +755,47 @@ async function handleTeamSelectMenu(interaction) {
       components
     });
   }
+  // Selection de carte (recherche globale)
+  else if (customId.startsWith('team_select_card_global_')) {
+    const parts = customId.split('_');
+    const sessionId = parts[4];
+    const slot = parseInt(parts[5]);
+
+    const session = activeTeamSessions.get(sessionId);
+    if (!session) {
+      return interaction.reply({
+        content: '❌ Cette session a expire. Utilisez `/team` a nouveau.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
+    if (interaction.user.id !== session.userId) {
+      return interaction.reply({
+        content: '❌ Cette interaction ne vous appartient pas.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
+    const selectedValue = interaction.values[0];
+    const cardId = selectedValue.replace('team_card_', '');
+
+    // Mettre a jour le slot
+    const success = setTeamSlot(session.userId, slot, cardId);
+
+    if (!success) {
+      return interaction.reply({
+        content: '❌ Vous ne possedez pas cette carte.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
+    const cardInfo = getCardInfo(cardId);
+    const view = await generateMainTeamView(session, sessionId);
+    view.content = `**Votre Equipe** (${getTeam(session.userId).filter(c => c !== null).length}/3)\n\n` +
+      `**${cardInfo?.name}** ajoute au slot ${slot + 1} !\n\nCliquez sur un slot pour le modifier.`;
+
+    await interaction.update(view);
+  }
   // Selection de carte
   else if (customId.startsWith('team_select_card_')) {
     const parts = customId.split('_');
@@ -642,10 +845,11 @@ async function handleTeamSelectMenu(interaction) {
 async function handleTeamSearchModal(interaction) {
   const searchTerm = interaction.fields.getTextInputValue('search_input').toLowerCase();
   const parts = interaction.customId.split('_');
-  // search_team_sessionId_slot_boosterId
-  const sessionId = parts[2];
-  const slot = parseInt(parts[3]);
-  const boosterId = parts[4];
+  // search_team_sessionId_slot_boosterId OR search_team_global_sessionId_slot
+  const isGlobal = parts[2] === 'global';
+  const sessionId = isGlobal ? parts[3] : parts[2];
+  const slot = parseInt(isGlobal ? parts[4] : parts[3]);
+  const boosterId = isGlobal ? null : parts[4];
 
   const session = activeTeamSessions.get(sessionId);
   if (!session) {
@@ -662,10 +866,21 @@ async function handleTeamSearchModal(interaction) {
     });
   }
 
-  const allCards = getUserCardsFromBooster(session.userId, boosterId);
-  const filteredCards = allCards.filter(card =>
-    card.name.toLowerCase().includes(searchTerm)
-  );
+  let allCards, filteredCards;
+
+  if (isGlobal) {
+    // Recherche globale dans tous les boosters
+    allCards = getAllUserCards(session.userId);
+    filteredCards = allCards.filter(card =>
+      card.name.toLowerCase().includes(searchTerm)
+    );
+  } else {
+    // Recherche dans un booster specifique
+    allCards = getUserCardsFromBooster(session.userId, boosterId);
+    filteredCards = allCards.filter(card =>
+      card.name.toLowerCase().includes(searchTerm)
+    );
+  }
 
   if (filteredCards.length === 0) {
     return interaction.reply({
@@ -676,19 +891,32 @@ async function handleTeamSearchModal(interaction) {
 
   await interaction.deferUpdate();
 
-  const { components, totalCards } = createCardSelectComponents(filteredCards, sessionId, slot, boosterId, 0, session.userId);
-  const boosterName = boosters[boosterId]?.name || 'Booster';
-
   const team = getTeam(session.userId);
   const teamImageBuffer = await generateTeamImage(session.userId, team);
   const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
-  await interaction.editReply({
-    content: `**Modification du Slot ${slot + 1}**\n\n` +
-      `**${boosterName}** - 🔍 "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})`,
-    files: [attachment],
-    components
-  });
+  if (isGlobal) {
+    // Creer les composants pour la recherche globale
+    const { components } = createGlobalCardSelectComponents(filteredCards, sessionId, slot, 0, session.userId);
+
+    await interaction.editReply({
+      content: `**Modification du Slot ${slot + 1}**\n\n` +
+        `🔍 Recherche globale: "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})`,
+      files: [attachment],
+      components
+    });
+  } else {
+    // Composants pour la recherche dans un booster
+    const { components, totalCards } = createCardSelectComponents(filteredCards, sessionId, slot, boosterId, 0, session.userId);
+    const boosterName = boosters[boosterId]?.name || 'Booster';
+
+    await interaction.editReply({
+      content: `**Modification du Slot ${slot + 1}**\n\n` +
+        `**${boosterName}** - 🔍 "${searchTerm}" (${filteredCards.length} resultat${filteredCards.length > 1 ? 's' : ''})`,
+      files: [attachment],
+      components
+    });
+  }
 }
 
 module.exports = {
