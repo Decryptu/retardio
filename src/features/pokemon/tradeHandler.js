@@ -701,75 +701,76 @@ async function handleTradeButton(interaction) {
 
     const { canOffer, canReceive } = findTradeOpportunities(trade.initiatorId, trade.targetId);
 
-    // Grouper par booster
-    const groupByBooster = (cards) => {
-      const grouped = {};
-      for (const card of cards) {
-        const boosterName = boosters[card.boosterId]?.name || card.boosterId;
-        if (!grouped[boosterName]) {
-          grouped[boosterName] = [];
-        }
-        grouped[boosterName].push(card);
-      }
-      return grouped;
-    };
-
-    const offerByBooster = groupByBooster(canOffer);
-    const receiveByBooster = groupByBooster(canReceive);
-
-    // Emoji de rarete par couleur
-    const rarityEmoji = (rarity) => {
-      switch (rarity) {
-        case 'common': return '⚪';
-        case 'uncommon': return '🟢';
-        case 'rare': return '🔵';
-        case 'legendary': return '🟠';
-        case 'promo': return '🟣';
-        default: return '⚪';
-      }
-    };
-
-    // Construire le message
-    let description = '';
-
     if (canOffer.length === 0 && canReceive.length === 0) {
-      description = '*Aucune opportunite d\'echange trouvee.*\n\n' +
-        'Les opportunites apparaissent quand:\n' +
-        '• Vous avez des doublons que l\'autre n\'a pas\n' +
-        '• L\'autre a des doublons que vous n\'avez pas';
-    } else {
-      // Ce que vous pouvez offrir
-      if (canOffer.length > 0) {
-        description += '**Vous pouvez offrir** (vos doublons):\n';
-        for (const [boosterName, cards] of Object.entries(offerByBooster)) {
-          const cardList = cards.slice(0, 5).map(c => `${rarityEmoji(c.rarity)}${c.name} #${c.id} x${c.quantity}`).join(', ');
-          const more = cards.length > 5 ? ` +${cards.length - 5}` : '';
-          description += `📦 ${boosterName}: ${cardList}${more}\n`;
-        }
-        description += '\n';
-      }
-
-      // Ce que vous pouvez recevoir
-      if (canReceive.length > 0) {
-        description += '**Vous pouvez recevoir** (leurs doublons):\n';
-        for (const [boosterName, cards] of Object.entries(receiveByBooster)) {
-          const cardList = cards.slice(0, 5).map(c => `${rarityEmoji(c.rarity)}${c.name} #${c.id} x${c.quantity}`).join(', ');
-          const more = cards.length > 5 ? ` +${cards.length - 5}` : '';
-          description += `📦 ${boosterName}: ${cardList}${more}\n`;
-        }
-      }
+      const embed = new EmbedBuilder()
+        .setColor('#3498db')
+        .setTitle('💡 Opportunites d\'echange')
+        .setDescription(
+          '*Aucune opportunite d\'echange trouvee.*\n\n' +
+          'Les opportunites apparaissent quand:\n' +
+          '• Vous avez des doublons que l\'autre n\'a pas\n' +
+          '• L\'autre a des doublons que vous n\'avez pas'
+        );
+      return interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
-    const embed = new EmbedBuilder()
-      .setColor('#3498db')
-      .setTitle('💡 Opportunites d\'echange')
-      .setDescription(description)
-      .setFooter({ text: `${canOffer.length} carte(s) a offrir • ${canReceive.length} carte(s) a recevoir` });
+    const rarityEmoji = { promo: '🟣', legendary: '🟠', rare: '🔵', uncommon: '🟢', common: '⚪' };
+    const rarityOrder = ['promo', 'legendary', 'rare', 'uncommon', 'common'];
 
-    return interaction.reply({
-      embeds: [embed],
-      ephemeral: true
-    });
+    const formatSection = (cards, title, color) => {
+      // Group by booster, then by rarity
+      const byBooster = {};
+      for (const card of cards) {
+        const boosterName = boosters[card.boosterId]?.name || card.boosterId;
+        if (!byBooster[boosterName]) byBooster[boosterName] = {};
+        const rarity = card.rarity || 'common';
+        if (!byBooster[boosterName][rarity]) byBooster[boosterName][rarity] = [];
+        byBooster[boosterName][rarity].push(card);
+      }
+
+      // Build text blocks per booster
+      const blocks = [];
+      for (const [boosterName, rarities] of Object.entries(byBooster)) {
+        let block = `📦 **${boosterName}**\n`;
+        for (const rarity of rarityOrder) {
+          if (!rarities[rarity]) continue;
+          const emoji = rarityEmoji[rarity] || '⚪';
+          const names = rarities[rarity].map(c => `${c.name} #${c.id} (x${c.quantity})`).join(', ');
+          block += `${emoji} ${names}\n`;
+        }
+        blocks.push(block);
+      }
+
+      // Split across multiple embeds if needed (4096 char limit)
+      const embeds = [];
+      let current = '';
+      let embedTitle = title;
+      for (const block of blocks) {
+        if (current.length + block.length > 4000 && current) {
+          embeds.push(new EmbedBuilder().setColor(color).setTitle(embedTitle).setDescription(current.trim()));
+          embedTitle = title + ' (suite)';
+          current = '';
+        }
+        current += block + '\n';
+      }
+      if (current.trim()) {
+        embeds.push(new EmbedBuilder().setColor(color).setTitle(embedTitle).setDescription(current.trim()));
+      }
+      if (embeds.length > 0) {
+        embeds[embeds.length - 1].setFooter({ text: `${cards.length} carte(s)` });
+      }
+      return embeds;
+    };
+
+    const embeds = [];
+    if (canOffer.length > 0) {
+      embeds.push(...formatSection(canOffer, '📤 Vous pouvez offrir (vos doublons)', '#e67e22'));
+    }
+    if (canReceive.length > 0) {
+      embeds.push(...formatSection(canReceive, '📥 Vous pouvez recevoir (leurs doublons)', '#2ecc71'));
+    }
+
+    return interaction.reply({ embeds: embeds.slice(0, 10), ephemeral: true });
   }
 
   // Gestion de la pagination globale
