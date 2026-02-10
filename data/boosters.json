@@ -39,6 +39,46 @@
     },
     "price": 500
   },
+  "5": {
+    "id": 5,
+    "name": "Sanctuaire du Temps",
+    "totalCards": 53,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "6": {
+    "id": 6,
+    "name": "Rugissement des Légendes",
+    "totalCards": 50,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "7": {
+    "id": 7,
+    "name": "Duel des Cieux",
+    "totalCards": 48,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "8": {
+    "id": 8,
+    "name": "Éclat Chromatique",
+    "totalCards": 43,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
   "promo_1": {
     "id": "promo_1",
     "name": "Promo",

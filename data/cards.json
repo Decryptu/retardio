@@ -1,1508 +1,2672 @@
 {
-  "1": {
-    "id": 1,
-    "name": "Énergie Feuille",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "2": {
-    "id": 2,
-    "name": "Énergie Feu",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "3": {
-    "id": 3,
-    "name": "Énergie Eau",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "4": {
-    "id": 4,
-    "name": "Énergie Élec",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "5": {
-    "id": 5,
-    "name": "Énergie Combat",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "6": {
-    "id": 6,
-    "name": "Énergie Psy",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "7": {
-    "id": 7,
-    "name": "Énergie Normal",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "8": {
-    "id": 8,
-    "name": "Professeur Chen",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "9": {
-    "id": 9,
-    "name": "Fillette",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "10": {
-    "id": 10,
-    "name": "Peluche Mélofée",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "11": {
-    "id": 11,
-    "name": "Recherche Énergie",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "12": {
-    "id": 12,
-    "name": "Centre Pokémon",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "13": {
-    "id": 13,
-    "name": "Pokédex",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "14": {
-    "id": 14,
-    "name": "Rafale de vent",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "15": {
-    "id": 15,
-    "name": "Total Soin",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "16": {
-    "id": 16,
-    "name": "Joueur",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "17": {
-    "id": 17,
-    "name": "Pikachu",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "18": {
-    "id": 18,
-    "name": "Pikachu Volant",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "19": {
-    "id": 19,
-    "name": "Raichu",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "20": {
-    "id": 20,
-    "name": "Magnéti",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "21": {
-    "id": 21,
-    "name": "Magnéton",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "22": {
-    "id": 22,
-    "name": "Élektek",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "23": {
-    "id": 23,
-    "name": "Électhor",
-    "rarity": "legendary",
-    "boosterPackId": 1
-  },
-  "24": {
-    "id": 24,
-    "name": "Carapuce",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "25": {
-    "id": 25,
-    "name": "Carabaffe",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "26": {
-    "id": 26,
-    "name": "Tortank",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "27": {
-    "id": 27,
-    "name": "Psykokwak",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "28": {
-    "id": 28,
-    "name": "Akwakwak",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "29": {
-    "id": 29,
-    "name": "Salamèche",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "30": {
-    "id": 30,
-    "name": "Reptincel",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "31": {
-    "id": 31,
-    "name": "Dracaufeu",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "32": {
-    "id": 32,
-    "name": "Goupix",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "33": {
-    "id": 33,
-    "name": "Feunard",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "34": {
-    "id": 34,
-    "name": "Bulbizarre",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "35": {
-    "id": 35,
-    "name": "Herbizarre",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "36": {
-    "id": 36,
-    "name": "Florizarre",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "37": {
-    "id": 37,
-    "name": "Chenipan",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "38": {
-    "id": 38,
-    "name": "Chrysacier",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "39": {
-    "id": 39,
-    "name": "Papilusion",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "40": {
-    "id": 40,
-    "name": "Sabelette",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "41": {
-    "id": 41,
-    "name": "Sablaireau",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "42": {
-    "id": 42,
-    "name": "Taupiqueur",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "43": {
-    "id": 43,
-    "name": "Triopikeur",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "44": {
-    "id": 44,
-    "name": "Férosinge",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "45": {
-    "id": 45,
-    "name": "Colossinge",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "46": {
-    "id": 46,
-    "name": "Osselait",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "47": {
-    "id": 47,
-    "name": "Ossatueur",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "48": {
-    "id": 48,
-    "name": "Abra",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "49": {
-    "id": 49,
-    "name": "Kadabra",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "50": {
-    "id": 50,
-    "name": "Alakazam",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "51": {
-    "id": 51,
-    "name": "Lippoutou",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "52": {
-    "id": 52,
-    "name": "Mew",
-    "rarity": "legendary",
-    "boosterPackId": 1
-  },
-  "53": {
-    "id": 53,
-    "name": "Roucool",
-    "rarity": "common",
-    "boosterPackId": 1
-  },
-  "54": {
-    "id": 54,
-    "name": "Roucoups",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "55": {
-    "id": 55,
-    "name": "Roucarnage",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "56": {
-    "id": 56,
-    "name": "Canarticho",
-    "rarity": "uncommon",
-    "boosterPackId": 1
-  },
-  "57": {
-    "id": 57,
-    "name": "Métamorph",
-    "rarity": "rare",
-    "boosterPackId": 1
-  },
-  "58": {
-    "id": 58,
-    "name": "Imposteur Chen",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "59": {
-    "id": 59,
-    "name": "Imakuni?",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "60": {
-    "id": 60,
-    "name": "Fossile Mystérieux",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "61": {
-    "id": 61,
-    "name": "Retrait d'Énergie",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "62": {
-    "id": 62,
-    "name": "Poké Ball",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "63": {
-    "id": 63,
-    "name": "Puissance Plus",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "64": {
-    "id": 64,
-    "name": "Spray Dés-Évoluant",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "65": {
-    "id": 65,
-    "name": "Réanimation",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "66": {
-    "id": 66,
-    "name": "Recyclage",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "67": {
-    "id": 67,
-    "name": "Pikachu",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "68": {
-    "id": 68,
-    "name": "Pikachu Surf",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "69": {
-    "id": 69,
-    "name": "Voltorbe",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "70": {
-    "id": 70,
-    "name": "Élektek",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "71": {
-    "id": 71,
-    "name": "Voltali",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "72": {
-    "id": 72,
-    "name": "Électhor",
-    "rarity": "legendary",
-    "boosterPackId": 2
-  },
-  "73": {
-    "id": 73,
-    "name": "Aspicot",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "74": {
-    "id": 74,
-    "name": "Coconfort",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "75": {
-    "id": 75,
-    "name": "Dardargnan",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "76": {
-    "id": 76,
-    "name": "Abo",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "77": {
-    "id": 77,
-    "name": "Arbok",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "78": {
-    "id": 78,
-    "name": "Nosferapti",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "79": {
-    "id": 79,
-    "name": "Nosferalto",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "80": {
-    "id": 80,
-    "name": "Mystherbe",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "81": {
-    "id": 81,
-    "name": "Ortide",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "82": {
-    "id": 82,
-    "name": "Rafflesia",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "83": {
-    "id": 83,
-    "name": "Noeunoeuf",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "84": {
-    "id": 84,
-    "name": "Noadkoko",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "85": {
-    "id": 85,
-    "name": "Insécateur",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "86": {
-    "id": 86,
-    "name": "Feunard",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "87": {
-    "id": 87,
-    "name": "Caninos",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "88": {
-    "id": 88,
-    "name": "Arcanin",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "89": {
-    "id": 89,
-    "name": "Pyroli",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "90": {
-    "id": 90,
-    "name": "Sulfura",
-    "rarity": "legendary",
-    "boosterPackId": 2
-  },
-  "91": {
-    "id": 91,
-    "name": "Machoc",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "92": {
-    "id": 92,
-    "name": "Machopeur",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "93": {
-    "id": 93,
-    "name": "Mackogneur",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "94": {
-    "id": 94,
-    "name": "Ossatueur",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "95": {
-    "id": 95,
-    "name": "Rhinocorne",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "96": {
-    "id": 96,
-    "name": "Rhinoféros",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "97": {
-    "id": 97,
-    "name": "Ptitard",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "98": {
-    "id": 98,
-    "name": "Tetarte",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "99": {
-    "id": 99,
-    "name": "Tartard",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "100": {
-    "id": 100,
-    "name": "Aquali",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "101": {
-    "id": 101,
-    "name": "Poissirène",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "102": {
-    "id": 102,
-    "name": "Poissoroy",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "103": {
-    "id": 103,
-    "name": "Artikodin",
-    "rarity": "legendary",
-    "boosterPackId": 2
-  },
-  "104": {
-    "id": 104,
-    "name": "Rattata",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "105": {
-    "id": 105,
-    "name": "Rattatac",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "106": {
-    "id": 106,
-    "name": "Porygon",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "107": {
-    "id": 107,
-    "name": "Leveinard",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "108": {
-    "id": 108,
-    "name": "Évoli",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "109": {
-    "id": 109,
-    "name": "Doduo",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "110": {
-    "id": 110,
-    "name": "Dodrio",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "111": {
-    "id": 111,
-    "name": "Fantominus",
-    "rarity": "common",
-    "boosterPackId": 2
-  },
-  "112": {
-    "id": 112,
-    "name": "Spectrum",
-    "rarity": "uncommon",
-    "boosterPackId": 2
-  },
-  "113": {
-    "id": 113,
-    "name": "Ectoplasma",
-    "rarity": "rare",
-    "boosterPackId": 2
-  },
-  "114": {
-    "id": 114,
-    "name": "Mewtwo",
-    "rarity": "legendary",
-    "boosterPackId": 2
-  },
-  "115": {
-    "id": 115,
-    "name": "Léo",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "116": {
-    "id": 116,
-    "name": "Marchand de Pokémon",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "117": {
-    "id": 117,
-    "name": "Récupération d'Énergie",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "118": {
-    "id": 118,
-    "name": "Super Retrait d'Énergie",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "119": {
-    "id": 119,
-    "name": "Rappel",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "120": {
-    "id": 120,
-    "name": "Defender",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "121": {
-    "id": 121,
-    "name": "Potion",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "122": {
-    "id": 122,
-    "name": "Maintenance",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "123": {
-    "id": 123,
-    "name": "Pikachu",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "124": {
-    "id": 124,
-    "name": "Pikachu Jump",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "125": {
-    "id": 125,
-    "name": "Pikachu Surf",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "126": {
-    "id": 126,
-    "name": "Raichu",
-    "rarity": "rare",
-    "boosterPackId": 3
-  },
-  "127": {
-    "id": 127,
-    "name": "Électhor",
-    "rarity": "legendary",
-    "boosterPackId": 3
-  },
-  "128": {
-    "id": 128,
-    "name": "Nidoran (F)",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "129": {
-    "id": 129,
-    "name": "Nidorina",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "130": {
-    "id": 130,
-    "name": "Nidoqueen",
-    "rarity": "rare",
-    "boosterPackId": 3
-  },
-  "131": {
-    "id": 131,
-    "name": "Nidoran (M)",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "132": {
-    "id": 132,
-    "name": "Nidorino",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "133": {
-    "id": 133,
-    "name": "Nidoking",
-    "rarity": "rare",
-    "boosterPackId": 3
-  },
-  "134": {
-    "id": 134,
-    "name": "Paras",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "135": {
-    "id": 135,
-    "name": "Parasect",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "136": {
-    "id": 136,
-    "name": "Mimitoss",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "137": {
-    "id": 137,
-    "name": "Aéromite",
-    "rarity": "rare",
-    "boosterPackId": 3
-  },
-  "138": {
-    "id": 138,
-    "name": "Saquedeneu",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "139": {
-    "id": 139,
-    "name": "Saquedeneu Brillant",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "140": {
-    "id": 140,
-    "name": "Scarabrute",
-    "rarity": "rare",
-    "boosterPackId": 3
-  },
-  "141": {
-    "id": 141,
-    "name": "Ponyta",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "142": {
-    "id": 142,
-    "name": "Galopa",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "143": {
-    "id": 143,
-    "name": "Magmar",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "144": {
-    "id": 144,
-    "name": "Sulfura",
-    "rarity": "legendary",
-    "boosterPackId": 3
-  },
-  "145": {
-    "id": 145,
-    "name": "Tentacool",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "146": {
-    "id": 146,
-    "name": "Tentacruel",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "147": {
-    "id": 147,
-    "name": "Otaria",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "148": {
-    "id": 148,
-    "name": "Lamantine",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "149": {
-    "id": 149,
-    "name": "Lokhlass",
-    "rarity": "rare",
-    "boosterPackId": 3
-  },
-  "150": {
-    "id": 150,
-    "name": "Stari",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "151": {
-    "id": 151,
-    "name": "Staross",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "152": {
-    "id": 152,
-    "name": "Krabby",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "153": {
-    "id": 153,
-    "name": "Krabboss",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "154": {
-    "id": 154,
-    "name": "Artikodin",
-    "rarity": "legendary",
-    "boosterPackId": 3
-  },
-  "155": {
-    "id": 155,
-    "name": "Racaillou",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "156": {
-    "id": 156,
-    "name": "Gravalanch",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "157": {
-    "id": 157,
-    "name": "Grolem",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "158": {
-    "id": 158,
-    "name": "Onix",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "159": {
-    "id": 159,
-    "name": "Ptéra",
-    "rarity": "rare",
-    "boosterPackId": 3
-  },
-  "160": {
-    "id": 160,
-    "name": "Ramoloss",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "161": {
-    "id": 161,
-    "name": "Flagadoss",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "162": {
-    "id": 162,
-    "name": "Fantominus",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "163": {
-    "id": 163,
-    "name": "Spectrum",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "164": {
-    "id": 164,
-    "name": "Mew",
-    "rarity": "legendary",
-    "boosterPackId": 3
-  },
-  "165": {
-    "id": 165,
-    "name": "Piafabec",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "166": {
-    "id": 166,
-    "name": "Rapasdepic",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "167": {
-    "id": 167,
-    "name": "Rondoudou",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "168": {
-    "id": 168,
-    "name": "Rondoudou Berceuse",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "169": {
-    "id": 169,
-    "name": "Miaouss",
-    "rarity": "common",
-    "boosterPackId": 3
-  },
-  "170": {
-    "id": 170,
-    "name": "Tauros",
-    "rarity": "uncommon",
-    "boosterPackId": 3
-  },
-  "171": {
-    "id": 171,
-    "name": "Ronflex",
-    "rarity": "rare",
-    "boosterPackId": 3
-  },
-  "172": {
-    "id": 172,
-    "name": "Mr Fuji",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "173": {
-    "id": 173,
-    "name": "Éleveur",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "174": {
-    "id": 174,
-    "name": "Super sauvegarde d'Énergie",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "175": {
-    "id": 175,
-    "name": "Échange",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "176": {
-    "id": 176,
-    "name": "Recherche Informatique",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "177": {
-    "id": 177,
-    "name": "Cherche Objet",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "178": {
-    "id": 178,
-    "name": "Super Potion",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "179": {
-    "id": 179,
-    "name": "Poké Flute",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "180": {
-    "id": 180,
-    "name": "Chétiflor",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "181": {
-    "id": 181,
-    "name": "Boustiflor",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "182": {
-    "id": 182,
-    "name": "Empiflor",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "183": {
-    "id": 183,
-    "name": "Smogo",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "184": {
-    "id": 184,
-    "name": "Smogogo",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "185": {
-    "id": 185,
-    "name": "Tadmorv",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "186": {
-    "id": 186,
-    "name": "Grotadmorv",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "187": {
-    "id": 187,
-    "name": "Florizarre",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "188": {
-    "id": 188,
-    "name": "Arcanin",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "189": {
-    "id": 189,
-    "name": "Magmar",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "190": {
-    "id": 190,
-    "name": "Pyroli",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "191": {
-    "id": 191,
-    "name": "Kokiyas",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "192": {
-    "id": 192,
-    "name": "Crustabri",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "193": {
-    "id": 193,
-    "name": "Hypotrempe",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "194": {
-    "id": 194,
-    "name": "Hypocéan",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "195": {
-    "id": 195,
-    "name": "Magicarpe",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "196": {
-    "id": 196,
-    "name": "Léviator",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "197": {
-    "id": 197,
-    "name": "Aquali",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "198": {
-    "id": 198,
-    "name": "Amonita",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "199": {
-    "id": 199,
-    "name": "Amonistar",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "200": {
-    "id": 200,
-    "name": "Magnéti",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "201": {
-    "id": 201,
-    "name": "Magnéton",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "202": {
-    "id": 202,
-    "name": "Électrode",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "203": {
-    "id": 203,
-    "name": "Électrode",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "204": {
-    "id": 204,
-    "name": "Voltali",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "205": {
-    "id": 205,
-    "name": "Kicklee",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "206": {
-    "id": 206,
-    "name": "Tygnon",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "207": {
-    "id": 207,
-    "name": "Kabuto",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "208": {
-    "id": 208,
-    "name": "Kabutops",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "209": {
-    "id": 209,
-    "name": "Ramoloss",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "210": {
-    "id": 210,
-    "name": "Soporifik",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "211": {
-    "id": 211,
-    "name": "Hypnomade",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "212": {
-    "id": 212,
-    "name": "Mr Mime",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "213": {
-    "id": 213,
-    "name": "Mewtwo Holo",
-    "rarity": "legendary",
-    "boosterPackId": 4
-  },
-  "214": {
-    "id": 214,
-    "name": "Mewtwo",
-    "rarity": "legendary",
-    "boosterPackId": 4
-  },
-  "215": {
-    "id": 215,
-    "name": "Mew",
-    "rarity": "legendary",
-    "boosterPackId": 4
-  },
-  "216": {
-    "id": 216,
-    "name": "Roucarnage",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "217": {
-    "id": 217,
-    "name": "Mélofée",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "218": {
-    "id": 218,
-    "name": "Mélodelfe",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "219": {
-    "id": 219,
-    "name": "Rondoudou",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "220": {
-    "id": 220,
-    "name": "Grodoudou",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "221": {
-    "id": 221,
-    "name": "Miaouss",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "222": {
-    "id": 222,
-    "name": "Persian",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "223": {
-    "id": 223,
-    "name": "Excelangue",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "224": {
-    "id": 224,
-    "name": "Kangourex",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "225": {
-    "id": 225,
-    "name": "Minidraco",
-    "rarity": "common",
-    "boosterPackId": 4
-  },
-  "226": {
-    "id": 226,
-    "name": "Draco",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "227": {
-    "id": 227,
-    "name": "Dracolosse",
-    "rarity": "uncommon",
-    "boosterPackId": 4
-  },
-  "228": {
-    "id": 228,
-    "name": "Dracolosse Holo",
-    "rarity": "rare",
-    "boosterPackId": 4
-  },
-  "promo_1": {
-    "id": "promo_1",
-    "name": "Mew Promo",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 2500,
-    "limitedPerUser": 1
-  },
-  "promo_2": {
-    "id": "promo_2",
-    "name": "Pikachu Anniversaire",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 0,
-    "limitedPerUser": 1,
-    "requiresBirthday": true
-  },
-  "promo_3": {
-    "id": "promo_3",
-    "name": "Mew Antique",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 0,
-    "limitedPerUser": 1,
-    "requiresMasterSet": true
-  },
-  "promo_4": {
-    "id": "promo_4",
-    "name": "Fat Pikachu",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1
-  },
-  "promo_5": {
-    "id": "promo_5",
-    "name": "Ectoplasma Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "98891713610797056": 500 }
-  },
-  "promo_6": {
-    "id": "promo_6",
-    "name": "Métamorph Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "508377833945563140": 500 }
-  },
-  "promo_7": {
-    "id": "promo_7",
-    "name": "Goupix Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "277887390645747712": 500 }
-  },
-  "promo_8": {
-    "id": "promo_8",
-    "name": "Raikou Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "219777236755152896": 500 }
-  },
-  "promo_9": {
-    "id": "promo_9",
-    "name": "Jirachi Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "261260647155630081": 500 }
-  },
-  "promo_10": {
-    "id": "promo_10",
-    "name": "Mimiqui Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "460563686839549963": 500 }
-  },
-  "promo_11": {
-    "id": "promo_11",
-    "name": "Évoli Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "317023659225251840": 500 }
-  },
-  "promo_12": {
-    "id": "promo_12",
-    "name": "Zorua Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "299265520086286336": 500 }
-  },
-  "promo_13": {
-    "id": "promo_13",
-    "name": "Entei Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "427582315233935371": 500 }
-  },
-  "promo_14": {
-    "id": "promo_14",
-    "name": "Darkrai Shiny",
-    "rarity": "promo",
-    "boosterPackId": "promo_1",
-    "isPromo": true,
-    "price": 5000,
-    "limitedPerUser": 1,
-    "specialPrices": { "247395588142923776": 500 }
-  }
+	"1": {
+		"id": 1,
+		"name": "Énergie Feuille",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"2": {
+		"id": 2,
+		"name": "Énergie Feu",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"3": {
+		"id": 3,
+		"name": "Énergie Eau",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"4": {
+		"id": 4,
+		"name": "Énergie Élec",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"5": {
+		"id": 5,
+		"name": "Énergie Combat",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"6": {
+		"id": 6,
+		"name": "Énergie Psy",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"7": {
+		"id": 7,
+		"name": "Énergie Normal",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"8": {
+		"id": 8,
+		"name": "Professeur Chen",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"9": {
+		"id": 9,
+		"name": "Fillette",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"10": {
+		"id": 10,
+		"name": "Peluche Mélofée",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"11": {
+		"id": 11,
+		"name": "Recherche Énergie",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"12": {
+		"id": 12,
+		"name": "Centre Pokémon",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"13": {
+		"id": 13,
+		"name": "Pokédex",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"14": {
+		"id": 14,
+		"name": "Rafale de vent",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"15": {
+		"id": 15,
+		"name": "Total Soin",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"16": {
+		"id": 16,
+		"name": "Joueur",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"17": {
+		"id": 17,
+		"name": "Pikachu",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"18": {
+		"id": 18,
+		"name": "Pikachu Volant",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"19": {
+		"id": 19,
+		"name": "Raichu",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"20": {
+		"id": 20,
+		"name": "Magnéti",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"21": {
+		"id": 21,
+		"name": "Magnéton",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"22": {
+		"id": 22,
+		"name": "Élektek",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"23": {
+		"id": 23,
+		"name": "Électhor",
+		"rarity": "legendary",
+		"boosterPackId": 1
+	},
+	"24": {
+		"id": 24,
+		"name": "Carapuce",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"25": {
+		"id": 25,
+		"name": "Carabaffe",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"26": {
+		"id": 26,
+		"name": "Tortank",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"27": {
+		"id": 27,
+		"name": "Psykokwak",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"28": {
+		"id": 28,
+		"name": "Akwakwak",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"29": {
+		"id": 29,
+		"name": "Salamèche",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"30": {
+		"id": 30,
+		"name": "Reptincel",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"31": {
+		"id": 31,
+		"name": "Dracaufeu",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"32": {
+		"id": 32,
+		"name": "Goupix",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"33": {
+		"id": 33,
+		"name": "Feunard",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"34": {
+		"id": 34,
+		"name": "Bulbizarre",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"35": {
+		"id": 35,
+		"name": "Herbizarre",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"36": {
+		"id": 36,
+		"name": "Florizarre",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"37": {
+		"id": 37,
+		"name": "Chenipan",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"38": {
+		"id": 38,
+		"name": "Chrysacier",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"39": {
+		"id": 39,
+		"name": "Papilusion",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"40": {
+		"id": 40,
+		"name": "Sabelette",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"41": {
+		"id": 41,
+		"name": "Sablaireau",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"42": {
+		"id": 42,
+		"name": "Taupiqueur",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"43": {
+		"id": 43,
+		"name": "Triopikeur",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"44": {
+		"id": 44,
+		"name": "Férosinge",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"45": {
+		"id": 45,
+		"name": "Colossinge",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"46": {
+		"id": 46,
+		"name": "Osselait",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"47": {
+		"id": 47,
+		"name": "Ossatueur",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"48": {
+		"id": 48,
+		"name": "Abra",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"49": {
+		"id": 49,
+		"name": "Kadabra",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"50": {
+		"id": 50,
+		"name": "Alakazam",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"51": {
+		"id": 51,
+		"name": "Lippoutou",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"52": {
+		"id": 52,
+		"name": "Mew",
+		"rarity": "legendary",
+		"boosterPackId": 1
+	},
+	"53": {
+		"id": 53,
+		"name": "Roucool",
+		"rarity": "common",
+		"boosterPackId": 1
+	},
+	"54": {
+		"id": 54,
+		"name": "Roucoups",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"55": {
+		"id": 55,
+		"name": "Roucarnage",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"56": {
+		"id": 56,
+		"name": "Canarticho",
+		"rarity": "uncommon",
+		"boosterPackId": 1
+	},
+	"57": {
+		"id": 57,
+		"name": "Métamorph",
+		"rarity": "rare",
+		"boosterPackId": 1
+	},
+	"58": {
+		"id": 58,
+		"name": "Imposteur Chen",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"59": {
+		"id": 59,
+		"name": "Imakuni?",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"60": {
+		"id": 60,
+		"name": "Fossile Mystérieux",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"61": {
+		"id": 61,
+		"name": "Retrait d'Énergie",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"62": {
+		"id": 62,
+		"name": "Poké Ball",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"63": {
+		"id": 63,
+		"name": "Puissance Plus",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"64": {
+		"id": 64,
+		"name": "Spray Dés-Évoluant",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"65": {
+		"id": 65,
+		"name": "Réanimation",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"66": {
+		"id": 66,
+		"name": "Recyclage",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"67": {
+		"id": 67,
+		"name": "Pikachu",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"68": {
+		"id": 68,
+		"name": "Pikachu Surf",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"69": {
+		"id": 69,
+		"name": "Voltorbe",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"70": {
+		"id": 70,
+		"name": "Élektek",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"71": {
+		"id": 71,
+		"name": "Voltali",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"72": {
+		"id": 72,
+		"name": "Électhor",
+		"rarity": "legendary",
+		"boosterPackId": 2
+	},
+	"73": {
+		"id": 73,
+		"name": "Aspicot",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"74": {
+		"id": 74,
+		"name": "Coconfort",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"75": {
+		"id": 75,
+		"name": "Dardargnan",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"76": {
+		"id": 76,
+		"name": "Abo",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"77": {
+		"id": 77,
+		"name": "Arbok",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"78": {
+		"id": 78,
+		"name": "Nosferapti",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"79": {
+		"id": 79,
+		"name": "Nosferalto",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"80": {
+		"id": 80,
+		"name": "Mystherbe",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"81": {
+		"id": 81,
+		"name": "Ortide",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"82": {
+		"id": 82,
+		"name": "Rafflesia",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"83": {
+		"id": 83,
+		"name": "Noeunoeuf",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"84": {
+		"id": 84,
+		"name": "Noadkoko",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"85": {
+		"id": 85,
+		"name": "Insécateur",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"86": {
+		"id": 86,
+		"name": "Feunard",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"87": {
+		"id": 87,
+		"name": "Caninos",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"88": {
+		"id": 88,
+		"name": "Arcanin",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"89": {
+		"id": 89,
+		"name": "Pyroli",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"90": {
+		"id": 90,
+		"name": "Sulfura",
+		"rarity": "legendary",
+		"boosterPackId": 2
+	},
+	"91": {
+		"id": 91,
+		"name": "Machoc",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"92": {
+		"id": 92,
+		"name": "Machopeur",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"93": {
+		"id": 93,
+		"name": "Mackogneur",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"94": {
+		"id": 94,
+		"name": "Ossatueur",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"95": {
+		"id": 95,
+		"name": "Rhinocorne",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"96": {
+		"id": 96,
+		"name": "Rhinoféros",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"97": {
+		"id": 97,
+		"name": "Ptitard",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"98": {
+		"id": 98,
+		"name": "Tetarte",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"99": {
+		"id": 99,
+		"name": "Tartard",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"100": {
+		"id": 100,
+		"name": "Aquali",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"101": {
+		"id": 101,
+		"name": "Poissirène",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"102": {
+		"id": 102,
+		"name": "Poissoroy",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"103": {
+		"id": 103,
+		"name": "Artikodin",
+		"rarity": "legendary",
+		"boosterPackId": 2
+	},
+	"104": {
+		"id": 104,
+		"name": "Rattata",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"105": {
+		"id": 105,
+		"name": "Rattatac",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"106": {
+		"id": 106,
+		"name": "Porygon",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"107": {
+		"id": 107,
+		"name": "Leveinard",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"108": {
+		"id": 108,
+		"name": "Évoli",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"109": {
+		"id": 109,
+		"name": "Doduo",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"110": {
+		"id": 110,
+		"name": "Dodrio",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"111": {
+		"id": 111,
+		"name": "Fantominus",
+		"rarity": "common",
+		"boosterPackId": 2
+	},
+	"112": {
+		"id": 112,
+		"name": "Spectrum",
+		"rarity": "uncommon",
+		"boosterPackId": 2
+	},
+	"113": {
+		"id": 113,
+		"name": "Ectoplasma",
+		"rarity": "rare",
+		"boosterPackId": 2
+	},
+	"114": {
+		"id": 114,
+		"name": "Mewtwo",
+		"rarity": "legendary",
+		"boosterPackId": 2
+	},
+	"115": {
+		"id": 115,
+		"name": "Léo",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"116": {
+		"id": 116,
+		"name": "Marchand de Pokémon",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"117": {
+		"id": 117,
+		"name": "Récupération d'Énergie",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"118": {
+		"id": 118,
+		"name": "Super Retrait d'Énergie",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"119": {
+		"id": 119,
+		"name": "Rappel",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"120": {
+		"id": 120,
+		"name": "Defender",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"121": {
+		"id": 121,
+		"name": "Potion",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"122": {
+		"id": 122,
+		"name": "Maintenance",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"123": {
+		"id": 123,
+		"name": "Pikachu",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"124": {
+		"id": 124,
+		"name": "Pikachu Jump",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"125": {
+		"id": 125,
+		"name": "Pikachu Surf",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"126": {
+		"id": 126,
+		"name": "Raichu",
+		"rarity": "rare",
+		"boosterPackId": 3
+	},
+	"127": {
+		"id": 127,
+		"name": "Électhor",
+		"rarity": "legendary",
+		"boosterPackId": 3
+	},
+	"128": {
+		"id": 128,
+		"name": "Nidoran (F)",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"129": {
+		"id": 129,
+		"name": "Nidorina",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"130": {
+		"id": 130,
+		"name": "Nidoqueen",
+		"rarity": "rare",
+		"boosterPackId": 3
+	},
+	"131": {
+		"id": 131,
+		"name": "Nidoran (M)",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"132": {
+		"id": 132,
+		"name": "Nidorino",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"133": {
+		"id": 133,
+		"name": "Nidoking",
+		"rarity": "rare",
+		"boosterPackId": 3
+	},
+	"134": {
+		"id": 134,
+		"name": "Paras",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"135": {
+		"id": 135,
+		"name": "Parasect",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"136": {
+		"id": 136,
+		"name": "Mimitoss",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"137": {
+		"id": 137,
+		"name": "Aéromite",
+		"rarity": "rare",
+		"boosterPackId": 3
+	},
+	"138": {
+		"id": 138,
+		"name": "Saquedeneu",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"139": {
+		"id": 139,
+		"name": "Saquedeneu Brillant",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"140": {
+		"id": 140,
+		"name": "Scarabrute",
+		"rarity": "rare",
+		"boosterPackId": 3
+	},
+	"141": {
+		"id": 141,
+		"name": "Ponyta",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"142": {
+		"id": 142,
+		"name": "Galopa",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"143": {
+		"id": 143,
+		"name": "Magmar",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"144": {
+		"id": 144,
+		"name": "Sulfura",
+		"rarity": "legendary",
+		"boosterPackId": 3
+	},
+	"145": {
+		"id": 145,
+		"name": "Tentacool",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"146": {
+		"id": 146,
+		"name": "Tentacruel",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"147": {
+		"id": 147,
+		"name": "Otaria",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"148": {
+		"id": 148,
+		"name": "Lamantine",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"149": {
+		"id": 149,
+		"name": "Lokhlass",
+		"rarity": "rare",
+		"boosterPackId": 3
+	},
+	"150": {
+		"id": 150,
+		"name": "Stari",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"151": {
+		"id": 151,
+		"name": "Staross",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"152": {
+		"id": 152,
+		"name": "Krabby",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"153": {
+		"id": 153,
+		"name": "Krabboss",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"154": {
+		"id": 154,
+		"name": "Artikodin",
+		"rarity": "legendary",
+		"boosterPackId": 3
+	},
+	"155": {
+		"id": 155,
+		"name": "Racaillou",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"156": {
+		"id": 156,
+		"name": "Gravalanch",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"157": {
+		"id": 157,
+		"name": "Grolem",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"158": {
+		"id": 158,
+		"name": "Onix",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"159": {
+		"id": 159,
+		"name": "Ptéra",
+		"rarity": "rare",
+		"boosterPackId": 3
+	},
+	"160": {
+		"id": 160,
+		"name": "Ramoloss",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"161": {
+		"id": 161,
+		"name": "Flagadoss",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"162": {
+		"id": 162,
+		"name": "Fantominus",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"163": {
+		"id": 163,
+		"name": "Spectrum",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"164": {
+		"id": 164,
+		"name": "Mew",
+		"rarity": "legendary",
+		"boosterPackId": 3
+	},
+	"165": {
+		"id": 165,
+		"name": "Piafabec",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"166": {
+		"id": 166,
+		"name": "Rapasdepic",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"167": {
+		"id": 167,
+		"name": "Rondoudou",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"168": {
+		"id": 168,
+		"name": "Rondoudou Berceuse",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"169": {
+		"id": 169,
+		"name": "Miaouss",
+		"rarity": "common",
+		"boosterPackId": 3
+	},
+	"170": {
+		"id": 170,
+		"name": "Tauros",
+		"rarity": "uncommon",
+		"boosterPackId": 3
+	},
+	"171": {
+		"id": 171,
+		"name": "Ronflex",
+		"rarity": "rare",
+		"boosterPackId": 3
+	},
+	"172": {
+		"id": 172,
+		"name": "Mr Fuji",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"173": {
+		"id": 173,
+		"name": "Éleveur",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"174": {
+		"id": 174,
+		"name": "Super sauvegarde d'Énergie",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"175": {
+		"id": 175,
+		"name": "Échange",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"176": {
+		"id": 176,
+		"name": "Recherche Informatique",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"177": {
+		"id": 177,
+		"name": "Cherche Objet",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"178": {
+		"id": 178,
+		"name": "Super Potion",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"179": {
+		"id": 179,
+		"name": "Poké Flute",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"180": {
+		"id": 180,
+		"name": "Chétiflor",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"181": {
+		"id": 181,
+		"name": "Boustiflor",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"182": {
+		"id": 182,
+		"name": "Empiflor",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"183": {
+		"id": 183,
+		"name": "Smogo",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"184": {
+		"id": 184,
+		"name": "Smogogo",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"185": {
+		"id": 185,
+		"name": "Tadmorv",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"186": {
+		"id": 186,
+		"name": "Grotadmorv",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"187": {
+		"id": 187,
+		"name": "Florizarre",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"188": {
+		"id": 188,
+		"name": "Arcanin",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"189": {
+		"id": 189,
+		"name": "Magmar",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"190": {
+		"id": 190,
+		"name": "Pyroli",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"191": {
+		"id": 191,
+		"name": "Kokiyas",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"192": {
+		"id": 192,
+		"name": "Crustabri",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"193": {
+		"id": 193,
+		"name": "Hypotrempe",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"194": {
+		"id": 194,
+		"name": "Hypocéan",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"195": {
+		"id": 195,
+		"name": "Magicarpe",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"196": {
+		"id": 196,
+		"name": "Léviator",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"197": {
+		"id": 197,
+		"name": "Aquali",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"198": {
+		"id": 198,
+		"name": "Amonita",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"199": {
+		"id": 199,
+		"name": "Amonistar",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"200": {
+		"id": 200,
+		"name": "Magnéti",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"201": {
+		"id": 201,
+		"name": "Magnéton",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"202": {
+		"id": 202,
+		"name": "Électrode",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"203": {
+		"id": 203,
+		"name": "Électrode",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"204": {
+		"id": 204,
+		"name": "Voltali",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"205": {
+		"id": 205,
+		"name": "Kicklee",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"206": {
+		"id": 206,
+		"name": "Tygnon",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"207": {
+		"id": 207,
+		"name": "Kabuto",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"208": {
+		"id": 208,
+		"name": "Kabutops",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"209": {
+		"id": 209,
+		"name": "Ramoloss",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"210": {
+		"id": 210,
+		"name": "Soporifik",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"211": {
+		"id": 211,
+		"name": "Hypnomade",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"212": {
+		"id": 212,
+		"name": "Mr Mime",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"213": {
+		"id": 213,
+		"name": "Mewtwo Holo",
+		"rarity": "legendary",
+		"boosterPackId": 4
+	},
+	"214": {
+		"id": 214,
+		"name": "Mewtwo",
+		"rarity": "legendary",
+		"boosterPackId": 4
+	},
+	"215": {
+		"id": 215,
+		"name": "Mew",
+		"rarity": "legendary",
+		"boosterPackId": 4
+	},
+	"216": {
+		"id": 216,
+		"name": "Roucarnage",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"217": {
+		"id": 217,
+		"name": "Mélofée",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"218": {
+		"id": 218,
+		"name": "Mélodelfe",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"219": {
+		"id": 219,
+		"name": "Rondoudou",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"220": {
+		"id": 220,
+		"name": "Grodoudou",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"221": {
+		"id": 221,
+		"name": "Miaouss",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"222": {
+		"id": 222,
+		"name": "Persian",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"223": {
+		"id": 223,
+		"name": "Excelangue",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"224": {
+		"id": 224,
+		"name": "Kangourex",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"225": {
+		"id": 225,
+		"name": "Minidraco",
+		"rarity": "common",
+		"boosterPackId": 4
+	},
+	"226": {
+		"id": 226,
+		"name": "Draco",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"227": {
+		"id": 227,
+		"name": "Dracolosse",
+		"rarity": "uncommon",
+		"boosterPackId": 4
+	},
+	"228": {
+		"id": 228,
+		"name": "Dracolosse Holo",
+		"rarity": "rare",
+		"boosterPackId": 4
+	},
+	"229": {
+		"id": 229,
+		"name": "Germignon",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"230": {
+		"id": 230,
+		"name": "Macronium",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"231": {
+		"id": 231,
+		"name": "Méganium",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"232": {
+		"id": 232,
+		"name": "Coxy",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"233": {
+		"id": 233,
+		"name": "Coxyclaque",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"234": {
+		"id": 234,
+		"name": "Mimigal",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"235": {
+		"id": 235,
+		"name": "Migalos",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"236": {
+		"id": 236,
+		"name": "Nosferapti",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"237": {
+		"id": 237,
+		"name": "Nosferalto",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"238": {
+		"id": 238,
+		"name": "Nostenfer",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"239": {
+		"id": 239,
+		"name": "Celebi Plante",
+		"rarity": "legendary",
+		"boosterPackId": 5
+	},
+	"240": {
+		"id": 240,
+		"name": "Héricendre",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"241": {
+		"id": 241,
+		"name": "Feurisson",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"242": {
+		"id": 242,
+		"name": "Typhlosion",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"243": {
+		"id": 243,
+		"name": "Malosse",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"244": {
+		"id": 244,
+		"name": "Démolosse",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"245": {
+		"id": 245,
+		"name": "Kaiminus",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"246": {
+		"id": 246,
+		"name": "Crocrodil",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"247": {
+		"id": 247,
+		"name": "Aligatueur",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"248": {
+		"id": 248,
+		"name": "Marill Bulle",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"249": {
+		"id": 249,
+		"name": "Marill",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"250": {
+		"id": 250,
+		"name": "Azumarill",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"251": {
+		"id": 251,
+		"name": "Axoloto",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"252": {
+		"id": 252,
+		"name": "Maraiste",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"253": {
+		"id": 253,
+		"name": "Magicarpe Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 5
+	},
+	"254": {
+		"id": 254,
+		"name": "Léviator Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 5
+	},
+	"255": {
+		"id": 255,
+		"name": "Wattouat",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"256": {
+		"id": 256,
+		"name": "Lainergie",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"257": {
+		"id": 257,
+		"name": "Pharamp",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"258": {
+		"id": 258,
+		"name": "Onix",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"259": {
+		"id": 259,
+		"name": "Steelix",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"260": {
+		"id": 260,
+		"name": "Phanpy",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"261": {
+		"id": 261,
+		"name": "Donphan",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"262": {
+		"id": 262,
+		"name": "Natu",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"263": {
+		"id": 263,
+		"name": "Xatu",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"264": {
+		"id": 264,
+		"name": "Ramoloss",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"265": {
+		"id": 265,
+		"name": "Flagadoss",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"266": {
+		"id": 266,
+		"name": "Roigada",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"267": {
+		"id": 267,
+		"name": "Feuforeve",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"268": {
+		"id": 268,
+		"name": "Zarbi",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"269": {
+		"id": 269,
+		"name": "Qulbutoké",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"270": {
+		"id": 270,
+		"name": "Celebi Psy",
+		"rarity": "legendary",
+		"boosterPackId": 5
+	},
+	"271": {
+		"id": 271,
+		"name": "Fouinette",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"272": {
+		"id": 272,
+		"name": "Fouinar",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"273": {
+		"id": 273,
+		"name": "Togepi",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"274": {
+		"id": 274,
+		"name": "Togetic",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"275": {
+		"id": 275,
+		"name": "Porygon",
+		"rarity": "uncommon",
+		"boosterPackId": 5
+	},
+	"276": {
+		"id": 276,
+		"name": "Porygon2",
+		"rarity": "rare",
+		"boosterPackId": 5
+	},
+	"277": {
+		"id": 277,
+		"name": "Clone",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"278": {
+		"id": 278,
+		"name": "Master Ball",
+		"rarity": "legendary",
+		"boosterPackId": 5
+	},
+	"279": {
+		"id": 279,
+		"name": "Redirection de Données",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"280": {
+		"id": 280,
+		"name": "Énergie Acier",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"281": {
+		"id": 281,
+		"name": "Énergie Ténèbre",
+		"rarity": "common",
+		"boosterPackId": 5
+	},
+	"282": {
+		"id": 282,
+		"name": "Germignon",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"283": {
+		"id": 283,
+		"name": "Macronium",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"284": {
+		"id": 284,
+		"name": "Méganium",
+		"rarity": "rare",
+		"boosterPackId": 6
+	},
+	"285": {
+		"id": 285,
+		"name": "Mystherbe",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"286": {
+		"id": 286,
+		"name": "Ortide",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"287": {
+		"id": 287,
+		"name": "Rafflesia",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"288": {
+		"id": 288,
+		"name": "Joliflor",
+		"rarity": "rare",
+		"boosterPackId": 6
+	},
+	"289": {
+		"id": 289,
+		"name": "Insécateur",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"290": {
+		"id": 290,
+		"name": "Cizayox",
+		"rarity": "rare",
+		"boosterPackId": 6
+	},
+	"291": {
+		"id": 291,
+		"name": "Scarhino",
+		"rarity": "rare",
+		"boosterPackId": 6
+	},
+	"292": {
+		"id": 292,
+		"name": "Héricendre",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"293": {
+		"id": 293,
+		"name": "Feurisson",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"294": {
+		"id": 294,
+		"name": "Typhlosion",
+		"rarity": "rare",
+		"boosterPackId": 6
+	},
+	"295": {
+		"id": 295,
+		"name": "Magby",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"296": {
+		"id": 296,
+		"name": "Magmar",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"297": {
+		"id": 297,
+		"name": "Limagma",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"298": {
+		"id": 298,
+		"name": "Volcaropod",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"299": {
+		"id": 299,
+		"name": "Entei",
+		"rarity": "legendary",
+		"boosterPackId": 6
+	},
+	"300": {
+		"id": 300,
+		"name": "Kaiminus",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"301": {
+		"id": 301,
+		"name": "Crocrodil",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"302": {
+		"id": 302,
+		"name": "Aligatueur",
+		"rarity": "rare",
+		"boosterPackId": 6
+	},
+	"303": {
+		"id": 303,
+		"name": "Ptitard",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"304": {
+		"id": 304,
+		"name": "Tetarte",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"305": {
+		"id": 305,
+		"name": "Tarpaud",
+		"rarity": "rare",
+		"boosterPackId": 6
+	},
+	"306": {
+		"id": 306,
+		"name": "Qwilfish",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"307": {
+		"id": 307,
+		"name": "Farfuret",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"308": {
+		"id": 308,
+		"name": "Suicune",
+		"rarity": "legendary",
+		"boosterPackId": 6
+	},
+	"309": {
+		"id": 309,
+		"name": "Loupio",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"310": {
+		"id": 310,
+		"name": "Lanturn",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"311": {
+		"id": 311,
+		"name": "Élekid",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"312": {
+		"id": 312,
+		"name": "Élektek",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"313": {
+		"id": 313,
+		"name": "Raikou",
+		"rarity": "legendary",
+		"boosterPackId": 6
+	},
+	"314": {
+		"id": 314,
+		"name": "Simularbre",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"315": {
+		"id": 315,
+		"name": "Scorplane",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"316": {
+		"id": 316,
+		"name": "Debugant",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"317": {
+		"id": 317,
+		"name": "Kicklee",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"318": {
+		"id": 318,
+		"name": "Tygnon",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"319": {
+		"id": 319,
+		"name": "Kapoera",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"320": {
+		"id": 320,
+		"name": "Cornèbre",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"321": {
+		"id": 321,
+		"name": "Girafarig",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"322": {
+		"id": 322,
+		"name": "Hoothoot",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"323": {
+		"id": 323,
+		"name": "Noarfang",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"324": {
+		"id": 324,
+		"name": "Toudoudou",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"325": {
+		"id": 325,
+		"name": "Rondoudou",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"326": {
+		"id": 326,
+		"name": "Grodoudou",
+		"rarity": "uncommon",
+		"boosterPackId": 6
+	},
+	"327": {
+		"id": 327,
+		"name": "Recherche Inflammable",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"328": {
+		"id": 328,
+		"name": "Plan Clandestin",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"329": {
+		"id": 329,
+		"name": "Coup de Jus Collectif",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"330": {
+		"id": 330,
+		"name": "Soins Aquatiques",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"331": {
+		"id": 331,
+		"name": "Poké Ball",
+		"rarity": "common",
+		"boosterPackId": 6
+	},
+	"332": {
+		"id": 332,
+		"name": "Granivol",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"333": {
+		"id": 333,
+		"name": "Floravol",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"334": {
+		"id": 334,
+		"name": "Cotovol",
+		"rarity": "rare",
+		"boosterPackId": 7
+	},
+	"335": {
+		"id": 335,
+		"name": "Tournegrin",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"336": {
+		"id": 336,
+		"name": "Héliatronc",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"337": {
+		"id": 337,
+		"name": "Pyroli",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"338": {
+		"id": 338,
+		"name": "Sulfura",
+		"rarity": "legendary",
+		"boosterPackId": 7
+	},
+	"339": {
+		"id": 339,
+		"name": "Ho-Oh",
+		"rarity": "legendary",
+		"boosterPackId": 7
+	},
+	"340": {
+		"id": 340,
+		"name": "Aquali",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"341": {
+		"id": 341,
+		"name": "Rémoraid",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"342": {
+		"id": 342,
+		"name": "Octillery",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"343": {
+		"id": 343,
+		"name": "Démenta",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"344": {
+		"id": 344,
+		"name": "Artikodin",
+		"rarity": "legendary",
+		"boosterPackId": 7
+	},
+	"345": {
+		"id": 345,
+		"name": "Voltali",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"346": {
+		"id": 346,
+		"name": "Lanturn",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"347": {
+		"id": 347,
+		"name": "Lanturn Holo",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"348": {
+		"id": 348,
+		"name": "Pichu",
+		"rarity": "rare",
+		"boosterPackId": 7
+	},
+	"349": {
+		"id": 349,
+		"name": "Pikachu",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"350": {
+		"id": 350,
+		"name": "Raichu",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"351": {
+		"id": 351,
+		"name": "Électhor",
+		"rarity": "legendary",
+		"boosterPackId": 7
+	},
+	"352": {
+		"id": 352,
+		"name": "Caratroc",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"353": {
+		"id": 353,
+		"name": "Marcacrin",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"354": {
+		"id": 354,
+		"name": "Cochignon",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"355": {
+		"id": 355,
+		"name": "Embrylex",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"356": {
+		"id": 356,
+		"name": "Ymphect",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"357": {
+		"id": 357,
+		"name": "Tyranocif",
+		"rarity": "rare",
+		"boosterPackId": 7
+	},
+	"358": {
+		"id": 358,
+		"name": "Mentali",
+		"rarity": "rare",
+		"boosterPackId": 7
+	},
+	"359": {
+		"id": 359,
+		"name": "Noctali",
+		"rarity": "rare",
+		"boosterPackId": 7
+	},
+	"360": {
+		"id": 360,
+		"name": "Zarbi",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"361": {
+		"id": 361,
+		"name": "Lippouti",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"362": {
+		"id": 362,
+		"name": "Lippoutou",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"363": {
+		"id": 363,
+		"name": "Mélo",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"364": {
+		"id": 364,
+		"name": "Mélofée",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"365": {
+		"id": 365,
+		"name": "Mélodelfe",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"366": {
+		"id": 366,
+		"name": "Capumain",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"367": {
+		"id": 367,
+		"name": "Évoli",
+		"rarity": "uncommon",
+		"boosterPackId": 7
+	},
+	"368": {
+		"id": 368,
+		"name": "Snubbull",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"369": {
+		"id": 369,
+		"name": "Granbull",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"370": {
+		"id": 370,
+		"name": "Airmure",
+		"rarity": "rare",
+		"boosterPackId": 7
+	},
+	"371": {
+		"id": 371,
+		"name": "Lugia",
+		"rarity": "legendary",
+		"boosterPackId": 7
+	},
+	"372": {
+		"id": 372,
+		"name": "Ho-Oh",
+		"rarity": "legendary",
+		"boosterPackId": 7
+	},
+	"373": {
+		"id": 373,
+		"name": "Dark Lugia",
+		"rarity": "legendary",
+		"boosterPackId": 7
+	},
+	"374": {
+		"id": 374,
+		"name": "Conseil de la Championne",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"375": {
+		"id": 375,
+		"name": "Défi du Rival",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"376": {
+		"id": 376,
+		"name": "Éclat Primordial",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"377": {
+		"id": 377,
+		"name": "Roche Foudroyée",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"378": {
+		"id": 378,
+		"name": "Tablette des Ruines",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"379": {
+		"id": 379,
+		"name": "Casino",
+		"rarity": "common",
+		"boosterPackId": 7
+	},
+	"380": {
+		"id": 380,
+		"name": "Yanma",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"381": {
+		"id": 381,
+		"name": "Pomdepik",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"382": {
+		"id": 382,
+		"name": "Foretress",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"383": {
+		"id": 383,
+		"name": "Goupix",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"384": {
+		"id": 384,
+		"name": "Feunard",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"385": {
+		"id": 385,
+		"name": "Salamèche",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"386": {
+		"id": 386,
+		"name": "Reptincel",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"387": {
+		"id": 387,
+		"name": "Dracaufeu Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"388": {
+		"id": 388,
+		"name": "Hypotrempe",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"389": {
+		"id": 389,
+		"name": "Hypocéan",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"390": {
+		"id": 390,
+		"name": "Hyporoi",
+		"rarity": "rare",
+		"boosterPackId": 8
+	},
+	"391": {
+		"id": 391,
+		"name": "Corayon",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"392": {
+		"id": 392,
+		"name": "Phanpy",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"393": {
+		"id": 393,
+		"name": "Donphan",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"394": {
+		"id": 394,
+		"name": "Fantominus",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"395": {
+		"id": 395,
+		"name": "Spectrum",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"396": {
+		"id": 396,
+		"name": "Ectoplasma",
+		"rarity": "rare",
+		"boosterPackId": 8
+	},
+	"397": {
+		"id": 397,
+		"name": "Togepi",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"398": {
+		"id": 398,
+		"name": "Insolourdo",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"399": {
+		"id": 399,
+		"name": "Teddiursa",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"400": {
+		"id": 400,
+		"name": "Ursaring",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"401": {
+		"id": 401,
+		"name": "Cadoizo",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"402": {
+		"id": 402,
+		"name": "Cerfrousse",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"403": {
+		"id": 403,
+		"name": "Queulorior",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"404": {
+		"id": 404,
+		"name": "Écrémeuh",
+		"rarity": "uncommon",
+		"boosterPackId": 8
+	},
+	"405": {
+		"id": 405,
+		"name": "Leveinard",
+		"rarity": "common",
+		"boosterPackId": 8
+	},
+	"406": {
+		"id": 406,
+		"name": "Leuphorie",
+		"rarity": "rare",
+		"boosterPackId": 8
+	},
+	"407": {
+		"id": 407,
+		"name": "Kabutops Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"408": {
+		"id": 408,
+		"name": "Steelix Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"409": {
+		"id": 409,
+		"name": "Tyranocif Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"410": {
+		"id": 410,
+		"name": "Pichu Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"411": {
+		"id": 411,
+		"name": "Pikachu Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"412": {
+		"id": 412,
+		"name": "Métamorph Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"413": {
+		"id": 413,
+		"name": "Migalos Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"414": {
+		"id": 414,
+		"name": "Fouinar Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"415": {
+		"id": 415,
+		"name": "Feuforeve Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"416": {
+		"id": 416,
+		"name": "Hyporoi Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"417": {
+		"id": 417,
+		"name": "Floravol Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"418": {
+		"id": 418,
+		"name": "Loupio Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"419": {
+		"id": 419,
+		"name": "Méganium Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"420": {
+		"id": 420,
+		"name": "Typhlosion Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"421": {
+		"id": 421,
+		"name": "Aligatueur Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"422": {
+		"id": 422,
+		"name": "Mew Shiny",
+		"rarity": "legendary",
+		"boosterPackId": 8
+	},
+	"promo_1": {
+		"id": "promo_1",
+		"name": "Mew Promo",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 2500,
+		"limitedPerUser": 1
+	},
+	"promo_2": {
+		"id": "promo_2",
+		"name": "Pikachu Anniversaire",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 0,
+		"limitedPerUser": 1,
+		"requiresBirthday": true
+	},
+	"promo_3": {
+		"id": "promo_3",
+		"name": "Mew Antique",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 0,
+		"limitedPerUser": 1,
+		"requiresMasterSet": true
+	},
+	"promo_4": {
+		"id": "promo_4",
+		"name": "Fat Pikachu",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1
+	},
+	"promo_5": {
+		"id": "promo_5",
+		"name": "Ectoplasma Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "98891713610797056": 500 }
+	},
+	"promo_6": {
+		"id": "promo_6",
+		"name": "Métamorph Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "508377833945563140": 500 }
+	},
+	"promo_7": {
+		"id": "promo_7",
+		"name": "Goupix Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "277887390645747712": 500 }
+	},
+	"promo_8": {
+		"id": "promo_8",
+		"name": "Raikou Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "219777236755152896": 500 }
+	},
+	"promo_9": {
+		"id": "promo_9",
+		"name": "Jirachi Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "261260647155630081": 500 }
+	},
+	"promo_10": {
+		"id": "promo_10",
+		"name": "Mimiqui Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "460563686839549963": 500 }
+	},
+	"promo_11": {
+		"id": "promo_11",
+		"name": "Évoli Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "317023659225251840": 500 }
+	},
+	"promo_12": {
+		"id": "promo_12",
+		"name": "Zorua Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "299265520086286336": 500 }
+	},
+	"promo_13": {
+		"id": "promo_13",
+		"name": "Entei Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "427582315233935371": 500 }
+	},
+	"promo_14": {
+		"id": "promo_14",
+		"name": "Darkrai Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "247395588142923776": 500 }
+	}
 }
