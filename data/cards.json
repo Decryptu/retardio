@@ -2668,5 +2668,15 @@
 		"price": 5000,
 		"limitedPerUser": 1,
 		"specialPrices": { "247395588142923776": 500 }
+	},
+	"promo_15": {
+		"id": "promo_15",
+		"name": "Suicune Shiny",
+		"rarity": "promo",
+		"boosterPackId": "promo_1",
+		"isPromo": true,
+		"price": 5000,
+		"limitedPerUser": 1,
+		"specialPrices": { "680509544706867213": 500 }
 	}
 }
