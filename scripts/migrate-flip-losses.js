@@ -62,7 +62,7 @@ async function fetchAllMessages(channel) {
 async function main() {
   console.log('Connecting to Discord...');
 
-  await client.login(process.env.DISCORD_TOKEN);
+  await client.login(process.env.TOKEN);
   console.log(`Logged in as ${client.user.tag}`);
 
   const guild = await client.guilds.fetch(GUILD_ID);
