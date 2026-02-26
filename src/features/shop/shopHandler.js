@@ -152,7 +152,7 @@ async function handleBalanceCommand(interaction) {
     .setDescription(
       `**Solde actuel:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
       `**Total gagné:** ${totalEarned.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
-      `**Total perdu (flip):** ${totalLost.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
+      `**Total perdu:** ${totalLost.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
       `**Net:** ${net.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`
     )
     .setThumbnail(targetUser.displayAvatarURL());
