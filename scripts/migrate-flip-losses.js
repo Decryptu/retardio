@@ -78,13 +78,21 @@ async function main() {
       }
     }
 
+    // Debug: print first raw result to understand the structure
+    if (offset === 0 && result.messages.length > 0) {
+      console.log('=== DEBUG: Raw first message group ===');
+      console.log(JSON.stringify(result.messages[0], null, 2).slice(0, 3000));
+      console.log('=== END DEBUG ===\n');
+    }
+
     // result.messages is an array of arrays (each inner array is the message + context)
     for (const messageGroup of result.messages) {
-      // The matching message is the one from our bot
-      const msg = messageGroup.find(m => m.author.id === BOT_ID);
+      // messageGroup might be an array or a single object - handle both
+      const messages = Array.isArray(messageGroup) ? messageGroup : [messageGroup];
+      const msg = messages.find(m => m.author?.id === BOT_ID);
       if (!msg) continue;
 
-      const match = msg.content.match(LOSS_REGEX);
+      const match = msg.content?.match(LOSS_REGEX);
       if (!match) continue; // Might be a "PERDU" in a different context
 
       const lossAmount = parseInt(match[1]);
