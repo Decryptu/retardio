@@ -40,7 +40,8 @@ function loadUserData(userId) {
     stats: {
       totalBoosters: 0,
       totalCards: 0,
-      totalMoneyEarned: 0
+      totalMoneyEarned: 0,
+      totalMoneyLost: 0
     }
   };
 
@@ -223,6 +224,17 @@ function removeMoney(userId, amount) {
   userData.money -= amount;
   saveUserData(userId, userData);
   return true;
+}
+
+/**
+ * Enregistre une perte d'argent (pour les stats)
+ * @param {string} userId - ID Discord de l'utilisateur
+ * @param {number} amount - Montant perdu
+ */
+function addLoss(userId, amount) {
+  const userData = loadUserData(userId);
+  userData.stats.totalMoneyLost = (userData.stats.totalMoneyLost || 0) + amount;
+  saveUserData(userId, userData);
 }
 
 /**
@@ -444,6 +456,7 @@ module.exports = {
   getTodayDate,
   addMoney,
   removeMoney,
+  addLoss,
   getMoney,
   addBoosterToInventory,
   removeBoosterFromInventory,
