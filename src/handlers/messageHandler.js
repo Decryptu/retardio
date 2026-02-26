@@ -39,7 +39,7 @@ class MessageHandler {
 			if (history) {
 				messages.push({
 					role: "system",
-					content: `Tu as accès à l'historique de conversation suivant. Ce sont des données que tu possèdes et que tu peux afficher, citer ou référencer si on te le demande :\n${history}`,
+					content: `Voici la conversation en cours dans le salon Discord. Tu dois réagir naturellement à ce qui se dit, comme un vrai participant du groupe :\n${history}`,
 				});
 			}
 			messages.push({
@@ -191,9 +191,6 @@ class MessageHandler {
 
 		// Single random check for all other triggers
 		const randomValue = Math.random();
-		const context = channelHistory
-			.map((msg) => `${msg.author}: ${msg.content}`)
-			.join("\n");
 
 		if (randomValue < this.config.triggers.mockChance) {
 			// Mock response
@@ -208,11 +205,12 @@ class MessageHandler {
 			this.config.triggers.mockChance +
 				this.config.triggers.randomInterventionChance
 		) {
-			// Random intervention
+			// Random intervention - fetch real channel history for better context
+			const context = await this.getReplyContext(message);
 			const response = await this.getAIResponse(
 				personalities.randomTalker.prompt,
 				message.channel,
-				"",
+				"Interviens naturellement dans cette conversation en réagissant à ce qui vient d'être dit.",
 				context,
 			);
 			if (response) message.channel.send(response);
@@ -251,11 +249,12 @@ class MessageHandler {
 				this.config.triggers.linkedinChance
 		) {
 			// LinkedIn influencer post
+			const linkedinContext = await this.getReplyContext(message);
 			const response = await this.getAIResponse(
 				personalities.linkedinInfluencer.prompt,
 				message.channel,
-				"",
-				context,
+				"Transforme cette conversation en un post LinkedIn inspirationnel absurde.",
+				linkedinContext,
 			);
 			if (response) message.channel.send(response);
 		}
