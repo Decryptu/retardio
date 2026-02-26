@@ -1,6 +1,6 @@
 const { MessageFlags } = require('discord.js');
 const crypto = require('node:crypto');
-const { loadUserData, addMoney, removeMoney } = require('../../services/userManager');
+const { loadUserData, addMoney, removeMoney, addLoss } = require('../../services/userManager');
 
 /**
  * Gere la commande /flip (pile ou face)
@@ -63,6 +63,7 @@ async function handleFlipCommand(interaction) {
     });
   } else {
     // Perdre = perdre la mise (51%)
+    addLoss(userId, bet);
     const userData = loadUserData(userId);
     const newBalance = userData.money || 0;
 

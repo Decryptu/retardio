@@ -142,12 +142,18 @@ async function handleBalanceCommand(interaction) {
   const userMoney = getMoney(targetUser.id);
   const userData = loadUserData(targetUser.id);
 
+  const totalEarned = userData.stats.totalMoneyEarned || 0;
+  const totalLost = userData.stats.totalMoneyLost || 0;
+  const net = totalEarned - totalLost;
+
   const embed = new EmbedBuilder()
     .setColor('#FFD700')
     .setTitle(`Solde de ${targetUser.username}`)
     .setDescription(
       `**Solde actuel:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
-      `**Total gagné:** ${(userData.stats.totalMoneyEarned || 0).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`
+      `**Total gagné:** ${totalEarned.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
+      `**Total perdu (flip):** ${totalLost.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
+      `**Net:** ${net.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`
     )
     .setThumbnail(targetUser.displayAvatarURL());
 
