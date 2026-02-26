@@ -1,11 +1,8 @@
 /**
  * One-time migration script: Recover historical flip losses from Discord message history.
  *
- * This script:
- * 1. Connects to Discord using the bot token
- * 2. Scans all text channels in the server for bot messages matching "PERDU"
- * 3. Extracts who lost how much from interaction metadata
- * 4. Updates each user's data/db/{userId}.json with totalMoneyLost
+ * Uses Discord's guild search API to find only "PERDU" messages from the bot,
+ * instead of scanning every message in every channel.
  *
  * Usage: node scripts/migrate-flip-losses.js
  *
@@ -13,7 +10,7 @@
  */
 
 require('dotenv').config();
-const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
+const { Client, GatewayIntentBits } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -21,42 +18,33 @@ const GUILD_ID = '1266723885295079445';
 const BOT_ID = '1334577967917043743';
 const DB_DIR = path.join(__dirname, '../data/db');
 
-// Regex to match loss messages: "PERDU ! Vous avez perdu XX P."
+// Regex to extract loss amount from message content
 const LOSS_REGEX = /PERDU\s*!?\s*(?:\*\*PERDU\s*!?\*\*\s*)?Vous avez perdu (\d+) P/i;
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+  intents: [GatewayIntentBits.Guilds]
 });
 
 // Track losses per user: { userId: totalLost }
 const userLosses = {};
 
 /**
- * Fetch all messages from a channel, going back through history
+ * Search guild messages using Discord's search API.
+ * GET /guilds/{guild_id}/messages/search?author_id=...&content=...&offset=...
+ * Returns 25 results per page.
  */
-async function fetchAllMessages(channel) {
-  const messages = [];
-  let lastId = null;
+async function searchGuildMessages(guildId, authorId, content, offset = 0) {
+  const params = new URLSearchParams({
+    author_id: authorId,
+    content: content,
+    offset: String(offset)
+  });
 
-  while (true) {
-    const options = { limit: 100 };
-    if (lastId) options.before = lastId;
+  const response = await client.rest.get(
+    `/guilds/${guildId}/messages/search?${params.toString()}`
+  );
 
-    const batch = await channel.messages.fetch(options);
-    if (batch.size === 0) break;
-
-    messages.push(...batch.values());
-    lastId = batch.last().id;
-
-    // Small delay to avoid rate limits
-    await new Promise(r => setTimeout(r, 200));
-  }
-
-  return messages;
+  return response;
 }
 
 async function main() {
@@ -68,87 +56,87 @@ async function main() {
   const guild = await client.guilds.fetch(GUILD_ID);
   console.log(`Found guild: ${guild.name}`);
 
-  // Get all text channels
-  const channels = await guild.channels.fetch();
-  const textChannels = channels.filter(
-    ch => ch && (ch.type === ChannelType.GuildText || ch.type === ChannelType.PublicThread || ch.type === ChannelType.PrivateThread)
-  );
+  // Search for all "PERDU" messages from the bot using guild search API
+  console.log(`\nSearching for "PERDU" messages from bot (${BOT_ID})...`);
 
-  console.log(`Found ${textChannels.size} text channels to scan\n`);
-
+  let offset = 0;
+  let totalResults = null;
   let totalLossMessages = 0;
-  let totalChannelsScanned = 0;
+  let warnings = 0;
 
-  for (const [channelId, channel] of textChannels) {
-    try {
-      totalChannelsScanned++;
-      process.stdout.write(`[${totalChannelsScanned}/${textChannels.size}] Scanning #${channel.name}...`);
+  while (true) {
+    const result = await searchGuildMessages(GUILD_ID, BOT_ID, 'PERDU', offset);
 
-      const messages = await fetchAllMessages(channel);
+    if (totalResults === null) {
+      totalResults = result.total_results;
+      console.log(`Found ${totalResults} messages matching "PERDU" from bot\n`);
 
-      // Filter bot messages that match the loss pattern
-      let channelLosses = 0;
-      for (const msg of messages) {
-        if (msg.author.id !== BOT_ID) continue;
-
-        const match = msg.content.match(LOSS_REGEX);
-        if (!match) continue;
-
-        const lossAmount = parseInt(match[1]);
-
-        // Get the user who triggered this interaction
-        // Discord.js stores this in msg.interaction (for slash command responses)
-        let userId = null;
-
-        if (msg.interaction) {
-          userId = msg.interaction.user?.id || msg.interaction.user;
-        } else if (msg.interactionMetadata) {
-          userId = msg.interactionMetadata.user?.id || msg.interactionMetadata.user;
-        }
-
-        // Fallback: check if the message is a reply to someone
-        if (!userId && msg.reference) {
-          try {
-            const referenced = await channel.messages.fetch(msg.reference.messageId);
-            userId = referenced.author.id;
-          } catch {
-            // Referenced message might be deleted
-          }
-        }
-
-        // Fallback: check mentions
-        if (!userId && msg.mentions.users.size > 0) {
-          userId = msg.mentions.users.first().id;
-        }
-
-        if (!userId) {
-          console.log(`\n  WARNING: Could not determine user for loss message (${lossAmount} P) in #${channel.name} at ${msg.createdAt.toISOString()}`);
-          continue;
-        }
-
-        userLosses[userId] = (userLosses[userId] || 0) + lossAmount;
-        channelLosses++;
-        totalLossMessages++;
+      if (totalResults === 0) {
+        console.log('No loss messages found. Nothing to migrate.');
+        client.destroy();
+        process.exit(0);
       }
-
-      if (channelLosses > 0) {
-        console.log(` ${channelLosses} losses found`);
-      } else {
-        console.log(` no losses`);
-      }
-    } catch (error) {
-      console.log(` SKIPPED (no access or error: ${error.message})`);
     }
+
+    // result.messages is an array of arrays (each inner array is the message + context)
+    for (const messageGroup of result.messages) {
+      // The matching message is the one from our bot
+      const msg = messageGroup.find(m => m.author.id === BOT_ID);
+      if (!msg) continue;
+
+      const match = msg.content.match(LOSS_REGEX);
+      if (!match) continue; // Might be a "PERDU" in a different context
+
+      const lossAmount = parseInt(match[1]);
+
+      // Get the user who triggered this interaction
+      let userId = null;
+
+      // interaction_metadata contains the user who used the slash command
+      if (msg.interaction_metadata) {
+        userId = msg.interaction_metadata.user?.id;
+      }
+      // Older format
+      if (!userId && msg.interaction) {
+        userId = msg.interaction.user?.id;
+      }
+      // Fallback: referenced message
+      if (!userId && msg.referenced_message) {
+        userId = msg.referenced_message.author?.id;
+      }
+      // Fallback: mentions
+      if (!userId && msg.mentions && msg.mentions.length > 0) {
+        userId = msg.mentions[0].id;
+      }
+
+      if (!userId) {
+        warnings++;
+        console.log(`  WARNING: Could not determine user for loss of ${lossAmount} P (msg ID: ${msg.id})`);
+        continue;
+      }
+
+      userLosses[userId] = (userLosses[userId] || 0) + lossAmount;
+      totalLossMessages++;
+    }
+
+    offset += result.messages.length;
+    process.stdout.write(`\r  Processed ${offset}/${totalResults} search results...`);
+
+    // If we've processed all results, stop
+    if (offset >= totalResults || result.messages.length === 0) break;
+
+    // Small delay to respect rate limits (search API is rate-limited)
+    await new Promise(r => setTimeout(r, 1000));
   }
 
-  console.log(`\n========== RESULTS ==========`);
-  console.log(`Total loss messages found: ${totalLossMessages}`);
+  console.log(`\n\n========== RESULTS ==========`);
+  console.log(`Total loss messages processed: ${totalLossMessages}`);
+  if (warnings > 0) console.log(`Warnings (no user found): ${warnings}`);
   console.log(`Users with losses: ${Object.keys(userLosses).length}\n`);
 
   // Display per-user losses
   const sortedUsers = Object.entries(userLosses).sort((a, b) => b[1] - a[1]);
   for (const [userId, totalLost] of sortedUsers) {
-    // Try to get username
     let username = userId;
     try {
       const user = await client.users.fetch(userId);
@@ -157,10 +145,9 @@ async function main() {
     console.log(`  ${username} (${userId}): ${totalLost} P lost`);
   }
 
-  // Ask for confirmation before writing
+  // Apply to database
   console.log(`\n========== APPLYING TO DATABASE ==========`);
 
-  // Ensure DB directory exists
   if (!fs.existsSync(DB_DIR)) {
     fs.mkdirSync(DB_DIR, { recursive: true });
   }
@@ -174,7 +161,7 @@ async function main() {
       if (fs.existsSync(filePath)) {
         userData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
       } else {
-        console.log(`  WARNING: No data file for ${userId}, skipping (user has no saved data yet)`);
+        console.log(`  WARNING: No data file for ${userId}, skipping`);
         continue;
       }
     } catch (error) {
@@ -182,10 +169,7 @@ async function main() {
       continue;
     }
 
-    // Initialize stats if missing
     if (!userData.stats) userData.stats = {};
-
-    // Set the historical loss total
     userData.stats.totalMoneyLost = (userData.stats.totalMoneyLost || 0) + totalLost;
 
     fs.writeFileSync(filePath, JSON.stringify(userData, null, 2), 'utf8');
