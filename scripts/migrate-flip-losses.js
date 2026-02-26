@@ -19,7 +19,8 @@ const BOT_ID = '1334577967917043743';
 const DB_DIR = path.join(__dirname, '../data/db');
 
 // Regex to extract loss amount from message content
-const LOSS_REGEX = /PERDU\s*!?\s*(?:\*\*PERDU\s*!?\*\*\s*)?Vous avez perdu (\d+) P/i;
+// Message format: "😢 **PERDU !** Vous avez perdu 100 P."
+const LOSS_REGEX = /Vous avez perdu (\d+) P/i;
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -76,13 +77,6 @@ async function main() {
         client.destroy();
         process.exit(0);
       }
-    }
-
-    // Debug: print first raw result to understand the structure
-    if (offset === 0 && result.messages.length > 0) {
-      console.log('=== DEBUG: Raw first message group ===');
-      console.log(JSON.stringify(result.messages[0], null, 2).slice(0, 3000));
-      console.log('=== END DEBUG ===\n');
     }
 
     // result.messages is an array of arrays (each inner array is the message + context)
