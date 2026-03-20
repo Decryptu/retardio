@@ -82,7 +82,7 @@
   "promo_1": {
     "id": "promo_1",
     "name": "Promo",
-    "totalCards": 17,
+    "totalCards": 15,
     "cardsPerPack": 0,
     "isPromo": true,
     "guarantees": {}
