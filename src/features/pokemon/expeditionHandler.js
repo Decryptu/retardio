@@ -21,6 +21,17 @@ let activeExpedition = null;
 const EXPEDITION_DURATION = 15 * 60 * 1000; // 15 minutes
 const PROGRESS_INTERVAL = 60 * 1000; // Update every 60 seconds
 
+function sanitizeJsonStringControlChars(jsonStr) {
+  return jsonStr.replace(/"(?:[^"\\]|\\.)*"/g, (match) =>
+    match.replace(/[\x00-\x1F\x7F]/g, (char) => {
+      if (char === "\n") return "\\n";
+      if (char === "\r") return "\\r";
+      if (char === "\t") return "\\t";
+      return "";
+    })
+  );
+}
+
 // Biomes with dominant types and recommendations
 const BIOMES = [
   {
@@ -442,7 +453,7 @@ EXEMPLE STRICT:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5.1",
+        model: "gpt-5.4",
         messages: [
           {
             role: "system",
@@ -475,7 +486,7 @@ EXEMPLE STRICT:
       throw new Error(`No JSON found. First 400 chars:\n${content.slice(0, 400)}`);
     }
 
-    const jsonStr = content.slice(start, end + 1);
+    const jsonStr = sanitizeJsonStringControlChars(content.slice(start, end + 1));
     const parsed = JSON.parse(jsonStr);
 
     result.expeditionLog = clampExpeditionLog(
