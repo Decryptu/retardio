@@ -4,7 +4,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const pokemonCommands = [
   new SlashCommandBuilder()
     .setName('booster')
-    .setDescription('Ouvrir un booster de cartes Pokemon'),
+    .setDescription('Ouvrir un ou plusieurs boosters de cartes Pokemon'),
 
   new SlashCommandBuilder()
     .setName('collection')

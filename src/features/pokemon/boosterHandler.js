@@ -1,6 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
 const { drawBoosterPack, getCardInfo } = require('../../services/cardGenerator');
 const { canOpenBooster, addCardsToUser, loadUserData, saveUserData, getBoosterInventory, removeBoosterFromInventory, getMoney } = require('../../services/userManager');
+const rarities = require('../../../data/rarities.json');
 const { generateBoosterOpeningImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
 const path = require('node:path');
@@ -168,9 +169,21 @@ async function showBoosterPreview(interaction, boosterId, ownerId) {
 
   const confirmButton = new ButtonBuilder()
     .setCustomId(`booster_confirm_open_${boosterId}_${ownerId}`)
-    .setLabel('Ouvrir le booster !')
+    .setLabel('Ouvrir 1 booster')
     .setStyle(ButtonStyle.Success)
     .setEmoji('🎴');
+
+  const buttons = [confirmButton];
+
+  // Bouton multi-ouverture si l'utilisateur a 2+ boosters en inventaire
+  if (!canOpen && inInventory >= 2) {
+    const openAllButton = new ButtonBuilder()
+      .setCustomId(`booster_confirm_openall_${boosterId}_${ownerId}`)
+      .setLabel(`Ouvrir tout (${inInventory})`)
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('📦');
+    buttons.push(openAllButton);
+  }
 
   const backButton = new ButtonBuilder()
     .setCustomId(`booster_back_select_${ownerId}`)
@@ -182,7 +195,8 @@ async function showBoosterPreview(interaction, boosterId, ownerId) {
     .setLabel('X')
     .setStyle(ButtonStyle.Danger);
 
-  const row = new ActionRowBuilder().addComponents(confirmButton, backButton, closeButton);
+  buttons.push(backButton, closeButton);
+  const row = new ActionRowBuilder().addComponents(buttons);
 
   await interaction.update({
     embeds: [embed],
@@ -301,6 +315,135 @@ async function openBooster(interaction, boosterId, ownerId) {
 }
 
 /**
+ * Ouvre plusieurs boosters d'un coup
+ */
+async function openMultipleBoosters(interaction, boosterId, ownerId) {
+  const inventory = getBoosterInventory(ownerId);
+  const booster = boosters[boosterId];
+
+  if (!booster || booster.isPromo) {
+    return interaction.update({
+      content: '❌ Ce booster n\'est pas disponible.',
+      embeds: [],
+      components: []
+    });
+  }
+
+  const count = inventory[String(boosterId)] || 0;
+  if (count < 1) {
+    return interaction.update({
+      content: '❌ Vous n\'avez pas de booster disponible !',
+      embeds: [],
+      components: []
+    });
+  }
+
+  await interaction.deferUpdate();
+
+  try {
+    // Capturer les cartes possedees AVANT l'ouverture
+    const userDataBefore = loadUserData(ownerId);
+    const ownedCardsBefore = new Set(
+      Object.keys(userDataBefore.cards).filter(id => userDataBefore.cards[id] > 0)
+    );
+
+    const allCardIds = [];
+    let godPackCount = 0;
+
+    // Ouvrir tous les boosters
+    for (let i = 0; i < count; i++) {
+      const removed = removeBoosterFromInventory(ownerId, boosterId);
+      if (!removed) break;
+
+      const { cards: cardIds, isGodPack } = drawBoosterPack(boosterId);
+      allCardIds.push(...cardIds);
+      if (isGodPack) godPackCount++;
+    }
+
+    // Ajouter toutes les cartes au joueur
+    const userData = loadUserData(ownerId);
+    allCardIds.forEach(cardId => {
+      const id = String(cardId);
+      userData.cards[id] = (userData.cards[id] || 0) + 1;
+    });
+    userData.stats.totalCards += allCardIds.length;
+    userData.stats.totalBoosters += count;
+    saveUserData(ownerId, userData);
+
+    // Determiner les nouvelles cartes
+    const newCardIds = [...new Set(allCardIds.filter(cardId => !ownedCardsBefore.has(String(cardId))))];
+
+    // Grouper les cartes par rarete
+    const rarityOrder = ['legendary', 'rare', 'uncommon', 'common', 'promo'];
+    const cardsByRarity = {};
+
+    allCardIds.forEach(cardId => {
+      const cardInfo = getCardInfo(cardId);
+      if (!cardInfo) return;
+      const rarity = cardInfo.rarity;
+      if (!cardsByRarity[rarity]) cardsByRarity[rarity] = {};
+      const key = String(cardId);
+      cardsByRarity[rarity][key] = (cardsByRarity[rarity][key] || 0) + 1;
+    });
+
+    // Construire la description
+    let description = '';
+    if (godPackCount > 0) {
+      description += `✨ **${godPackCount} GOD PACK${godPackCount > 1 ? 'S' : ''} !**\n\n`;
+    }
+    description += `📦 **${count} boosters** ouverts — **${allCardIds.length} cartes** obtenues\n`;
+    description += `🆕 **${newCardIds.length}** nouvelle${newCardIds.length > 1 ? 's' : ''} carte${newCardIds.length > 1 ? 's' : ''}\n\n`;
+
+    for (const rarity of rarityOrder) {
+      const cardsInRarity = cardsByRarity[rarity];
+      if (!cardsInRarity) continue;
+
+      const rarityData = rarities[rarity];
+      const rarityName = rarityData?.name || rarity;
+
+      const entries = Object.entries(cardsInRarity)
+        .map(([cardId, qty]) => {
+          const info = getCardInfo(cardId);
+          const isNew = !ownedCardsBefore.has(String(cardId));
+          return { name: info?.name || cardId, qty, isNew };
+        })
+        .sort((a, b) => b.qty - a.qty);
+
+      const lines = entries.map(e =>
+        `${e.isNew ? '🆕 ' : ''}**${e.name}**${e.qty > 1 ? ` x${e.qty}` : ''}`
+      );
+
+      description += `__${rarityName}__\n${lines.join('\n')}\n\n`;
+    }
+
+    // Limiter la description a 4096 caracteres (limite Discord)
+    if (description.length > 4096) {
+      description = description.substring(0, 4090) + '\n...';
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(godPackCount > 0 ? '#FF00FF' : '#FFD700')
+      .setTitle(`${booster.name} — Ouverture x${count}`)
+      .setDescription(description)
+      .setFooter({ text: 'Achetez plus de boosters dans la /boutique !' });
+
+    await interaction.editReply({
+      embeds: [embed],
+      components: [],
+      files: []
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de l\'ouverture multiple:', error);
+    await interaction.editReply({
+      content: '❌ Une erreur est survenue lors de l\'ouverture des boosters.',
+      embeds: [],
+      components: []
+    });
+  }
+}
+
+/**
  * Gere la selection de booster a ouvrir
  */
 async function handleBoosterSelectMenu(interaction) {
@@ -328,7 +471,11 @@ async function handleBoosterButton(interaction) {
     return;
   }
 
-  if (customId.includes('_confirm_open_')) {
+  if (customId.includes('_confirm_openall_')) {
+    // Format: booster_confirm_openall_boosterId_ownerId
+    const boosterId = parts[3];
+    await openMultipleBoosters(interaction, boosterId, ownerId);
+  } else if (customId.includes('_confirm_open_')) {
     // Format: booster_confirm_open_boosterId_ownerId
     const boosterId = parts[3];
     await openBooster(interaction, boosterId, ownerId);
