@@ -2,7 +2,7 @@ const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, 
 const { drawBoosterPack, getCardInfo } = require('../../services/cardGenerator');
 const { canOpenBooster, addCardsToUser, loadUserData, saveUserData, getBoosterInventory, removeBoosterFromInventory, getMoney } = require('../../services/userManager');
 const rarities = require('../../../data/rarities.json');
-const { generateBoosterOpeningImage } = require('../../services/imageGenerator');
+const { generateBoosterOpeningImage, generateMultiBoosterOpeningImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -348,6 +348,8 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
     );
 
     const allCardIds = [];
+    const packsCardIds = [];
+    const godPackFlags = [];
     let godPackCount = 0;
 
     // Ouvrir tous les boosters
@@ -356,6 +358,8 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
       if (!removed) break;
 
       const { cards: cardIds, isGodPack } = drawBoosterPack(boosterId);
+      packsCardIds.push(cardIds);
+      godPackFlags.push(isGodPack);
       allCardIds.push(...cardIds);
       if (isGodPack) godPackCount++;
     }
@@ -421,16 +425,21 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
       description = description.substring(0, 4090) + '\n...';
     }
 
+    // Generer l'image de la grille de cartes
+    const imageBuffer = await generateMultiBoosterOpeningImage(packsCardIds, godPackFlags, newCardIds);
+    const attachment = new AttachmentBuilder(imageBuffer, { name: 'multi_booster.png' });
+
     const embed = new EmbedBuilder()
       .setColor(godPackCount > 0 ? '#FF00FF' : '#FFD700')
       .setTitle(`${booster.name} — Ouverture x${count}`)
       .setDescription(description)
+      .setImage('attachment://multi_booster.png')
       .setFooter({ text: 'Achetez plus de boosters dans la /boutique !' });
 
     await interaction.editReply({
       embeds: [embed],
       components: [],
-      files: []
+      files: [attachment]
     });
 
   } catch (error) {

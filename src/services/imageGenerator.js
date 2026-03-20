@@ -332,6 +332,177 @@ async function generateBoosterOpeningImage(cardIds, isGodPack = false, newCardId
 }
 
 /**
+ * Génère l'image d'ouverture multi-boosters (grille de cartes)
+ * @param {Array<Array<number>>} packsCardIds - Tableau de packs, chaque pack contenant ses cardIds
+ * @param {Array<boolean>} godPackFlags - Tableau indiquant si chaque pack est un god pack
+ * @param {Array<number>} newCardIds - IDs des cartes nouvelles pour le joueur
+ * @returns {Buffer} Buffer PNG de l'image générée
+ */
+async function generateMultiBoosterOpeningImage(packsCardIds, godPackFlags, newCardIds = []) {
+  const newCardSet = new Set(newCardIds.map(id => String(id)));
+  const totalPacks = packsCardIds.length;
+
+  // Dimensions adaptées selon le nombre de packs
+  const padding = 20;
+  const cardSpacing = 10;
+  const rowSpacing = 50; // Espace entre les rangées (inclut texte séparateur)
+  const cardsPerRow = 5;
+
+  // Taille des cartes (réduite si beaucoup de packs pour garder une image raisonnable)
+  const scale = totalPacks > 5 ? 0.65 : totalPacks > 3 ? 0.8 : 1;
+  const cardW = Math.round(CARD_WIDTH * scale);
+  const cardH = Math.round(CARD_HEIGHT * scale);
+  const infoHeight = Math.round(55 * scale); // Espace pour nom + rareté sous chaque carte
+
+  const totalWidth = (cardW * cardsPerRow) + (cardSpacing * (cardsPerRow - 1)) + (padding * 2);
+  const rowHeight = cardH + infoHeight;
+  const totalHeight = (rowHeight * totalPacks) + (rowSpacing * (totalPacks - 1)) + (padding * 2) + 50; // +50 pour titre en bas
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Fond
+  const bgImage = await loadBackgroundImage('opening');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  // Dessiner chaque pack en une rangée
+  for (let packIndex = 0; packIndex < totalPacks; packIndex++) {
+    const cardIds = packsCardIds[packIndex];
+    const isGodPack = godPackFlags[packIndex] || false;
+    const baseY = padding + packIndex * (rowHeight + rowSpacing);
+
+    // Séparateur / label du pack
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    ctx.fillStyle = isGodPack ? '#FF00FF' : '#FFD700';
+    ctx.font = `bold ${Math.round(16 * scale)}px ${PIXEL_FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      isGodPack ? `★ Pack ${packIndex + 1} — GOD PACK ★` : `Pack ${packIndex + 1}`,
+      padding, baseY - 8
+    );
+    ctx.shadowColor = 'transparent';
+
+    // God pack overlay pour cette rangée
+    if (isGodPack) {
+      ctx.fillStyle = 'rgba(129, 0, 127, 0.15)';
+      ctx.fillRect(0, baseY - 15, totalWidth, rowHeight + 20);
+    }
+
+    // Dessiner les cartes de ce pack
+    for (let i = 0; i < cardIds.length; i++) {
+      const cardId = cardIds[i];
+      const cardInfo = getCardInfo(cardId);
+
+      const x = padding + (i * (cardW + cardSpacing));
+      const y = baseY;
+
+      const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${cardId}.png`);
+      try {
+        const cardImage = await loadImage(cardImagePath);
+
+        // Glow
+        const hasGlow = GLOW_RARITIES.includes(cardInfo.rarity);
+        if (hasGlow) {
+          drawCardGlow(ctx, x, y, cardW, cardH, cardInfo.rarityColor);
+        }
+
+        // Carte
+        ctx.drawImage(cardImage, x, y, cardW, cardH);
+
+        // Cadre rareté
+        ctx.strokeStyle = cardInfo.rarityColor;
+        ctx.lineWidth = 3;
+        strokeRoundedRect(ctx, x - 2, y - 2, cardW + 4, cardH + 4, BORDER_RADIUS);
+
+        // Badge NEW
+        if (newCardSet.has(String(cardId))) {
+          const badgeScale = scale;
+          const badgeWidth = Math.round(60 * badgeScale);
+          const badgeHeight = Math.round(28 * badgeScale);
+          const badgeX = x + cardW - badgeWidth - 6;
+          const badgeY = y + 6;
+
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+          ctx.beginPath();
+          ctx.roundRect(badgeX + 2, badgeY + 2, badgeWidth, badgeHeight, 5);
+          ctx.fill();
+
+          ctx.fillStyle = '#FF2222';
+          ctx.beginPath();
+          ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 5);
+          ctx.fill();
+
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 5);
+          ctx.stroke();
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `bold ${Math.round(17 * badgeScale)}px ${PIXEL_FONT}`;
+          ctx.textAlign = 'center';
+          ctx.shadowColor = 'transparent';
+          ctx.fillText('NEW', badgeX + badgeWidth / 2, badgeY + Math.round(20 * badgeScale));
+        }
+
+        // Nom et rareté
+        const textY = y + cardH + Math.round(25 * scale);
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${Math.round(14 * scale)}px ${PIXEL_FONT}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(cardInfo.name, x + cardW / 2, textY);
+
+        ctx.fillStyle = cardInfo.rarityColor;
+        ctx.font = `${Math.round(12 * scale)}px ${PIXEL_FONT}`;
+        ctx.fillText(cardInfo.rarityName, x + cardW / 2, textY + Math.round(18 * scale));
+
+        ctx.shadowColor = 'transparent';
+
+      } catch (error) {
+        console.error(`Erreur lors du chargement de la carte ${cardId}:`, error);
+        ctx.fillStyle = '#333333';
+        ctx.fillRect(x, y, cardW, cardH);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `${Math.round(18 * scale)}px ${PIXEL_FONT}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`Carte ${cardId}`, x + cardW / 2, y + cardH / 2);
+      }
+    }
+  }
+
+  // Titre en bas
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${totalPacks} Boosters Ouverts !`, totalWidth / 2, totalHeight - 20);
+  ctx.shadowColor = 'transparent';
+
+  return canvas.toBuffer('image/png');
+}
+
+/**
  * Génère l'image de la collection d'un utilisateur pour un booster
  * @param {string} userId - ID Discord de l'utilisateur
  * @param {number} boosterId - ID du booster
@@ -1770,6 +1941,7 @@ async function generateTradeCompletedImage(giveCard, receiveCard, initiatorUsern
 
 module.exports = {
   generateBoosterOpeningImage,
+  generateMultiBoosterOpeningImage,
   generateCollectionImage,
   generateCardDetailImage,
   generateTeamImage,
