@@ -17,6 +17,17 @@ let activeRaid = null;
 
 const RAID_DURATION = 5 * 60 * 1000;
 
+function sanitizeJsonStringControlChars(jsonStr) {
+  return jsonStr.replace(/"(?:[^"\\]|\\.)*"/g, (match) =>
+    match.replace(/[\x00-\x1F\x7F]/g, (char) => {
+      if (char === "\n") return "\\n";
+      if (char === "\r") return "\\r";
+      if (char === "\t") return "\\t";
+      return "";
+    })
+  );
+}
+
 function selectRaidBoss() {
   const rand = Math.random();
   let targetRarity;
@@ -313,7 +324,7 @@ EXEMPLE STRICT:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5.1",
+        model: "gpt-5.4",
         messages: [
           {
             role: "system",
@@ -346,7 +357,7 @@ EXEMPLE STRICT:
       throw new Error(`No JSON found. First 400 chars:\n${content.slice(0, 400)}`);
     }
 
-    const jsonStr = content.slice(start, end + 1);
+    const jsonStr = sanitizeJsonStringControlChars(content.slice(start, end + 1));
     const parsed = JSON.parse(jsonStr);
 
     result.victory = !!parsed.victory;

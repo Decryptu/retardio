@@ -49,9 +49,10 @@ class MessageHandler {
 					: "Réponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format \"nom: message\".",
 			});
 			const completion = await this.openai.chat.completions.create({
-				model: "gpt-4o-mini",
+				model: "gpt-5.4-mini",
 				messages,
-				max_tokens: 1024,
+				max_completion_tokens: 1024,
+				reasoning_effort: "none",
 				temperature: 0.8,
 			});
 			return completion.choices[0].message.content;
