@@ -491,12 +491,15 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
 
   // Action buttons
   const actionRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`shop_confirm_booster_${boosterId}_${ownerId}_${quantity}`)
-      .setLabel(quantity > 1 ? `Acheter x${quantity}` : 'Acheter')
-      .setStyle(canAfford ? ButtonStyle.Success : ButtonStyle.Secondary)
-      .setEmoji(canAfford ? '💰' : undefined)
-      .setDisabled(!canAfford),
+    (() => {
+      const btn = new ButtonBuilder()
+        .setCustomId(`shop_confirm_booster_${boosterId}_${ownerId}_${quantity}`)
+        .setLabel(quantity > 1 ? `Acheter x${quantity}` : 'Acheter')
+        .setStyle(canAfford ? ButtonStyle.Success : ButtonStyle.Secondary)
+        .setDisabled(!canAfford);
+      if (canAfford) btn.setEmoji('💰');
+      return btn;
+    })(),
     new ButtonBuilder()
       .setCustomId(`shop_category_boosters_${ownerId}`)
       .setLabel('Retour')
