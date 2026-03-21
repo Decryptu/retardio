@@ -79,6 +79,36 @@
     },
     "price": 500
   },
+  "9": {
+    "id": 9,
+    "name": "Éveil Sylvestre",
+    "totalCards": 43,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "10": {
+    "id": 10,
+    "name": "Fureur Primordiale",
+    "totalCards": 41,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "11": {
+    "id": 11,
+    "name": "Marées Éthérées",
+    "totalCards": 49,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
   "promo_1": {
     "id": "promo_1",
     "name": "Promo",
