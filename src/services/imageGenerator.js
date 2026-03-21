@@ -1939,6 +1939,312 @@ async function generateTradeCompletedImage(giveCard, receiveCard, initiatorUsern
   return canvas.toBuffer('image/png');
 }
 
+/**
+ * Genere l'image de progression d'un safari
+ * @param {string} avatarURL - URL de l'avatar du joueur
+ * @param {string} username - Nom du joueur
+ * @param {number} progress - 0 to 1
+ * @param {number} timeRemaining - minutes restantes
+ * @param {Array} encounters - Rencontres effectuees
+ * @param {number} totalEncounters - Nombre total de rencontres
+ * @returns {Buffer} Buffer PNG
+ */
+async function generateSafariProgressImage(avatarURL, username, progress, timeRemaining, encounters, totalEncounters) {
+  const totalWidth = 800;
+  const totalHeight = 280;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bgImage = await loadBackgroundImage('safari');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#2ECC71';
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+    ctx.globalAlpha = 1.0;
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#0a3a0a');
+    gradient.addColorStop(0.5, '#1a5a1a');
+    gradient.addColorStop(1, '#0a3a0a');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  // Dark overlay
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+  // Title
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+
+  ctx.fillStyle = '#2ECC71';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`Safari de ${username}`, totalWidth / 2, 30);
+
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.fillText('Exploration en cours...', totalWidth / 2, 50);
+
+  ctx.shadowColor = 'transparent';
+
+  // Progress bar
+  const barX = 60;
+  const barY = 140;
+  const barWidth = totalWidth - 120;
+  const barHeight = 14;
+
+  // Bar background
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+  fillRoundedRect(ctx, barX, barY, barWidth, barHeight, 7);
+
+  // Bar fill
+  const fillWidth = barWidth * progress;
+  if (fillWidth > 0) {
+    ctx.fillStyle = '#2ECC71';
+    fillRoundedRect(ctx, barX, barY, Math.max(fillWidth, 14), barHeight, 7);
+  }
+
+  // Encounter markers (like step markers)
+  for (let i = 0; i < totalEncounters; i++) {
+    const stepProgress = (i + 1) / (totalEncounters + 1);
+    const sx = barX + barWidth * stepProgress;
+    const reached = i < encounters.length;
+
+    ctx.beginPath();
+    ctx.arc(sx, barY + barHeight / 2, 10, 0, Math.PI * 2);
+
+    if (reached) {
+      const enc = encounters[i];
+      ctx.fillStyle = enc.caught ? '#2ECC71' : '#E74C3C';
+    } else {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    }
+    ctx.fill();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Icon inside marker
+    if (reached) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `bold 11px ${PIXEL_FONT}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(encounters[i].caught ? '✓' : '✗', sx, barY + barHeight / 2);
+      ctx.textBaseline = 'alphabetic';
+    } else {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `10px ${PIXEL_FONT}`;
+      ctx.textAlign = 'center';
+      ctx.fillText('?', sx, barY + barHeight / 2 + 4);
+    }
+
+    // Label below
+    ctx.fillStyle = reached ? '#FFFFFF' : '#888888';
+    ctx.font = `9px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`#${i + 1}`, sx, barY + barHeight + 18);
+  }
+
+  // Start/End markers
+  ctx.beginPath();
+  ctx.arc(barX, barY + barHeight / 2, 8, 0, Math.PI * 2);
+  ctx.fillStyle = '#2ECC71';
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `9px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Depart', barX, barY + barHeight + 18);
+
+  ctx.beginPath();
+  ctx.arc(barX + barWidth, barY + barHeight / 2, 8, 0, Math.PI * 2);
+  ctx.fillStyle = progress >= 1 ? '#FFD700' : 'rgba(255, 255, 255, 0.3)';
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = progress >= 1 ? '#FFFFFF' : '#888888';
+  ctx.font = `9px ${PIXEL_FONT}`;
+  ctx.fillText('Fin', barX + barWidth, barY + barHeight + 18);
+
+  // Draw avatar on progress bar
+  const avatarRadius = 18;
+  const progressX = barX + barWidth * progress;
+  const avatarY = barY - 32;
+
+  try {
+    const avatarImg = await loadImage(avatarURL);
+    drawCircleAvatar(ctx, avatarImg, progressX, avatarY, avatarRadius);
+  } catch {
+    drawFallbackAvatar(ctx, progressX, avatarY, avatarRadius, username[0]);
+  }
+
+  // Encounter recap below bar
+  if (encounters.length > 0) {
+    const recapY = barY + barHeight + 38;
+    ctx.font = `12px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+
+    const recapParts = encounters.map(enc => {
+      const color = enc.caught ? '#2ECC71' : '#E74C3C';
+      return { name: enc.card.name, color, caught: enc.caught };
+    });
+
+    let recapX = totalWidth / 2 - (recapParts.length - 1) * 70;
+    for (const part of recapParts) {
+      ctx.fillStyle = part.color;
+      ctx.fillText(`${part.caught ? '✓' : '✗'} ${part.name}`, recapX, recapY);
+      recapX += 140;
+    }
+  }
+
+  // Bottom info bar
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.fillRect(0, totalHeight - 40, totalWidth, 40);
+
+  const progressPct = Math.round(progress * 100);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 16px ${PIXEL_FONT}`;
+  ctx.textAlign = 'left';
+  ctx.fillText(`${progressPct}%`, 20, totalHeight - 15);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.fillText(`${encounters.length}/${totalEncounters} rencontres`, totalWidth / 2, totalHeight - 15);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 16px ${PIXEL_FONT}`;
+  ctx.fillText(`${timeRemaining} min`, totalWidth - 20, totalHeight - 15);
+
+  return canvas.toBuffer('image/png');
+}
+
+/**
+ * Genere l'image de resultat d'un safari
+ * @param {string} avatarURL - URL de l'avatar du joueur
+ * @param {string} username - Nom du joueur
+ * @param {Array} encounters - Toutes les rencontres
+ * @param {Array} cardsCaught - Cartes capturees
+ * @returns {Buffer} Buffer PNG
+ */
+async function generateSafariResultImage(avatarURL, username, encounters, cardsCaught) {
+  const totalWidth = 800;
+  const caughtCount = cardsCaught.length;
+  const totalHeight = 350 + Math.max(0, encounters.length - 3) * 30;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bgImage = await loadBackgroundImage('safari');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#0a3a0a');
+    gradient.addColorStop(0.5, '#1a5a1a');
+    gradient.addColorStop(1, '#0a3a0a');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  // Success-based overlay
+  let overlayColor;
+  if (caughtCount >= 4) {
+    overlayColor = 'rgba(0, 100, 0, 0.5)';
+  } else if (caughtCount >= 2) {
+    overlayColor = 'rgba(80, 80, 0, 0.5)';
+  } else {
+    overlayColor = 'rgba(100, 0, 0, 0.5)';
+  }
+  ctx.fillStyle = overlayColor;
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+  // Title
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold 36px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('SAFARI TERMINE', totalWidth / 2, 50);
+
+  ctx.shadowColor = 'transparent';
+
+  // Avatar + username
+  const avatarRadius = 24;
+  const avatarCenterX = totalWidth / 2;
+  const avatarCenterY = 90;
+
+  try {
+    const avatarImg = await loadImage(avatarURL);
+    drawCircleAvatar(ctx, avatarImg, avatarCenterX, avatarCenterY, avatarRadius);
+  } catch {
+    drawFallbackAvatar(ctx, avatarCenterX, avatarCenterY, avatarRadius, username[0]);
+  }
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 18px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(username, totalWidth / 2, avatarCenterY + avatarRadius + 20);
+
+  // Stats
+  const statsY = avatarCenterY + avatarRadius + 50;
+  ctx.fillStyle = '#2ECC71';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.fillText(`${caughtCount}/${encounters.length} captures`, totalWidth / 2, statsY);
+
+  // Encounter list
+  const rarityColors = {
+    common: '#CCCCCC',
+    uncommon: '#1EFF00',
+    rare: '#2fd2ff',
+    legendary: '#FF8000',
+  };
+
+  let listY = statsY + 40;
+  for (const enc of encounters) {
+    const color = rarityColors[enc.rarity] || '#FFFFFF';
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    fillRoundedRect(ctx, 100, listY - 15, totalWidth - 200, 26, 6);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = color;
+    ctx.font = `bold 14px ${PIXEL_FONT}`;
+    ctx.fillText(`#${enc.card.id} ${enc.card.name}`, 120, listY);
+
+    ctx.textAlign = 'right';
+    if (enc.caught) {
+      ctx.fillStyle = '#2ECC71';
+      ctx.fillText(`Capture !${enc.isNew ? ' NEW' : ''}`, totalWidth - 120, listY);
+    } else {
+      ctx.fillStyle = '#E74C3C';
+      ctx.fillText('Echappe...', totalWidth - 120, listY);
+    }
+
+    listY += 30;
+  }
+
+  return canvas.toBuffer('image/png');
+}
+
 module.exports = {
   generateBoosterOpeningImage,
   generateMultiBoosterOpeningImage,
@@ -1951,5 +2257,7 @@ module.exports = {
   generateExpeditionProgressImage,
   generateExpeditionResultImage,
   generateTradeProposalImage,
-  generateTradeCompletedImage
+  generateTradeCompletedImage,
+  generateSafariProgressImage,
+  generateSafariResultImage
 };

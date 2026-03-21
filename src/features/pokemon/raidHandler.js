@@ -147,6 +147,15 @@ async function handleRaidJoin(interaction) {
 
   const userId = interaction.user.id;
 
+  // Block if user is in safari
+  const { hasActiveSafari } = require('./safariHandler');
+  if (hasActiveSafari(userId)) {
+    return interaction.reply({
+      content: "❌ Vous êtes en safari ! Terminez votre safari avant de rejoindre un raid.",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
   if (!hasTeamMember(userId)) {
     return interaction.reply({
       content:

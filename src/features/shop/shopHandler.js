@@ -1,9 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { getMoney, removeMoney, addBoosterToInventory, addCardToUser, hasLimitedCard, loadUserData, getBoosterCompletion } = require('../../services/userManager');
+const { getMoney, removeMoney, addBoosterToInventory, addCardToUser, hasLimitedCard, loadUserData, getBoosterCompletion, addItemToInventory, getItemCount } = require('../../services/userManager');
 const { loadBirthdays, getParisDayMonth } = require('../birthday/birthdayHandler');
 const boosters = require('../../../data/boosters.json');
 const cards = require('../../../data/cards.json');
 const rarities = require('../../../data/rarities.json');
+const items = require('../../../data/items.json');
 const path = require('node:path');
 const fs = require('node:fs');
 
@@ -117,6 +118,12 @@ async function handleShopCommand(interaction) {
         description: 'Acheter des cartes promotionnelles exclusives',
         value: 'cards',
         emoji: '✨'
+      },
+      {
+        label: 'Objets',
+        description: 'Acheter des tickets et objets spéciaux',
+        value: 'items',
+        emoji: '🎫'
       }
     ]);
 
@@ -175,14 +182,30 @@ async function handleInventoryCommand(interaction) {
     }
   }
 
+  const itemInventory = userData.inventory?.items || {};
+  const itemLines = [];
+  for (const [itemId, quantity] of Object.entries(itemInventory)) {
+    if (quantity > 0 && items[itemId]) {
+      itemLines.push(`**${items[itemId].emoji} ${items[itemId].name}** x${quantity}`);
+    }
+  }
+
+  let description = '';
+  if (boosterLines.length > 0) {
+    description += `**Boosters en stock:**\n${boosterLines.join('\n')}\n\nUtilisez \`/booster\` pour ouvrir un booster de votre inventaire !`;
+  }
+  if (itemLines.length > 0) {
+    if (description) description += '\n\n';
+    description += `**Objets:**\n${itemLines.join('\n')}`;
+  }
+  if (!description) {
+    description = 'Votre inventaire est vide.\nAchetez des boosters ou objets dans la `/boutique` !';
+  }
+
   const embed = new EmbedBuilder()
     .setColor('#9B59B6')
     .setTitle(`Inventaire de ${interaction.user.username}`)
-    .setDescription(
-      boosterLines.length > 0
-        ? `**Boosters en stock:**\n${boosterLines.join('\n')}\n\nUtilisez \`/booster\` pour ouvrir un booster de votre inventaire !`
-        : 'Votre inventaire de boosters est vide.\nAchetez des boosters dans la `/boutique` !'
-    )
+    .setDescription(description)
     .setFooter({ text: `Solde: ${getMoney(userId).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` });
 
   await interaction.reply({ embeds: [embed] });
@@ -806,6 +829,186 @@ async function purchaseCard(interaction, cardId, ownerId) {
 }
 
 /**
+ * Affiche les objets disponibles à l'achat
+ */
+async function showItemsShop(interaction, ownerId) {
+  const userMoney = getMoney(ownerId);
+  const purchasableItems = Object.values(items).filter(i => i.price);
+
+  if (purchasableItems.length === 0) {
+    return interaction.update({
+      content: 'Aucun objet disponible à l\'achat pour le moment.',
+      embeds: [],
+      components: []
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#E67E22')
+    .setTitle('Boutique - Objets')
+    .setDescription(
+      `**Votre solde:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n\n` +
+      `Sélectionnez un objet pour l'acheter.`
+    );
+
+  const itemOptions = purchasableItems.map(item => {
+    const canAfford = userMoney >= item.price;
+    const owned = getItemCount(ownerId, item.id);
+    const atMax = item.maxStack && owned >= item.maxStack;
+    return {
+      label: `${item.name} - ${item.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`,
+      description: `${item.description.slice(0, 90)}${atMax ? ' (Max atteint)' : !canAfford ? ' (Fonds insuffisants)' : ''}`,
+      value: `buy_item_${item.id}`,
+      emoji: (canAfford && !atMax) ? item.emoji : '🔒'
+    };
+  });
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`shop_item_select_${ownerId}`)
+    .setPlaceholder('Choisir un objet...')
+    .addOptions(itemOptions);
+
+  const row = new ActionRowBuilder().addComponents(selectMenu);
+
+  const backButton = new ButtonBuilder()
+    .setCustomId(`shop_back_main_${ownerId}`)
+    .setLabel('Retour')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('⬅️');
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  const navRow = new ActionRowBuilder().addComponents(backButton, closeButton);
+
+  await interaction.update({
+    embeds: [embed],
+    components: [row, navRow],
+    files: []
+  });
+}
+
+/**
+ * Affiche la confirmation d'achat d'un objet
+ */
+async function showItemPurchaseConfirm(interaction, itemId, ownerId) {
+  const item = items[itemId];
+  if (!item) return;
+
+  const userMoney = getMoney(ownerId);
+  const owned = getItemCount(ownerId, itemId);
+  const atMax = item.maxStack && owned >= item.maxStack;
+  const canAfford = userMoney >= item.price && !atMax;
+
+  let statusMessage = '';
+  if (atMax) {
+    statusMessage = `\n\n⚠️ Vous avez déjà le maximum (${item.maxStack}) de cet objet !`;
+  } else if (!canAfford) {
+    statusMessage = `\n\n⚠️ Fonds insuffisants ! Il vous manque **${(item.price - userMoney).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}**`;
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(canAfford ? '#2ECC71' : '#E74C3C')
+    .setTitle(`${item.emoji} ${item.name}`)
+    .setDescription(
+      `${item.description}\n\n` +
+      `**Prix:** ${item.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
+      `**En stock:** ${owned}${item.maxStack ? `/${item.maxStack}` : ''}\n` +
+      `**Votre solde:** ${userMoney.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` +
+      (canAfford ? `\n**Solde après achat:** ${(userMoney - item.price).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` : '') +
+      statusMessage
+    );
+
+  const actionRow = new ActionRowBuilder().addComponents(
+    (() => {
+      const btn = new ButtonBuilder()
+        .setCustomId(`shop_confirm_item_${itemId}_${ownerId}`)
+        .setLabel('Acheter')
+        .setStyle(canAfford ? ButtonStyle.Success : ButtonStyle.Secondary)
+        .setDisabled(!canAfford);
+      if (canAfford) btn.setEmoji('💰');
+      return btn;
+    })(),
+    new ButtonBuilder()
+      .setCustomId(`shop_category_items_${ownerId}`)
+      .setLabel('Retour')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('⬅️'),
+    new ButtonBuilder()
+      .setCustomId(`close_${ownerId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  await interaction.update({
+    embeds: [embed],
+    components: [actionRow],
+    files: []
+  });
+}
+
+/**
+ * Effectue l'achat d'un objet
+ */
+async function purchaseItem(interaction, itemId, ownerId) {
+  const item = items[itemId];
+  if (!item) return;
+
+  const userMoney = getMoney(ownerId);
+  const owned = getItemCount(ownerId, itemId);
+  const atMax = item.maxStack && owned >= item.maxStack;
+
+  if (atMax) {
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription(`❌ Vous avez déjà le maximum de **${item.name}** !`)],
+      components: []
+    });
+  }
+
+  if (userMoney < item.price) {
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription('❌ Fonds insuffisants !')],
+      components: []
+    });
+  }
+
+  const success = removeMoney(ownerId, item.price);
+  if (!success) {
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription('❌ Erreur lors du paiement.')],
+      components: []
+    });
+  }
+
+  addItemToInventory(ownerId, itemId);
+
+  const newBalance = getMoney(ownerId);
+  const newCount = getItemCount(ownerId, itemId);
+
+  const embed = new EmbedBuilder()
+    .setColor('#2ECC71')
+    .setTitle('Achat réussi !')
+    .setDescription(
+      `Vous avez acheté **${item.emoji} ${item.name}** !\n\n` +
+      `**En stock:** ${newCount}${item.maxStack ? `/${item.maxStack}` : ''}\n` +
+      `**Solde restant:** ${newBalance.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`
+    );
+
+  const continueButton = new ButtonBuilder()
+    .setCustomId(`shop_back_main_${ownerId}`)
+    .setLabel('Continuer les achats')
+    .setStyle(ButtonStyle.Primary);
+
+  const row = new ActionRowBuilder().addComponents(continueButton);
+
+  await interaction.update({
+    embeds: [embed],
+    components: [row],
+    files: []
+  });
+}
+
+/**
  * Affiche le menu principal de la boutique
  */
 async function showMainShop(interaction, ownerId) {
@@ -836,6 +1039,12 @@ async function showMainShop(interaction, ownerId) {
         description: 'Acheter des cartes promotionnelles exclusives',
         value: 'cards',
         emoji: '✨'
+      },
+      {
+        label: 'Objets',
+        description: 'Acheter des tickets et objets spéciaux',
+        value: 'items',
+        emoji: '🎫'
       }
     ]);
 
@@ -883,7 +1092,9 @@ function extractOwnerId(customId) {
   if (customId.includes('_page_') ||
       customId.startsWith('shop_booster_select_') ||
       customId.startsWith('shop_card_select_') ||
+      customId.startsWith('shop_item_select_') ||
       customId.startsWith('shop_qty_') ||
+      customId.startsWith('shop_confirm_item_') ||
       (customId.includes('_confirm_booster_') && parts.length === 6)) {
     return parts[parts.length - 2];
   }
@@ -908,7 +1119,12 @@ async function handleShopInteraction(interaction) {
         await showBoostersShop(interaction, ownerId, 0);
       } else if (selected === 'cards') {
         await showCardsShop(interaction, ownerId, 0);
+      } else if (selected === 'items') {
+        await showItemsShop(interaction, ownerId);
       }
+    } else if (customId.startsWith('shop_item_select_')) {
+      const itemId = interaction.values[0].replace('buy_item_', '');
+      await showItemPurchaseConfirm(interaction, itemId, ownerId);
     } else if (customId.startsWith('shop_booster_select_')) {
       const boosterId = interaction.values[0].replace('buy_booster_', '');
       await showBoosterPurchaseConfirm(interaction, boosterId, ownerId);
@@ -923,6 +1139,13 @@ async function handleShopInteraction(interaction) {
       await showBoostersShop(interaction, ownerId, 0);
     } else if (customId.startsWith('shop_category_cards_')) {
       await showCardsShop(interaction, ownerId, 0);
+    } else if (customId.startsWith('shop_category_items_')) {
+      await showItemsShop(interaction, ownerId);
+    } else if (customId.startsWith('shop_confirm_item_')) {
+      // Format: shop_confirm_item_{itemId}_{ownerId}
+      const parts = customId.split('_');
+      const itemId = parts[3];
+      await purchaseItem(interaction, itemId, ownerId);
     } else if (customId.startsWith('shop_booster_page_')) {
       // Format: shop_booster_page_prev/next_ownerId_currentPage
       const parts = customId.split('_');

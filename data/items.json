@@ -1,0 +1,11 @@
+{
+  "safari_ticket": {
+    "id": "safari_ticket",
+    "name": "Ticket Safari",
+    "description": "Un ticket pour partir en Safari et capturer des Pokémon que vous ne possédez pas encore !",
+    "price": 1000,
+    "emoji": "🎫",
+    "category": "items",
+    "maxStack": 5
+  }
+}
