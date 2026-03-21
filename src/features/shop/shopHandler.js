@@ -1383,19 +1383,19 @@ function extractOwnerId(customId) {
   //           shop_booster_select_ownerId_page, shop_card_select_ownerId_page
   //           shop_qty_{action}_{boosterId}_{ownerId}_{qty}
   //           shop_confirm_booster_{boosterId}_{ownerId}_{qty}
-  // inv_ patterns: inv_confirm_use_{itemId}_{ownerId}
-  if (customId.startsWith('inv_confirm_use_')) {
-    return parts[parts.length - 1];
-  }
+  // Discord user IDs are always numeric snowflakes — use that to find ownerId reliably
+  // For most patterns, ownerId is the last numeric-looking part
+  // Patterns where ownerId is second-to-last (there's a numeric page/qty after it):
   if (customId.includes('_page_') ||
-      customId.startsWith('shop_booster_select_') ||
-      customId.startsWith('shop_card_select_') ||
-      customId.startsWith('shop_item_select_') ||
       customId.startsWith('shop_qty_') ||
-      customId.startsWith('shop_confirm_item_') ||
       (customId.includes('_confirm_booster_') && parts.length === 6)) {
     return parts[parts.length - 2];
   }
+  // For booster/card selects with page: shop_booster_select_{ownerId}_{page}
+  if ((customId.startsWith('shop_booster_select_') || customId.startsWith('shop_card_select_')) && parts.length === 5) {
+    return parts[parts.length - 2];
+  }
+  // Everything else: ownerId is the last part
   return parts[parts.length - 1];
 }
 
@@ -1440,9 +1440,9 @@ async function handleShopInteraction(interaction) {
     } else if (customId.startsWith('shop_category_items_')) {
       await showItemsShop(interaction, ownerId);
     } else if (customId.startsWith('shop_confirm_item_')) {
-      // Format: shop_confirm_item_{itemId}_{ownerId}
-      const parts = customId.split('_');
-      const itemId = parts[3];
+      // Format: shop_confirm_item_{itemId}_{ownerId} — itemId may contain underscores
+      const withoutPrefix = customId.replace('shop_confirm_item_', '');
+      const itemId = withoutPrefix.slice(0, withoutPrefix.lastIndexOf('_'));
       await purchaseItem(interaction, itemId, ownerId);
     } else if (customId.startsWith('shop_booster_page_')) {
       // Format: shop_booster_page_prev/next_ownerId_currentPage
@@ -1538,9 +1538,9 @@ async function handleShopInteraction(interaction) {
     } else if (customId.startsWith('inv_category_boosters_')) {
       await showInventoryBoosters(interaction, ownerId);
     } else if (customId.startsWith('inv_confirm_use_')) {
-      // Format: inv_confirm_use_{itemId}_{ownerId}
-      const parts = customId.split('_');
-      const itemId = parts[3];
+      // Format: inv_confirm_use_{itemId}_{ownerId} — itemId may contain underscores
+      const withoutPrefix = customId.replace('inv_confirm_use_', '');
+      const itemId = withoutPrefix.slice(0, withoutPrefix.lastIndexOf('_'));
       await useItem(interaction, itemId, ownerId);
     }
   }
