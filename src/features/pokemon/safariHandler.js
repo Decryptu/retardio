@@ -25,7 +25,7 @@ const activeSafaris = new Map();
 
 const SAFARI_DURATION = 10 * 60 * 1000; // 10 minutes
 const TOTAL_ENCOUNTERS = 5;
-const ENCOUNTER_INTERVAL = SAFARI_DURATION / (TOTAL_ENCOUNTERS + 1); // ~1m43s between encounters
+const ENCOUNTER_INTERVAL = SAFARI_DURATION / TOTAL_ENCOUNTERS; // 2min between encounters, last one at 10min
 
 // Safari zones (thematic areas to explore)
 const SAFARI_ZONES = [
