@@ -116,7 +116,7 @@ client.on("interactionCreate", async (interaction) => {
 			return;
 		}
 
-		if (customId?.startsWith("shop_")) {
+		if (customId?.startsWith("shop_") || customId?.startsWith("inv_")) {
 			await handleShopInteraction(interaction);
 		} else {
 			// Gérer les interactions Pokémon (menus, boutons, modals)

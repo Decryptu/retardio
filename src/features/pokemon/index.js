@@ -7,6 +7,7 @@ const { handleTeamCommand, handleTeamButton, handleTeamSelectMenu, handleTeamSea
 const { handleForceRaidCommand, handleRaidButton, checkRaidTrigger, hasActiveRaid } = require('./raidHandler');
 const { handleForceExpeditionCommand, handleExpeditionButton, checkExpeditionTrigger, hasActiveExpedition } = require('./expeditionHandler');
 const { handleFlipCommand } = require('./flipHandler');
+const { handleSafariButton, hasActiveSafari } = require('./safariHandler');
 
 /**
  * Gere toutes les commandes Pokemon
@@ -78,6 +79,8 @@ async function handlePokemonInteraction(interaction) {
       await handleRaidButton(interaction);
     } else if (interaction.customId.startsWith('expedition_')) {
       await handleExpeditionButton(interaction);
+    } else if (interaction.customId.startsWith('safari_')) {
+      await handleSafariButton(interaction);
     }
   } else if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith('search_team_')) {
@@ -97,5 +100,6 @@ module.exports = {
   checkRaidTrigger,
   hasActiveRaid,
   checkExpeditionTrigger,
-  hasActiveExpedition
+  hasActiveExpedition,
+  hasActiveSafari
 };

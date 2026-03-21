@@ -32,7 +32,8 @@ function loadUserData(userId) {
     lastBoosterOpen: null,
     money: 0,
     inventory: {
-      boosters: {}
+      boosters: {},
+      items: {}
     },
     team: [null, null, null], // Team of 3 Pokemon for raids
     rewardCooldown: null,
@@ -54,7 +55,11 @@ function loadUserData(userId) {
     return {
       ...defaultData,
       ...fileData,
-      inventory: { ...defaultData.inventory, ...fileData.inventory },
+      inventory: {
+        ...defaultData.inventory,
+        ...fileData.inventory,
+        items: { ...(fileData.inventory?.items || {}) }
+      },
       team: fileData.team || defaultData.team,
       stats: { ...defaultData.stats, ...fileData.stats }
     };
@@ -421,6 +426,39 @@ function hasTeamMember(userId) {
  * @param {string} userId - ID Discord de l'utilisateur
  * @param {string|number} cardId - ID de la carte
  */
+/**
+ * Ajoute un item à l'inventaire
+ */
+function addItemToInventory(userId, itemId, quantity = 1) {
+  const userData = loadUserData(userId);
+  if (!userData.inventory.items) userData.inventory.items = {};
+  userData.inventory.items[itemId] = (userData.inventory.items[itemId] || 0) + quantity;
+  saveUserData(userId, userData);
+}
+
+/**
+ * Retire un item de l'inventaire
+ */
+function removeItemFromInventory(userId, itemId) {
+  const userData = loadUserData(userId);
+  if (!userData.inventory.items) return false;
+  if (!userData.inventory.items[itemId] || userData.inventory.items[itemId] <= 0) return false;
+  userData.inventory.items[itemId] -= 1;
+  if (userData.inventory.items[itemId] === 0) {
+    delete userData.inventory.items[itemId];
+  }
+  saveUserData(userId, userData);
+  return true;
+}
+
+/**
+ * Obtient la quantité d'un item
+ */
+function getItemCount(userId, itemId) {
+  const userData = loadUserData(userId);
+  return userData.inventory?.items?.[itemId] || 0;
+}
+
 function clearTeamSlotIfNotOwned(userId, cardId) {
   const userData = loadUserData(userId);
   const id = String(cardId);
@@ -468,5 +506,8 @@ module.exports = {
   setTeamSlot,
   hasTeamMember,
   clearTeamSlotIfNotOwned,
+  addItemToInventory,
+  removeItemFromInventory,
+  getItemCount,
   ECONOMY_CONFIG
 };
