@@ -907,6 +907,9 @@ async function showItemPurchaseConfirm(interaction, itemId, ownerId) {
     statusMessage = `\n\n⚠️ Fonds insuffisants ! Il vous manque **${(item.price - userMoney).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}**`;
   }
 
+  const files = [];
+  const itemImagePath = path.join(ASSETS_DIR, 'items', `${itemId.replace(/_/g, '-')}.png`);
+
   const embed = new EmbedBuilder()
     .setColor(canAfford ? '#2ECC71' : '#E74C3C')
     .setTitle(`${item.emoji} ${item.name}`)
@@ -918,6 +921,12 @@ async function showItemPurchaseConfirm(interaction, itemId, ownerId) {
       (canAfford ? `\n**Solde après achat:** ${(userMoney - item.price).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` : '') +
       statusMessage
     );
+
+  if (fs.existsSync(itemImagePath)) {
+    const attachment = new AttachmentBuilder(itemImagePath, { name: 'item.png' });
+    files.push(attachment);
+    embed.setImage('attachment://item.png');
+  }
 
   const actionRow = new ActionRowBuilder().addComponents(
     (() => {
@@ -943,7 +952,7 @@ async function showItemPurchaseConfirm(interaction, itemId, ownerId) {
   await interaction.update({
     embeds: [embed],
     components: [actionRow],
-    files: []
+    files
   });
 }
 
