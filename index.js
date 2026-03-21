@@ -16,7 +16,6 @@ const {
 	hasActiveRaid,
 	checkExpeditionTrigger,
 	hasActiveExpedition,
-	hasActiveSafari,
 } = require("./src/features/pokemon");
 const {
 	shopCommands,
@@ -73,7 +72,7 @@ async function registerCommands() {
 client.on("interactionCreate", async (interaction) => {
 	const cmdName = interaction.commandName;
 	const isBirthdayCmd = cmdName?.startsWith("anniversaire");
-	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster", "team", "forceraid", "forceexpedition", "flip", "safari"].includes(cmdName);
+	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster", "team", "forceraid", "forceexpedition", "flip"].includes(cmdName);
 	const isShopCmd = ["boutique", "solde", "inventaire"].includes(cmdName);
 
 	if (interaction.isAutocomplete()) {
@@ -117,7 +116,7 @@ client.on("interactionCreate", async (interaction) => {
 			return;
 		}
 
-		if (customId?.startsWith("shop_")) {
+		if (customId?.startsWith("shop_") || customId?.startsWith("inv_")) {
 			await handleShopInteraction(interaction);
 		} else {
 			// Gérer les interactions Pokémon (menus, boutons, modals)

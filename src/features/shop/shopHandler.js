@@ -168,33 +168,44 @@ async function handleBalanceCommand(interaction) {
 }
 
 /**
- * Gère la commande /inventaire
+ * Gère la commande /inventaire — affiche un inventaire interactif
  */
 async function handleInventoryCommand(interaction) {
   const userId = interaction.user.id;
-  const userData = loadUserData(userId);
+  await showInventoryMain(interaction, userId, true);
+}
+
+/**
+ * Affiche le menu principal de l'inventaire
+ * @param {boolean} isReply - true pour reply, false pour update
+ */
+async function showInventoryMain(interaction, ownerId, isReply = false) {
+  const userData = loadUserData(ownerId);
   const boosterInventory = userData.inventory?.boosters || {};
+  const itemInventory = userData.inventory?.items || {};
 
   const boosterLines = [];
   for (const [boosterId, quantity] of Object.entries(boosterInventory)) {
     if (quantity > 0 && boosters[boosterId]) {
-      boosterLines.push(`**${boosters[boosterId].name}** x${quantity}`);
+      boosterLines.push(`📦 **${boosters[boosterId].name}** x${quantity}`);
     }
   }
 
-  const itemInventory = userData.inventory?.items || {};
   const itemLines = [];
   for (const [itemId, quantity] of Object.entries(itemInventory)) {
     if (quantity > 0 && items[itemId]) {
-      itemLines.push(`**${items[itemId].emoji} ${items[itemId].name}** x${quantity}`);
+      itemLines.push(`${items[itemId].emoji} **${items[itemId].name}** x${quantity}`);
     }
   }
 
+  const hasBooters = boosterLines.length > 0;
+  const hasItems = itemLines.length > 0;
+
   let description = '';
-  if (boosterLines.length > 0) {
-    description += `**Boosters en stock:**\n${boosterLines.join('\n')}\n\nUtilisez \`/booster\` pour ouvrir un booster de votre inventaire !`;
+  if (hasBooters) {
+    description += `**Boosters en stock:**\n${boosterLines.join('\n')}`;
   }
-  if (itemLines.length > 0) {
+  if (hasItems) {
     if (description) description += '\n\n';
     description += `**Objets:**\n${itemLines.join('\n')}`;
   }
@@ -202,13 +213,258 @@ async function handleInventoryCommand(interaction) {
     description = 'Votre inventaire est vide.\nAchetez des boosters ou objets dans la `/boutique` !';
   }
 
+  if (hasBooters || hasItems) {
+    description += '\n\nSélectionnez une catégorie ci-dessous pour utiliser un objet.';
+  }
+
   const embed = new EmbedBuilder()
     .setColor('#9B59B6')
     .setTitle(`Inventaire de ${interaction.user.username}`)
     .setDescription(description)
-    .setFooter({ text: `Solde: ${getMoney(userId).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` });
+    .setFooter({ text: `Solde: ${getMoney(ownerId).toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` });
 
-  await interaction.reply({ embeds: [embed] });
+  const components = [];
+
+  // Category select menu (only if there's stuff)
+  if (hasBooters || hasItems) {
+    const options = [];
+    if (hasBooters) {
+      options.push({
+        label: 'Boosters',
+        description: 'Ouvrir un booster de votre inventaire',
+        value: 'inv_boosters',
+        emoji: '📦'
+      });
+    }
+    if (hasItems) {
+      options.push({
+        label: 'Objets',
+        description: 'Utiliser un objet de votre inventaire',
+        value: 'inv_items',
+        emoji: '🎫'
+      });
+    }
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`inv_category_select_${ownerId}`)
+      .setPlaceholder('Choisir une catégorie...')
+      .addOptions(options);
+
+    components.push(new ActionRowBuilder().addComponents(selectMenu));
+  }
+
+  const closeButton = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+  components.push(new ActionRowBuilder().addComponents(closeButton));
+
+  const payload = { embeds: [embed], components, files: [] };
+
+  if (isReply) {
+    await interaction.reply(payload);
+  } else {
+    await interaction.update(payload);
+  }
+}
+
+/**
+ * Affiche les boosters de l'inventaire avec possibilité de sélection
+ */
+async function showInventoryBoosters(interaction, ownerId) {
+  const userData = loadUserData(ownerId);
+  const boosterInventory = userData.inventory?.boosters || {};
+
+  const ownedBoosters = [];
+  for (const [boosterId, quantity] of Object.entries(boosterInventory)) {
+    if (quantity > 0 && boosters[boosterId]) {
+      ownedBoosters.push({ ...boosters[boosterId], quantity, boosterId });
+    }
+  }
+
+  if (ownedBoosters.length === 0) {
+    const embed = new EmbedBuilder()
+      .setColor('#9B59B6')
+      .setTitle('Inventaire — Boosters')
+      .setDescription('Vous n\'avez aucun booster en stock.\nAchetez-en dans la `/boutique` !');
+
+    const backBtn = new ButtonBuilder()
+      .setCustomId(`inv_back_main_${ownerId}`)
+      .setLabel('Retour')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('⬅️');
+    const closeBtn = new ButtonBuilder()
+      .setCustomId(`close_${ownerId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger);
+
+    return interaction.update({
+      embeds: [embed],
+      components: [new ActionRowBuilder().addComponents(backBtn, closeBtn)],
+      files: []
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#3498DB')
+    .setTitle('Inventaire — Boosters')
+    .setDescription(
+      `Sélectionnez un booster à ouvrir.\n\n` +
+      ownedBoosters.map(b => `📦 **${b.name}** — x${b.quantity} (${b.cardsPerPack} cartes/pack)`).join('\n')
+    );
+
+  const boosterOptions = ownedBoosters.slice(0, 25).map(b => ({
+    label: `${b.name} — x${b.quantity}`,
+    description: `${b.totalCards} cartes • ${b.cardsPerPack} cartes/pack`,
+    value: `inv_open_booster_${b.boosterId}`,
+    emoji: '📦'
+  }));
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`inv_booster_select_${ownerId}`)
+    .setPlaceholder('Choisir un booster à ouvrir...')
+    .addOptions(boosterOptions);
+
+  const backBtn = new ButtonBuilder()
+    .setCustomId(`inv_back_main_${ownerId}`)
+    .setLabel('Retour')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('⬅️');
+  const closeBtn = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+
+  await interaction.update({
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder().addComponents(selectMenu),
+      new ActionRowBuilder().addComponents(backBtn, closeBtn)
+    ],
+    files: []
+  });
+}
+
+/**
+ * Affiche les objets de l'inventaire avec possibilité d'utilisation
+ */
+async function showInventoryItems(interaction, ownerId) {
+  const userData = loadUserData(ownerId);
+  const itemInventory = userData.inventory?.items || {};
+
+  const ownedItems = [];
+  for (const [itemId, quantity] of Object.entries(itemInventory)) {
+    if (quantity > 0 && items[itemId]) {
+      ownedItems.push({ ...items[itemId], quantity });
+    }
+  }
+
+  if (ownedItems.length === 0) {
+    const embed = new EmbedBuilder()
+      .setColor('#9B59B6')
+      .setTitle('Inventaire — Objets')
+      .setDescription('Vous n\'avez aucun objet en stock.\nAchetez-en dans la `/boutique` (catégorie **Objets**) !');
+
+    const backBtn = new ButtonBuilder()
+      .setCustomId(`inv_back_main_${ownerId}`)
+      .setLabel('Retour')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('⬅️');
+    const closeBtn = new ButtonBuilder()
+      .setCustomId(`close_${ownerId}`)
+      .setLabel('X')
+      .setStyle(ButtonStyle.Danger);
+
+    return interaction.update({
+      embeds: [embed],
+      components: [new ActionRowBuilder().addComponents(backBtn, closeBtn)],
+      files: []
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#E67E22')
+    .setTitle('Inventaire — Objets')
+    .setDescription('Sélectionnez un objet pour voir ses détails et l\'utiliser.');
+
+  const itemOptions = ownedItems.slice(0, 25).map(item => ({
+    label: `${item.name} — x${item.quantity}`,
+    description: item.description.slice(0, 90),
+    value: `inv_use_item_${item.id}`,
+    emoji: item.emoji
+  }));
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`inv_item_select_${ownerId}`)
+    .setPlaceholder('Choisir un objet...')
+    .addOptions(itemOptions);
+
+  const backBtn = new ButtonBuilder()
+    .setCustomId(`inv_back_main_${ownerId}`)
+    .setLabel('Retour')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('⬅️');
+  const closeBtn = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+
+  await interaction.update({
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder().addComponents(selectMenu),
+      new ActionRowBuilder().addComponents(backBtn, closeBtn)
+    ],
+    files: []
+  });
+}
+
+/**
+ * Affiche le détail d'un objet avec image et bouton Utiliser
+ */
+async function showItemDetail(interaction, itemId, ownerId) {
+  const item = items[itemId];
+  if (!item) return;
+
+  const owned = getItemCount(ownerId, itemId);
+  const files = [];
+  const itemImagePath = path.join(ASSETS_DIR, 'items', `${itemId.replace(/_/g, '-')}.png`);
+
+  const embed = new EmbedBuilder()
+    .setColor('#E67E22')
+    .setTitle(`${item.emoji} ${item.name}`)
+    .setDescription(
+      `${item.description}\n\n` +
+      `**En stock:** ${owned}`
+    );
+
+  if (fs.existsSync(itemImagePath)) {
+    const attachment = new AttachmentBuilder(itemImagePath, { name: 'item.png' });
+    files.push(attachment);
+    embed.setImage('attachment://item.png');
+  }
+
+  const useBtn = new ButtonBuilder()
+    .setCustomId(`inv_confirm_use_${itemId}_${ownerId}`)
+    .setLabel('Utiliser')
+    .setStyle(ButtonStyle.Success)
+    .setEmoji('✅')
+    .setDisabled(owned <= 0);
+  const backBtn = new ButtonBuilder()
+    .setCustomId(`inv_category_items_${ownerId}`)
+    .setLabel('Retour')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('⬅️');
+  const closeBtn = new ButtonBuilder()
+    .setCustomId(`close_${ownerId}`)
+    .setLabel('X')
+    .setStyle(ButtonStyle.Danger);
+
+  await interaction.update({
+    embeds: [embed],
+    components: [new ActionRowBuilder().addComponents(useBtn, backBtn, closeBtn)],
+    files
+  });
 }
 
 /**
@@ -1018,6 +1274,35 @@ async function purchaseItem(interaction, itemId, ownerId) {
 }
 
 /**
+ * Utilise un objet de l'inventaire
+ */
+async function useItem(interaction, itemId, ownerId) {
+  const item = items[itemId];
+  if (!item) return;
+
+  const owned = getItemCount(ownerId, itemId);
+  if (owned <= 0) {
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription(`❌ Vous n'avez pas de **${item.name}** !`)],
+      components: [],
+      files: []
+    });
+  }
+
+  // Route to the right handler based on item id
+  if (itemId === 'safari_ticket') {
+    const { handleSafariFromInventory } = require('../pokemon/safariHandler');
+    await handleSafariFromInventory(interaction, ownerId);
+  } else {
+    await interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription(`❌ Cet objet ne peut pas être utilisé pour le moment.`)],
+      components: [],
+      files: []
+    });
+  }
+}
+
+/**
  * Affiche le menu principal de la boutique
  */
 async function showMainShop(interaction, ownerId) {
@@ -1098,6 +1383,10 @@ function extractOwnerId(customId) {
   //           shop_booster_select_ownerId_page, shop_card_select_ownerId_page
   //           shop_qty_{action}_{boosterId}_{ownerId}_{qty}
   //           shop_confirm_booster_{boosterId}_{ownerId}_{qty}
+  // inv_ patterns: inv_confirm_use_{itemId}_{ownerId}
+  if (customId.startsWith('inv_confirm_use_')) {
+    return parts[parts.length - 1];
+  }
   if (customId.includes('_page_') ||
       customId.startsWith('shop_booster_select_') ||
       customId.startsWith('shop_card_select_') ||
@@ -1187,6 +1476,72 @@ async function handleShopInteraction(interaction) {
       const parts = customId.split('_');
       const cardId = parts.slice(3, -1).join('_');
       await purchaseCard(interaction, cardId, ownerId);
+    }
+  }
+
+  // ── Inventory interactions (inv_ prefix) ──
+  if (interaction.isStringSelectMenu()) {
+    if (customId.startsWith('inv_category_select_')) {
+      const selected = interaction.values[0];
+      if (selected === 'inv_boosters') {
+        await showInventoryBoosters(interaction, ownerId);
+      } else if (selected === 'inv_items') {
+        await showInventoryItems(interaction, ownerId);
+      }
+    } else if (customId.startsWith('inv_booster_select_')) {
+      // Tell user to use /booster command to open boosters from inventory
+      const boosterId = interaction.values[0].replace('inv_open_booster_', '');
+      const booster = boosters[boosterId];
+      const boosterName = booster ? booster.name : `#${boosterId}`;
+
+      const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
+      const files = [];
+      const embed = new EmbedBuilder()
+        .setColor('#3498DB')
+        .setTitle(`📦 ${boosterName}`)
+        .setDescription(
+          `**Cartes par pack:** ${booster?.cardsPerPack || '?'}\n` +
+          `**Cartes totales:** ${booster?.totalCards || '?'}\n\n` +
+          `Utilisez \`/booster\` pour ouvrir ce booster !`
+        );
+
+      if (fs.existsSync(boosterImagePath)) {
+        const attachment = new AttachmentBuilder(boosterImagePath, { name: 'booster.png' });
+        files.push(attachment);
+        embed.setImage('attachment://booster.png');
+      }
+
+      const backBtn = new ButtonBuilder()
+        .setCustomId(`inv_category_boosters_${ownerId}`)
+        .setLabel('Retour')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('⬅️');
+      const closeBtn = new ButtonBuilder()
+        .setCustomId(`close_${ownerId}`)
+        .setLabel('X')
+        .setStyle(ButtonStyle.Danger);
+
+      await interaction.update({
+        embeds: [embed],
+        components: [new ActionRowBuilder().addComponents(backBtn, closeBtn)],
+        files
+      });
+    } else if (customId.startsWith('inv_item_select_')) {
+      const itemId = interaction.values[0].replace('inv_use_item_', '');
+      await showItemDetail(interaction, itemId, ownerId);
+    }
+  } else if (interaction.isButton()) {
+    if (customId.startsWith('inv_back_main_')) {
+      await showInventoryMain(interaction, ownerId);
+    } else if (customId.startsWith('inv_category_items_')) {
+      await showInventoryItems(interaction, ownerId);
+    } else if (customId.startsWith('inv_category_boosters_')) {
+      await showInventoryBoosters(interaction, ownerId);
+    } else if (customId.startsWith('inv_confirm_use_')) {
+      // Format: inv_confirm_use_{itemId}_{ownerId}
+      const parts = customId.split('_');
+      const itemId = parts[3];
+      await useItem(interaction, itemId, ownerId);
     }
   }
 }

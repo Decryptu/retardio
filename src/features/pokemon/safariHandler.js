@@ -331,25 +331,18 @@ function hasActiveSafari(userId) {
 }
 
 /**
- * Handle /safari command
+ * Start a safari from the inventory menu
+ * Called from shopHandler when user clicks "Utiliser" on a safari ticket
  */
-async function handleSafariCommand(interaction) {
-  const userId = interaction.user.id;
+async function handleSafariFromInventory(interaction, ownerId) {
+  const userId = ownerId;
 
   // Check if already in safari
   if (activeSafaris.has(userId)) {
-    return interaction.reply({
-      content: '❌ Vous êtes déjà en safari ! Attendez la fin de votre safari actuel.',
-      flags: MessageFlags.Ephemeral,
-    });
-  }
-
-  // Check if user has a ticket
-  const ticketCount = getItemCount(userId, 'safari_ticket');
-  if (ticketCount <= 0) {
-    return interaction.reply({
-      content: '❌ Vous n\'avez pas de **Ticket Safari** !\nAchetez-en dans la `/boutique` (catégorie **Objets**).',
-      flags: MessageFlags.Ephemeral,
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription('❌ Vous êtes déjà en safari ! Attendez la fin de votre safari actuel.')],
+      components: [],
+      files: []
     });
   }
 
@@ -358,14 +351,22 @@ async function handleSafariCommand(interaction) {
   const { hasActiveExpedition } = require('./expeditionHandler');
 
   if (hasActiveRaid() || hasActiveExpedition()) {
-    return interaction.reply({
-      content: '❌ Un raid ou une expédition est en cours ! Attendez la fin avant de partir en safari.',
-      flags: MessageFlags.Ephemeral,
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription('❌ Un raid ou une expédition est en cours ! Attendez la fin avant de partir en safari.')],
+      components: [],
+      files: []
     });
   }
 
   // Consume the ticket
-  removeItemFromInventory(userId, 'safari_ticket');
+  const consumed = removeItemFromInventory(userId, 'safari_ticket');
+  if (!consumed) {
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription('❌ Vous n\'avez pas de **Ticket Safari** !')],
+      components: [],
+      files: []
+    });
+  }
 
   const avatarURL = interaction.user.displayAvatarURL({ extension: 'png', size: 64 });
   const username = interaction.user.username;
@@ -405,11 +406,17 @@ async function handleSafariCommand(interaction) {
 
   const row = new ActionRowBuilder().addComponents(cancelButton);
 
-  const reply = await interaction.reply({
+  // Update the inventory message to show safari launching, then send a new safari message
+  await interaction.update({
+    embeds: [new EmbedBuilder().setColor('#2ECC71').setDescription('🌿 Safari lancé ! Regardez le message ci-dessous.')],
+    components: [],
+    files: []
+  });
+
+  const safariMessage = await interaction.channel.send({
     embeds: [embed],
     files: [attachment],
     components: [row],
-    fetchReply: true,
   });
 
   // Create safari state
@@ -418,7 +425,7 @@ async function handleSafariCommand(interaction) {
     username,
     avatarURL,
     channelId: interaction.channelId,
-    messageId: reply.id,
+    messageId: safariMessage.id,
     client: interaction.client,
     startTime: Date.now(),
     encounters: [],
@@ -475,7 +482,7 @@ async function handleSafariButton(interaction) {
 }
 
 module.exports = {
-  handleSafariCommand,
+  handleSafariFromInventory,
   handleSafariButton,
   hasActiveSafari,
 };

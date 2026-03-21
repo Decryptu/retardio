@@ -7,7 +7,7 @@ const { handleTeamCommand, handleTeamButton, handleTeamSelectMenu, handleTeamSea
 const { handleForceRaidCommand, handleRaidButton, checkRaidTrigger, hasActiveRaid } = require('./raidHandler');
 const { handleForceExpeditionCommand, handleExpeditionButton, checkExpeditionTrigger, hasActiveExpedition } = require('./expeditionHandler');
 const { handleFlipCommand } = require('./flipHandler');
-const { handleSafariCommand, handleSafariButton, hasActiveSafari } = require('./safariHandler');
+const { handleSafariButton, hasActiveSafari } = require('./safariHandler');
 
 /**
  * Gere toutes les commandes Pokemon
@@ -31,8 +31,6 @@ async function handlePokemonCommand(interaction) {
     await handleForceExpeditionCommand(interaction);
   } else if (commandName === 'flip') {
     await handleFlipCommand(interaction);
-  } else if (commandName === 'safari') {
-    await handleSafariCommand(interaction);
   }
 }
 
