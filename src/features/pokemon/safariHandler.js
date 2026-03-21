@@ -25,7 +25,7 @@ const activeSafaris = new Map();
 
 const SAFARI_DURATION = 10 * 60 * 1000; // 10 minutes
 const TOTAL_ENCOUNTERS = 5;
-const ENCOUNTER_INTERVAL = SAFARI_DURATION / (TOTAL_ENCOUNTERS + 1); // ~1m43s between encounters
+const ENCOUNTER_INTERVAL = SAFARI_DURATION / TOTAL_ENCOUNTERS; // 2min between encounters, last one at 10min
 
 // Safari zones (thematic areas to explore)
 const SAFARI_ZONES = [
@@ -129,11 +129,21 @@ function runEncounter(userId) {
   let card;
   let isNew = false;
 
-  if (missingByRarity[rarity] && missingByRarity[rarity].length > 0) {
-    // User is missing cards of this rarity — pick one they don't have
+  const hasMissing = missingByRarity[rarity] && missingByRarity[rarity].length > 0;
+  const pickNew = hasMissing && Math.random() < 0.5;
+
+  if (pickNew) {
+    // Coin flip won — pick a card the user doesn't have
     const pool = missingByRarity[rarity];
     card = pool[Math.floor(Math.random() * pool.length)];
     isNew = true;
+  } else if (allByRarity[rarity] && allByRarity[rarity].length > 0) {
+    // Pick any card of this rarity (may or may not be new)
+    const pool = allByRarity[rarity];
+    card = pool[Math.floor(Math.random() * pool.length)];
+    // Check if it happens to be new anyway
+    const userData = loadUserData(userId);
+    isNew = !userData.cards[String(card.id)] || userData.cards[String(card.id)] <= 0;
   } else {
     // User owns all cards of this rarity — pick any card (duplicate)
     const pool = allByRarity[rarity];
