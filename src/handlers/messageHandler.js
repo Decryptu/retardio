@@ -151,8 +151,13 @@ class MessageHandler {
 		return all;
 	}
 
-	// Find a guild member by username/displayName (case-insensitive)
+	// Find a guild member by ID, mention, username or displayName
 	findMember(guild, name) {
+		// Handle Discord mention format <@123> or <@!123> or raw ID
+		const idMatch = name.match(/^<?@?!?(\d{17,20})>?$/);
+		if (idMatch) {
+			return guild.members.cache.get(idMatch[1]);
+		}
 		const lower = name.toLowerCase();
 		return guild.members.cache.find(
 			(m) =>
@@ -167,9 +172,9 @@ class MessageHandler {
 	async executeTool(name, args, message) {
 		const guild = message.guild;
 		const channel = message.channel;
+		await guild.members.fetch();
 
 		if (name === "get_server_members") {
-			await guild.members.fetch();
 			const members = guild.members.cache
 				.filter((m) => !m.user.bot)
 				.map((m) => `${m.displayName} (@${m.user.username})`)
