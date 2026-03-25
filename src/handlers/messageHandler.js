@@ -33,7 +33,7 @@ const TOOLS = [
 				properties: {
 					username: { type: "string", description: "Filter by this username or display name (case-insensitive). Leave empty for all users." },
 					keyword: { type: "string", description: "Filter messages containing this word/phrase (case-insensitive). Leave empty for no filter." },
-					limit: { type: "number", description: "Max number of messages to scan (default 500, max 2000)" },
+					limit: { type: "number", description: "Max number of messages to scan (default 5000, max 10000). Higher values take longer." },
 				},
 				required: [],
 			},
@@ -49,7 +49,7 @@ const TOOLS = [
 				properties: {
 					username: { type: "string", description: "The username or display name to search for" },
 					keyword: { type: "string", description: "The word or phrase to count" },
-					limit: { type: "number", description: "Max number of messages to scan (default 500, max 2000)" },
+					limit: { type: "number", description: "Max number of messages to scan (default 5000, max 10000). Higher values take longer." },
 				},
 				required: ["username", "keyword"],
 			},
@@ -136,7 +136,7 @@ class MessageHandler {
 
 	// Fetch messages from a channel with pagination
 	async fetchMessages(channel, limit = 500) {
-		const max = Math.min(limit, 2000);
+		const max = Math.min(limit, 10000);
 		const all = [];
 		let lastId = null;
 		while (all.length < max) {
@@ -183,7 +183,7 @@ class MessageHandler {
 		}
 
 		if (name === "search_messages") {
-			const limit = args.limit || 500;
+			const limit = args.limit || 5000;
 			const msgs = await this.fetchMessages(channel, limit);
 			let filtered = msgs.filter((m) => !m.author.bot);
 
@@ -209,7 +209,7 @@ class MessageHandler {
 		}
 
 		if (name === "count_keyword") {
-			const limit = args.limit || 500;
+			const limit = args.limit || 5000;
 			const msgs = await this.fetchMessages(channel, limit);
 			const kw = args.keyword.toLowerCase();
 
