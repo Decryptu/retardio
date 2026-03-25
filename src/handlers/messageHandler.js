@@ -63,6 +63,21 @@ const TOOLS = [
 			parameters: { type: "object", properties: {}, required: [] },
 		},
 	},
+	{
+		type: "function",
+		function: {
+			name: "get_user_activity_summary",
+			description: "Get a summary of recent activity for all human members in the current channel. Returns message count and sample messages per user. Perfect for tier lists, rankings, comparisons, or any analysis across multiple users at once.",
+			parameters: {
+				type: "object",
+				properties: {
+					limit: { type: "number", description: "Max number of messages to scan (default 5000, max 10000)" },
+					samples_per_user: { type: "number", description: "Number of sample messages to include per user (default 5, max 10)" },
+				},
+				required: [],
+			},
+		},
+	},
 ];
 
 class MessageHandler {
@@ -237,6 +252,31 @@ class MessageHandler {
 				.map((c) => `#${c.name}`)
 				.sort();
 			return JSON.stringify({ count: channels.length, channels });
+		}
+
+		if (name === "get_user_activity_summary") {
+			const limit = args.limit || 5000;
+			const samplesPerUser = Math.min(args.samples_per_user || 5, 10);
+			const msgs = await this.fetchMessages(channel, limit);
+			const humanMsgs = msgs.filter((m) => !m.author.bot && m.content);
+
+			const byUser = new Map();
+			for (const m of humanMsgs) {
+				const key = m.author.id;
+				if (!byUser.has(key)) {
+					byUser.set(key, { username: m.author.username, count: 0, samples: [] });
+				}
+				const entry = byUser.get(key);
+				entry.count++;
+				if (entry.samples.length < samplesPerUser) {
+					entry.samples.push(m.content);
+				}
+			}
+
+			const users = [...byUser.values()]
+				.sort((a, b) => b.count - a.count)
+				.map((u) => ({ username: u.username, message_count: u.count, sample_messages: u.samples }));
+			return JSON.stringify({ total_messages_scanned: humanMsgs.length, users });
 		}
 
 		return JSON.stringify({ error: "Outil inconnu" });
