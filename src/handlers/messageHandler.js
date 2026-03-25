@@ -27,7 +27,7 @@ const TOOLS = [
 		type: "function",
 		function: {
 			name: "search_messages",
-			description: "Search recent messages in the current channel, optionally filtering by a specific user and/or keyword. Returns matching messages.",
+			description: "Fetch recent messages from the current channel. Use this whenever you need context about what people said — for summaries, roasts, compliments, recaps, tier lists, or any question about recent activity. Can optionally filter by user and/or keyword.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -247,7 +247,10 @@ class MessageHandler {
 		try {
 			if (channel) await channel.sendTyping();
 
-			const messages = [{ role: "system", content: prompt }];
+			const messages = [
+				{ role: "system", content: prompt },
+				{ role: "system", content: "Tu as accès à des outils pour interagir avec le serveur Discord. Utilise-les dès que la demande concerne des messages, des membres, ou des données du serveur. Par exemple : résumés, roasts, compliments, récaps, statistiques, tier lists, etc. N'hésite JAMAIS à appeler un outil si ça peut enrichir ta réponse." },
+			];
 			if (history) {
 				messages.push({
 					role: "system",
