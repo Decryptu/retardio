@@ -269,7 +269,6 @@ class MessageHandler {
 					messages,
 					tools: TOOLS,
 					max_completion_tokens: 1024,
-					reasoning_effort: "none",
 					temperature: 0.8,
 				});
 
