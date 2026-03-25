@@ -13,6 +13,58 @@ const RESPONSE_BLACKLIST_CHANNELS = [
 	"1272543925286211606",
 ];
 
+// Tools available to the bot when mentioned
+const TOOLS = [
+	{
+		type: "function",
+		function: {
+			name: "get_server_members",
+			description: "Get the list of all human (non-bot) members in the server with their display name and username",
+			parameters: { type: "object", properties: {}, required: [] },
+		},
+	},
+	{
+		type: "function",
+		function: {
+			name: "search_messages",
+			description: "Search recent messages in the current channel, optionally filtering by a specific user and/or keyword. Returns matching messages.",
+			parameters: {
+				type: "object",
+				properties: {
+					username: { type: "string", description: "Filter by this username or display name (case-insensitive). Leave empty for all users." },
+					keyword: { type: "string", description: "Filter messages containing this word/phrase (case-insensitive). Leave empty for no filter." },
+					limit: { type: "number", description: "Max number of messages to scan (default 500, max 2000)" },
+				},
+				required: [],
+			},
+		},
+	},
+	{
+		type: "function",
+		function: {
+			name: "count_keyword",
+			description: "Count how many times a specific user said a specific word/phrase across recent messages in the current channel",
+			parameters: {
+				type: "object",
+				properties: {
+					username: { type: "string", description: "The username or display name to search for" },
+					keyword: { type: "string", description: "The word or phrase to count" },
+					limit: { type: "number", description: "Max number of messages to scan (default 500, max 2000)" },
+				},
+				required: ["username", "keyword"],
+			},
+		},
+	},
+	{
+		type: "function",
+		function: {
+			name: "get_channel_list",
+			description: "Get the list of text channels in the server",
+			parameters: { type: "object", properties: {}, required: [] },
+		},
+	},
+];
+
 class MessageHandler {
 	constructor(client, config) {
 		this.client = client;
@@ -82,6 +134,173 @@ class MessageHandler {
 		return urls;
 	}
 
+	// Fetch messages from a channel with pagination
+	async fetchMessages(channel, limit = 500) {
+		const max = Math.min(limit, 2000);
+		const all = [];
+		let lastId = null;
+		while (all.length < max) {
+			const batch = await channel.messages.fetch({
+				limit: Math.min(100, max - all.length),
+				...(lastId && { before: lastId }),
+			});
+			if (batch.size === 0) break;
+			all.push(...batch.values());
+			lastId = batch.last().id;
+		}
+		return all;
+	}
+
+	// Find a guild member by username/displayName (case-insensitive)
+	findMember(guild, name) {
+		const lower = name.toLowerCase();
+		return guild.members.cache.find(
+			(m) =>
+				m.user.username.toLowerCase() === lower ||
+				m.displayName.toLowerCase() === lower ||
+				m.user.username.toLowerCase().includes(lower) ||
+				m.displayName.toLowerCase().includes(lower),
+		);
+	}
+
+	// Execute a tool call and return the result as a string
+	async executeTool(name, args, message) {
+		const guild = message.guild;
+		const channel = message.channel;
+
+		if (name === "get_server_members") {
+			await guild.members.fetch();
+			const members = guild.members.cache
+				.filter((m) => !m.user.bot)
+				.map((m) => `${m.displayName} (@${m.user.username})`)
+				.sort();
+			return JSON.stringify({ count: members.length, members });
+		}
+
+		if (name === "search_messages") {
+			const limit = args.limit || 500;
+			const msgs = await this.fetchMessages(channel, limit);
+			let filtered = msgs.filter((m) => !m.author.bot);
+
+			if (args.username) {
+				const member = this.findMember(guild, args.username);
+				if (member) {
+					filtered = filtered.filter((m) => m.author.id === member.user.id);
+				} else {
+					return JSON.stringify({ error: `Utilisateur "${args.username}" introuvable` });
+				}
+			}
+			if (args.keyword) {
+				const kw = args.keyword.toLowerCase();
+				filtered = filtered.filter((m) => m.content.toLowerCase().includes(kw));
+			}
+
+			const results = filtered.slice(0, 50).map((m) => ({
+				author: m.author.username,
+				content: m.content,
+				date: m.createdAt.toISOString(),
+			}));
+			return JSON.stringify({ total_matches: filtered.length, showing: results.length, messages: results });
+		}
+
+		if (name === "count_keyword") {
+			const limit = args.limit || 500;
+			const msgs = await this.fetchMessages(channel, limit);
+			const kw = args.keyword.toLowerCase();
+
+			let filtered = msgs.filter((m) => !m.author.bot);
+			if (args.username) {
+				const member = this.findMember(guild, args.username);
+				if (member) {
+					filtered = filtered.filter((m) => m.author.id === member.user.id);
+				} else {
+					return JSON.stringify({ error: `Utilisateur "${args.username}" introuvable` });
+				}
+			}
+
+			let count = 0;
+			for (const m of filtered) {
+				const matches = m.content.toLowerCase().split(kw).length - 1;
+				count += matches;
+			}
+			return JSON.stringify({ keyword: args.keyword, username: args.username, count, messages_scanned: filtered.length });
+		}
+
+		if (name === "get_channel_list") {
+			const channels = guild.channels.cache
+				.filter((c) => c.isTextBased() && !c.isThread())
+				.map((c) => `#${c.name}`)
+				.sort();
+			return JSON.stringify({ count: channels.length, channels });
+		}
+
+		return JSON.stringify({ error: "Outil inconnu" });
+	}
+
+	// AI response with tool calling (for mentions and replies)
+	async getAIResponseWithTools(prompt, channel, userMessage, history, imageUrls, message) {
+		try {
+			if (channel) await channel.sendTyping();
+
+			const messages = [{ role: "system", content: prompt }];
+			if (history) {
+				messages.push({
+					role: "system",
+					content: `Voici la conversation en cours dans le salon Discord :\n${history}`,
+				});
+			}
+
+			const textContent = `${userMessage}\n\nRéponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format "nom: message".`;
+			if (imageUrls.length > 0) {
+				const content = [{ type: "text", text: textContent }];
+				for (const url of imageUrls) {
+					content.push({ type: "image_url", image_url: { url } });
+				}
+				messages.push({ role: "user", content });
+			} else {
+				messages.push({ role: "user", content: textContent });
+			}
+
+			// Tool-calling loop (max 5 rounds to avoid infinite loops)
+			for (let i = 0; i < 5; i++) {
+				if (channel) await channel.sendTyping();
+				const completion = await this.openai.chat.completions.create({
+					model: "gpt-5.4-mini",
+					messages,
+					tools: TOOLS,
+					max_completion_tokens: 1024,
+					reasoning_effort: "none",
+					temperature: 0.8,
+				});
+
+				const choice = completion.choices[0];
+
+				// If no tool calls, we have the final answer
+				if (!choice.message.tool_calls || choice.message.tool_calls.length === 0) {
+					return choice.message.content;
+				}
+
+				// Process tool calls
+				messages.push(choice.message);
+				for (const toolCall of choice.message.tool_calls) {
+					const args = JSON.parse(toolCall.function.arguments || "{}");
+					console.log(`[TOOL] ${toolCall.function.name}(${JSON.stringify(args)})`);
+					const result = await this.executeTool(toolCall.function.name, args, message);
+					messages.push({
+						role: "tool",
+						tool_call_id: toolCall.id,
+						content: result,
+					});
+				}
+			}
+
+			return null;
+		} catch (error) {
+			console.error("Erreur OpenAI (tools):", error);
+			return null;
+		}
+	}
+
 	// Update message history
 	updateMessageHistory(channelId, content, author) {
 		let channelHistory = this.messageHistory.get(channelId) || [];
@@ -138,12 +357,13 @@ class MessageHandler {
 				if (repliedTo.author.id === this.client.user.id) {
 					const replyContext = await this.getReplyContext(message);
 					const imageUrls = this.getImageUrls(message);
-					const response = await this.getAIResponse(
+					const response = await this.getAIResponseWithTools(
 						personalities.randomTalker.prompt,
 						message.channel,
 						message.content,
 						replyContext,
 						imageUrls,
+						message,
 					);
 					if (response) {
 						message.reply(response);
@@ -176,12 +396,13 @@ class MessageHandler {
 			const replyContext = await this.getReplyContext(message);
 			const userMessage = message.content.replace(`<@${this.client.user.id}>`, "").trim();
 			const imageUrls = this.getImageUrls(message);
-			const response = await this.getAIResponse(
+			const response = await this.getAIResponseWithTools(
 				personalities.randomTalker.prompt,
 				message.channel,
 				userMessage,
 				replyContext,
 				imageUrls,
+				message,
 			);
 			if (response) {
 				message.reply(response);
