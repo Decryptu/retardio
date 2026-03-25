@@ -32,7 +32,7 @@ class MessageHandler {
 	}
 
 	// Function to get OpenAI response
-	async getAIResponse(prompt, channel, userMessage = "", history = "") {
+	async getAIResponse(prompt, channel, userMessage = "", history = "", imageUrls = []) {
 		try {
 			if (channel) await channel.sendTyping();
 			const messages = [{ role: "system", content: prompt }];
@@ -42,12 +42,21 @@ class MessageHandler {
 					content: `Voici la conversation en cours dans le salon Discord. Tu dois réagir naturellement à ce qui se dit, comme un vrai participant du groupe :\n${history}`,
 				});
 			}
-			messages.push({
-				role: "user",
-				content: userMessage
-					? `${userMessage}\n\nRéponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format "nom: message".`
-					: "Réponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format \"nom: message\".",
-			});
+
+			const textContent = userMessage
+				? `${userMessage}\n\nRéponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format "nom: message".`
+				: "Réponds directement. Ne préfixe JAMAIS ta réponse avec ton nom ou un format \"nom: message\".";
+
+			if (imageUrls.length > 0) {
+				const content = [{ type: "text", text: textContent }];
+				for (const url of imageUrls) {
+					content.push({ type: "image_url", image_url: { url } });
+				}
+				messages.push({ role: "user", content });
+			} else {
+				messages.push({ role: "user", content: textContent });
+			}
+
 			const completion = await this.openai.chat.completions.create({
 				model: "gpt-5.4-mini",
 				messages,
@@ -60,6 +69,17 @@ class MessageHandler {
 			console.error("Erreur OpenAI:", error);
 			return null;
 		}
+	}
+
+	// Extract image URLs from a Discord message's attachments
+	getImageUrls(message) {
+		const urls = [];
+		for (const attachment of message.attachments.values()) {
+			if (attachment.contentType?.startsWith("image/")) {
+				urls.push(attachment.url);
+			}
+		}
+		return urls;
 	}
 
 	// Update message history
@@ -91,6 +111,9 @@ class MessageHandler {
 
 	// Main message handling function
 	async handleMessage(message) {
+		// Skip system messages (pin notifications, member joins, etc.)
+		if (message.system) return;
+
 		// Update message history
 		const channelHistory = this.updateMessageHistory(
 			message.channelId,
@@ -114,11 +137,13 @@ class MessageHandler {
 				const repliedTo = await message.channel.messages.fetch(message.reference.messageId);
 				if (repliedTo.author.id === this.client.user.id) {
 					const replyContext = await this.getReplyContext(message);
+					const imageUrls = this.getImageUrls(message);
 					const response = await this.getAIResponse(
 						personalities.randomTalker.prompt,
 						message.channel,
 						message.content,
 						replyContext,
+						imageUrls,
 					);
 					if (response) {
 						message.reply(response);
@@ -132,9 +157,13 @@ class MessageHandler {
 
 		// Handle "$p" trigger (100% chance)
 		if (message.content === "$p") {
+			const imageUrls = this.getImageUrls(message);
 			const response = await this.getAIResponse(
 				personalities.swearingCat.prompt,
 				message.channel,
+				"",
+				"",
+				imageUrls,
 			);
 			if (response) {
 				message.reply(response);
@@ -146,11 +175,13 @@ class MessageHandler {
 		if (message.mentions.has(this.client.user)) {
 			const replyContext = await this.getReplyContext(message);
 			const userMessage = message.content.replace(`<@${this.client.user.id}>`, "").trim();
+			const imageUrls = this.getImageUrls(message);
 			const response = await this.getAIResponse(
 				personalities.randomTalker.prompt,
 				message.channel,
 				userMessage,
 				replyContext,
+				imageUrls,
 			);
 			if (response) {
 				message.reply(response);
@@ -178,10 +209,13 @@ class MessageHandler {
 			contentLower.endsWith("quoi ?")
 		) {
 			if (Math.random() < this.config.triggers.quoiChance) {
+				const imageUrls = this.getImageUrls(message);
 				const response = await this.getAIResponse(
 					personalities.quoiFeur.prompt,
 					message.channel,
 					message.content,
+					"",
+					imageUrls,
 				);
 				if (response) {
 					message.reply(response);
@@ -192,6 +226,7 @@ class MessageHandler {
 
 		// Single random check for all other triggers
 		const randomValue = Math.random();
+		const imageUrls = this.getImageUrls(message);
 
 		if (randomValue < this.config.triggers.mockChance) {
 			// Mock response
@@ -199,6 +234,8 @@ class MessageHandler {
 				personalities.mocker.prompt,
 				message.channel,
 				message.content,
+				"",
+				imageUrls,
 			);
 			if (response) message.reply(this.mockText(response));
 		} else if (
