@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -110,7 +110,7 @@ async function handleBirthdayCommand(interaction) {
 		if (!membre && !nomManuel) {
 			return interaction.reply({
 				content: "Tu dois spécifier un membre ou un nom !",
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -127,7 +127,7 @@ async function handleBirthdayCommand(interaction) {
 		if (exists) {
 			return interaction.reply({
 				content: `**${name}** a déjà un anniversaire enregistré !`,
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -167,7 +167,7 @@ async function handleBirthdayCommand(interaction) {
 		if (index === -1) {
 			return interaction.reply({
 				content: `**${nom}** n'est pas dans la liste !`,
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -183,7 +183,7 @@ async function handleBirthdayCommand(interaction) {
 		if (birthdays.length === 0) {
 			return interaction.reply({
 				content: "Aucun anniversaire enregistré !",
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 

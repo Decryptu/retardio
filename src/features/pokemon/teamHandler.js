@@ -481,7 +481,7 @@ async function handleTeamButton(interaction) {
 
     const session = activeTeamSessions.get(sessionId);
     if (!session || interaction.user.id !== session.userId) {
-      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+      return interaction.reply({ content: '❌ Session invalide.', flags: MessageFlags.Ephemeral });
     }
 
     const newPage = currentPage - 1;
@@ -510,7 +510,7 @@ async function handleTeamButton(interaction) {
 
     const session = activeTeamSessions.get(sessionId);
     if (!session || interaction.user.id !== session.userId) {
-      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+      return interaction.reply({ content: '❌ Session invalide.', flags: MessageFlags.Ephemeral });
     }
 
     const newPage = currentPage + 1;
@@ -539,7 +539,7 @@ async function handleTeamButton(interaction) {
 
     const session = activeTeamSessions.get(sessionId);
     if (!session || interaction.user.id !== session.userId) {
-      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+      return interaction.reply({ content: '❌ Session invalide.', flags: MessageFlags.Ephemeral });
     }
 
     const newPage = currentPage - 1;
@@ -567,7 +567,7 @@ async function handleTeamButton(interaction) {
 
     const session = activeTeamSessions.get(sessionId);
     if (!session || interaction.user.id !== session.userId) {
-      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+      return interaction.reply({ content: '❌ Session invalide.', flags: MessageFlags.Ephemeral });
     }
 
     const newPage = currentPage + 1;
@@ -596,7 +596,7 @@ async function handleTeamButton(interaction) {
 
     const session = activeTeamSessions.get(sessionId);
     if (!session || interaction.user.id !== session.userId) {
-      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+      return interaction.reply({ content: '❌ Session invalide.', flags: MessageFlags.Ephemeral });
     }
 
     const newPage = currentPage - 1;
@@ -628,7 +628,7 @@ async function handleTeamButton(interaction) {
 
     const session = activeTeamSessions.get(sessionId);
     if (!session || interaction.user.id !== session.userId) {
-      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+      return interaction.reply({ content: '❌ Session invalide.', flags: MessageFlags.Ephemeral });
     }
 
     const newPage = currentPage + 1;
@@ -658,7 +658,7 @@ async function handleTeamButton(interaction) {
 
     const session = activeTeamSessions.get(sessionId);
     if (!session || interaction.user.id !== session.userId) {
-      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+      return interaction.reply({ content: '❌ Session invalide.', flags: MessageFlags.Ephemeral });
     }
 
     session.boosterPage = 0;
@@ -685,7 +685,7 @@ async function handleTeamButton(interaction) {
 
     const session = activeTeamSessions.get(sessionId);
     if (!session || interaction.user.id !== session.userId) {
-      return interaction.reply({ content: '❌ Session invalide.', ephemeral: true });
+      return interaction.reply({ content: '❌ Session invalide.', flags: MessageFlags.Ephemeral });
     }
 
     const view = await generateMainTeamView(session, sessionId);

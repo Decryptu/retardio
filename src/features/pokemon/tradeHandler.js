@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, removeCardFromUser, addCardsToUser, saveUserData, clearTeamSlotIfNotOwned } = require('../../services/userManager');
 const { generateTradeProposalImage, generateTradeCompletedImage } = require('../../services/imageGenerator');
@@ -285,14 +285,14 @@ async function handleTradeCommand(interaction) {
   if (target.bot) {
     return interaction.reply({
       content: '❌ Vous ne pouvez pas echanger avec un bot.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
   if (target.id === initiator.id) {
     return interaction.reply({
       content: '❌ Vous ne pouvez pas echanger avec vous-meme.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -302,14 +302,14 @@ async function handleTradeCommand(interaction) {
   if (initiatorBoosters.size === 0) {
     return interaction.reply({
       content: '❌ Vous n\'avez aucune carte a echanger.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
   if (targetBoosters.size === 0) {
     return interaction.reply({
       content: `❌ ${target.username} n'a aucune carte a echanger.`,
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -370,8 +370,7 @@ async function handleTradeCommand(interaction) {
     content: `📋 **Echange avec ${target.username}**\n\n` +
       `**Etape 1:** Selectionnez le booster contenant la carte que vous voulez donner\n` +
       `💡 Cliquez sur **Opportunites** pour voir les echanges possibles`,
-    components: [row1, row2],
-    ephemeral: false
+    components: [row1, row2]
   });
 }
 
@@ -385,14 +384,14 @@ async function handleGiftBoosterCommand(interaction) {
   if (!ADMIN_WHITELIST.includes(adminId)) {
     return interaction.reply({
       content: '❌ Vous n\'avez pas la permission d\'utiliser cette commande.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
   if (targetUser.bot) {
     return interaction.reply({
       content: '❌ Vous ne pouvez pas offrir un booster a un bot.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -419,7 +418,7 @@ async function handleGiftBoosterCommand(interaction) {
     console.error('Erreur lors du gift de booster:', error);
     await interaction.reply({
       content: '❌ Une erreur est survenue lors de l\'attribution du booster.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 }
@@ -436,14 +435,14 @@ async function handleTradeSelectMenu(interaction) {
   if (!trade) {
     return interaction.reply({
       content: '❌ Cet echange n\'est plus valide.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
   if (interaction.user.id !== trade.initiatorId) {
     return interaction.reply({
       content: '❌ Seul l\'initiateur de l\'echange peut selectionner les cartes.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -688,14 +687,14 @@ async function handleTradeButton(interaction) {
     if (!trade) {
       return interaction.reply({
         content: '❌ Cet echange n\'est plus valide.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     if (interaction.user.id !== trade.initiatorId) {
       return interaction.reply({
         content: '❌ Seul l\'initiateur peut voir les opportunites.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -711,7 +710,7 @@ async function handleTradeButton(interaction) {
           '• Vous avez des doublons que l\'autre n\'a pas\n' +
           '• L\'autre a des doublons que vous n\'avez pas'
         );
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     const rarityEmoji = { promo: '🟣', legendary: '🟠', rare: '🔵', uncommon: '🟢', common: '⚪' };
@@ -771,7 +770,7 @@ async function handleTradeButton(interaction) {
         .setColor('#3498db')
         .setTitle('💡 Opportunites d\'echange')
         .setDescription('*Aucune opportunite trouvee.*');
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     // Store pages for pagination
@@ -794,7 +793,7 @@ async function handleTradeButton(interaction) {
           new ButtonBuilder().setCustomId(`trade_oppo_next_${oppoId}`).setLabel('Suivant ▶').setStyle(ButtonStyle.Secondary).setDisabled(pageIndex === data.pages.length - 1)
         ));
       }
-      return { embeds: [embed], components, ephemeral: true };
+      return { embeds: [embed], components, flags: MessageFlags.Ephemeral };
     };
 
     return interaction.reply(buildOpportunityPage(oppoId, 0));
@@ -807,7 +806,7 @@ async function handleTradeButton(interaction) {
     const data = activeTrades.get(oppoId);
 
     if (!data || !data.pages) {
-      return interaction.reply({ content: '❌ Ces opportunites ont expire.', ephemeral: true });
+      return interaction.reply({ content: '❌ Ces opportunites ont expire.', flags: MessageFlags.Ephemeral });
     }
 
     const newPage = direction === 'prev' ? data.page - 1 : data.page + 1;
@@ -846,14 +845,14 @@ async function handleTradeButton(interaction) {
     if (!trade) {
       return interaction.reply({
         content: '❌ Cet echange n\'est plus valide.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     if (interaction.user.id !== trade.initiatorId) {
       return interaction.reply({
         content: '❌ Seul l\'initiateur peut naviguer dans les pages.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -898,14 +897,14 @@ async function handleTradeButton(interaction) {
     if (!trade) {
       return interaction.reply({
         content: '❌ Cet echange n\'est plus valide.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     if (interaction.user.id !== trade.initiatorId) {
       return interaction.reply({
         content: '❌ Seul l\'initiateur peut naviguer dans les pages.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -951,14 +950,14 @@ async function handleTradeButton(interaction) {
   if (!trade) {
     return interaction.reply({
       content: '❌ Cet echange n\'est plus valide ou a expire.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
   if (interaction.user.id !== trade.targetId) {
     return interaction.reply({
       content: '❌ Seul l\'utilisateur cible peut accepter ou refuser l\'echange.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -1056,14 +1055,14 @@ async function handleTradeSearchModal(interaction) {
   if (!trade) {
     return interaction.reply({
       content: '❌ Cet echange n\'est plus valide.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
   if (interaction.user.id !== trade.initiatorId) {
     return interaction.reply({
       content: '❌ Seul l\'initiateur peut rechercher.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -1087,7 +1086,7 @@ async function handleTradeSearchModal(interaction) {
   if (filteredCards.length === 0) {
     return interaction.reply({
       content: `❌ Aucune carte trouvee pour "${searchTerm}".`,
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 

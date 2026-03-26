@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getMoney, removeMoney, addBoosterToInventory, addCardToUser, hasLimitedCard, loadUserData, getBoosterCompletion, addItemToInventory, getItemCount } = require('../../services/userManager');
 const { loadBirthdays, getParisDayMonth } = require('../birthday/birthdayHandler');
 const boosters = require('../../../data/boosters.json');
@@ -39,7 +39,7 @@ async function verifyInteractionOwner(interaction, ownerId) {
   if (interaction.user.id !== ownerId) {
     await interaction.reply({
       content: '❌ Cette interaction ne vous appartient pas. Utilisez `/boutique` pour ouvrir votre propre boutique.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return false;
   }
