@@ -717,60 +717,120 @@ async function handleTradeButton(interaction) {
     const rarityEmoji = { promo: '🟣', legendary: '🟠', rare: '🔵', uncommon: '🟢', common: '⚪' };
     const rarityOrder = ['promo', 'legendary', 'rare', 'uncommon', 'common'];
 
-    const formatSection = (cards, title, color) => {
-      // Group by booster, then by rarity
-      const byBooster = {};
-      for (const card of cards) {
-        const boosterName = boosters[card.boosterId]?.name || card.boosterId;
-        if (!byBooster[boosterName]) byBooster[boosterName] = {};
-        const rarity = card.rarity || 'common';
-        if (!byBooster[boosterName][rarity]) byBooster[boosterName][rarity] = [];
-        byBooster[boosterName][rarity].push(card);
-      }
+    // Build paginated pages that stay well under Discord's 6000 char total embed limit
+    const buildPages = (canOffer, canReceive) => {
+      const pages = [];
+      const allSections = [];
+      if (canOffer.length > 0) allSections.push({ cards: canOffer, title: '📤 Vous pouvez offrir (vos doublons)', color: '#e67e22' });
+      if (canReceive.length > 0) allSections.push({ cards: canReceive, title: '📥 Vous pouvez recevoir (leurs doublons)', color: '#2ecc71' });
 
-      // Build text blocks per booster
-      const blocks = [];
-      for (const [boosterName, rarities] of Object.entries(byBooster)) {
-        let block = `📦 **${boosterName}**\n`;
-        for (const rarity of rarityOrder) {
-          if (!rarities[rarity]) continue;
-          const emoji = rarityEmoji[rarity] || '⚪';
-          const names = rarities[rarity].map(c => `${c.name} #${c.id} (x${c.quantity})`).join(', ');
-          block += `${emoji} ${names}\n`;
+      for (const section of allSections) {
+        // Group by booster, then by rarity
+        const byBooster = {};
+        for (const card of section.cards) {
+          const boosterName = boosters[card.boosterId]?.name || card.boosterId;
+          if (!byBooster[boosterName]) byBooster[boosterName] = {};
+          const rarity = card.rarity || 'common';
+          if (!byBooster[boosterName][rarity]) byBooster[boosterName][rarity] = [];
+          byBooster[boosterName][rarity].push(card);
         }
-        blocks.push(block);
-      }
 
-      // Split across multiple embeds if needed (4096 char limit)
-      const embeds = [];
-      let current = '';
-      let embedTitle = title;
-      for (const block of blocks) {
-        if (current.length + block.length > 4000 && current) {
-          embeds.push(new EmbedBuilder().setColor(color).setTitle(embedTitle).setDescription(current.trim()));
-          embedTitle = title + ' (suite)';
-          current = '';
+        // Build text blocks per booster
+        const blocks = [];
+        for (const [boosterName, rarities] of Object.entries(byBooster)) {
+          let block = `📦 **${boosterName}**\n`;
+          for (const rarity of rarityOrder) {
+            if (!rarities[rarity]) continue;
+            const emoji = rarityEmoji[rarity] || '⚪';
+            const names = rarities[rarity].map(c => `${c.name} #${c.id} (x${c.quantity})`).join(', ');
+            block += `${emoji} ${names}\n`;
+          }
+          blocks.push(block);
         }
-        current += block + '\n';
+
+        // Split into pages (max ~3500 chars per page to stay safe)
+        let current = '';
+        for (const block of blocks) {
+          if (current.length + block.length > 3500 && current) {
+            pages.push({ title: section.title + (pages.some(p => p.title.startsWith(section.title)) ? ' (suite)' : ''), color: section.color, description: current.trim(), cardCount: section.cards.length });
+            current = '';
+          }
+          current += block + '\n';
+        }
+        if (current.trim()) {
+          pages.push({ title: section.title + (pages.some(p => p.title.startsWith(section.title)) ? ' (suite)' : ''), color: section.color, description: current.trim(), cardCount: section.cards.length });
+        }
       }
-      if (current.trim()) {
-        embeds.push(new EmbedBuilder().setColor(color).setTitle(embedTitle).setDescription(current.trim()));
-      }
-      if (embeds.length > 0) {
-        embeds[embeds.length - 1].setFooter({ text: `${cards.length} carte(s)` });
-      }
-      return embeds;
+      return pages;
     };
 
-    const embeds = [];
-    if (canOffer.length > 0) {
-      embeds.push(...formatSection(canOffer, '📤 Vous pouvez offrir (vos doublons)', '#e67e22'));
-    }
-    if (canReceive.length > 0) {
-      embeds.push(...formatSection(canReceive, '📥 Vous pouvez recevoir (leurs doublons)', '#2ecc71'));
+    const pages = buildPages(canOffer, canReceive);
+
+    if (pages.length === 0) {
+      const embed = new EmbedBuilder()
+        .setColor('#3498db')
+        .setTitle('💡 Opportunites d\'echange')
+        .setDescription('*Aucune opportunite trouvee.*');
+      return interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
-    return interaction.reply({ embeds: embeds.slice(0, 10), ephemeral: true });
+    // Store pages for pagination
+    const oppoId = `oppo_${tradeId}_${Date.now()}`;
+    activeTrades.set(oppoId, { pages, page: 0, expires: Date.now() + 5 * 60 * 1000 });
+    setTimeout(() => activeTrades.delete(oppoId), 5 * 60 * 1000);
+
+    const buildOpportunityPage = (oppoId, pageIndex) => {
+      const data = activeTrades.get(oppoId);
+      const p = data.pages[pageIndex];
+      const embed = new EmbedBuilder()
+        .setColor(p.color)
+        .setTitle(p.title)
+        .setDescription(p.description)
+        .setFooter({ text: `${p.cardCount} carte(s) • Page ${pageIndex + 1}/${data.pages.length}` });
+      const components = [];
+      if (data.pages.length > 1) {
+        components.push(new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId(`trade_oppo_prev_${oppoId}`).setLabel('◀ Precedent').setStyle(ButtonStyle.Secondary).setDisabled(pageIndex === 0),
+          new ButtonBuilder().setCustomId(`trade_oppo_next_${oppoId}`).setLabel('Suivant ▶').setStyle(ButtonStyle.Secondary).setDisabled(pageIndex === data.pages.length - 1)
+        ));
+      }
+      return { embeds: [embed], components, ephemeral: true };
+    };
+
+    return interaction.reply(buildOpportunityPage(oppoId, 0));
+  }
+
+  // Gestion de la pagination des opportunites
+  if (customId.startsWith('trade_oppo_prev_') || customId.startsWith('trade_oppo_next_')) {
+    const direction = customId.startsWith('trade_oppo_prev_') ? 'prev' : 'next';
+    const oppoId = customId.replace(/^trade_oppo_(prev|next)_/, '');
+    const data = activeTrades.get(oppoId);
+
+    if (!data || !data.pages) {
+      return interaction.reply({ content: '❌ Ces opportunites ont expire.', ephemeral: true });
+    }
+
+    const newPage = direction === 'prev' ? data.page - 1 : data.page + 1;
+    if (newPage < 0 || newPage >= data.pages.length) {
+      return interaction.deferUpdate();
+    }
+    data.page = newPage;
+
+    const p = data.pages[newPage];
+    const embed = new EmbedBuilder()
+      .setColor(p.color)
+      .setTitle(p.title)
+      .setDescription(p.description)
+      .setFooter({ text: `${p.cardCount} carte(s) • Page ${newPage + 1}/${data.pages.length}` });
+    const components = [];
+    if (data.pages.length > 1) {
+      components.push(new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`trade_oppo_prev_${oppoId}`).setLabel('◀ Precedent').setStyle(ButtonStyle.Secondary).setDisabled(newPage === 0),
+        new ButtonBuilder().setCustomId(`trade_oppo_next_${oppoId}`).setLabel('Suivant ▶').setStyle(ButtonStyle.Secondary).setDisabled(newPage === data.pages.length - 1)
+      ));
+    }
+
+    return interaction.update({ embeds: [embed], components });
   }
 
   // Gestion de la pagination globale
