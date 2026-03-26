@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, getBoosterCompletion } = require('../../services/userManager');
 const { generateCollectionImage, generateCardDetailImage } = require('../../services/imageGenerator');
@@ -245,7 +245,7 @@ async function handleCollectionCommand(interaction) {
     if (!boosters[boosterId]) {
       return interaction.reply({
         content: '❌ Aucun booster disponible.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
   }
@@ -301,7 +301,7 @@ async function handleCollectionSelectMenu(interaction) {
   if (!boosters[selectedBoosterId]) {
     return interaction.reply({
       content: '❌ Ce booster n\'existe pas.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -344,7 +344,7 @@ async function handleCollectionSelectMenu(interaction) {
     console.error('Erreur lors du changement de booster:', error);
     await interaction.followUp({
       content: '❌ Une erreur est survenue lors du changement de booster.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 }
@@ -378,7 +378,7 @@ async function handleCardDetailSelectMenu(interaction) {
     if (!cardInfo) {
       return interaction.followUp({
         content: '❌ Cette carte n\'existe pas.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -414,7 +414,7 @@ async function handleCardDetailSelectMenu(interaction) {
     console.error('Erreur lors de l\'affichage du detail de carte:', error);
     await interaction.followUp({
       content: '❌ Une erreur est survenue lors de l\'affichage de la carte.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 }
@@ -462,7 +462,7 @@ async function handleCollectionButton(interaction) {
       console.error('Erreur lors de la pagination globale:', error);
       await interaction.followUp({
         content: '❌ Une erreur est survenue.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
     return;
@@ -518,7 +518,7 @@ async function handleCollectionButton(interaction) {
       console.error('Erreur lors de la pagination:', error);
       await interaction.followUp({
         content: '❌ Une erreur est survenue.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
     return;
@@ -571,7 +571,7 @@ async function handleCollectionButton(interaction) {
       console.error('Erreur lors du retour a la collection:', error);
       await interaction.followUp({
         content: '❌ Une erreur est survenue.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
   }
@@ -607,7 +607,7 @@ async function handleCollectionSearchModal(interaction) {
   if (filteredCards.length === 0) {
     return interaction.reply({
       content: `❌ Aucune carte trouvee pour "${searchTerm}".`,
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -676,7 +676,7 @@ async function handleCollectionSearchModal(interaction) {
     console.error('Erreur lors de la recherche collection:', error);
     await interaction.followUp({
       content: '❌ Une erreur est survenue lors de la recherche.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 }

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
@@ -165,7 +165,7 @@ async function handleCommand(interaction) {
 		if (drinks[type].map((n) => n.toLowerCase()).includes(nom.toLowerCase())) {
 			return interaction.reply({
 				content: `**${nom}** est déjà dans la liste !`,
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -188,7 +188,7 @@ async function handleCommand(interaction) {
 		if (index === -1) {
 			return interaction.reply({
 				content: `**${nom}** n'est pas dans la liste !`,
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -209,7 +209,7 @@ async function handleCommand(interaction) {
 			if (!the) {
 				return interaction.reply({
 					content: "Aucun thé dans la liste !",
-					ephemeral: true,
+					flags: MessageFlags.Ephemeral,
 				});
 			}
 			return interaction.reply(`Tu vas boire un **${the}**`);
@@ -220,7 +220,7 @@ async function handleCommand(interaction) {
 			if (!infusion) {
 				return interaction.reply({
 					content: "Aucune infusion dans la liste !",
-					ephemeral: true,
+					flags: MessageFlags.Ephemeral,
 				});
 			}
 			return interaction.reply(`Tu vas boire une **${infusion}**`);
@@ -231,7 +231,7 @@ async function handleCommand(interaction) {
 			if (!cafe) {
 				return interaction.reply({
 					content: "Aucun café dans la liste !",
-					ephemeral: true,
+					flags: MessageFlags.Ephemeral,
 				});
 			}
 
@@ -263,7 +263,7 @@ async function handleCommand(interaction) {
 		if (list.length === 0) {
 			return interaction.reply({
 				content: "La liste est vide !",
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral,
 			});
 		}
 

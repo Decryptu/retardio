@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
+const { Client, GatewayIntentBits, REST, Routes, MessageFlags } = require("discord.js");
 const config = require("./src/config");
 const MessageHandler = require("./src/handlers/messageHandler.js");
 const { commands, handleCommand, handleAutocomplete } = require("./src/handlers/commandHandler.js");
@@ -102,7 +102,7 @@ client.on("interactionCreate", async (interaction) => {
 			if (interaction.user.id !== closeUserId) {
 				await interaction.reply({
 					content: "❌ Cette interaction ne vous appartient pas.",
-					ephemeral: true,
+					flags: MessageFlags.Ephemeral,
 				});
 				return;
 			}
@@ -111,7 +111,7 @@ client.on("interactionCreate", async (interaction) => {
 			} catch (_err) {
 				await interaction.reply({
 					content: "Message supprime.",
-					ephemeral: true,
+					flags: MessageFlags.Ephemeral,
 				});
 			}
 			return;

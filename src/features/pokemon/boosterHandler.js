@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { drawBoosterPack, getCardInfo } = require('../../services/cardGenerator');
 const { canOpenBooster, addCardsToUser, loadUserData, saveUserData, getBoosterInventory, removeBoosterFromInventory, getMoney } = require('../../services/userManager');
 const rarities = require('../../../data/rarities.json');
@@ -24,7 +24,7 @@ async function verifyOwner(interaction, ownerId) {
   if (interaction.user.id !== ownerId) {
     await interaction.reply({
       content: '❌ Cette interaction ne vous appartient pas.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return false;
   }
