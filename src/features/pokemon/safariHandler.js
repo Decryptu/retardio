@@ -38,10 +38,10 @@ const SAFARI_ZONES = [
 
 // Catch rates per rarity
 const CATCH_RATES = {
-  common: 0.85,
-  uncommon: 0.60,
-  rare: 0.35,
-  legendary: 0.12,
+  common: 0.90,
+  uncommon: 0.70,
+  rare: 0.45,
+  legendary: 0.20,
 };
 
 // Rarity weights for safari encounters (same as booster system)

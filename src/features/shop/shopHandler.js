@@ -1259,12 +1259,24 @@ async function purchaseItem(interaction, itemId, ownerId) {
       `**Solde restant:** ${newBalance.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`
     );
 
-  const continueButton = new ButtonBuilder()
-    .setCustomId(`shop_back_main_${ownerId}`)
-    .setLabel('Continuer les achats')
-    .setStyle(ButtonStyle.Primary);
+  const row = new ActionRowBuilder();
 
-  const row = new ActionRowBuilder().addComponents(continueButton);
+  if (itemId === 'safari_ticket') {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`inv_confirm_use_${itemId}_${ownerId}`)
+        .setLabel('Utiliser le ticket')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('🎫')
+    );
+  }
+
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`shop_back_main_${ownerId}`)
+      .setLabel('Continuer les achats')
+      .setStyle(ButtonStyle.Secondary)
+  );
 
   await interaction.update({
     embeds: [embed],
