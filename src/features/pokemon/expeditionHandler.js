@@ -248,6 +248,9 @@ async function handleExpeditionJoin(interaction) {
     });
   }
 
+  // Defer reply immediately to avoid 3-second interaction timeout
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   const team = getTeam(userId);
   const teamCards = team
     .filter((cardId) => cardId !== null)
@@ -278,20 +281,18 @@ async function handleExpeditionJoin(interaction) {
   }
 
   if (alreadyJoined) {
-    await interaction.reply({
+    await interaction.editReply({
       content:
         `✅ Votre équipe a été mise à jour pour cette expédition !\n` +
         `Équipe actuelle: ${teamCards.map((c) => c.name).join(", ")}\n\n` +
         `💡 Vous pouvez continuer à modifier votre équipe avec \`/team\`.`,
-      flags: MessageFlags.Ephemeral,
     });
   } else {
-    await interaction.reply({
+    await interaction.editReply({
       content:
         `🗺️ Vous avez rejoint l'expédition avec ${teamCards.length} Pokémon !\n` +
         `Équipe: ${teamCards.map((c) => c.name).join(", ")}\n\n` +
         `💡 Vous pouvez modifier votre équipe avec \`/team\` jusqu'à la fin de l'expédition.`,
-      flags: MessageFlags.Ephemeral,
     });
   }
 }
@@ -567,19 +568,18 @@ EXEMPLE STRICT:
   try {
     const message = await channel.messages.fetch(expedition.messageId);
     await message.edit({ components: [] });
+  } catch (error) {
+    console.error("Erreur lors de la suppression des boutons d'expedition:", error);
+  }
 
+  try {
     await channel.send({
       content: `${mentions}\nExpédition terminée ! Chaque explorateur reçoit **${result.reward} P** !`,
       embeds: [resultEmbed],
       files: [attachment],
     });
   } catch (error) {
-    console.error("Erreur lors de la fin de l'expedition:", error);
-    await channel.send({
-      content: `${mentions}\nExpédition terminée ! Chaque explorateur reçoit **${result.reward} P** !`,
-      embeds: [resultEmbed],
-      files: [attachment],
-    });
+    console.error("Erreur lors de l'envoi du résultat d'expedition:", error);
   }
 
   console.log(
