@@ -547,7 +547,7 @@ async function generateCollectionImage(userId, boosterId) {
 
   // Titre
   const owned = Object.keys(userData.cards).filter(cardId => {
-    const card = allCards.find(c => c.id === parseInt(cardId));
+    const card = allCards.find(c => String(c.id) === String(cardId));
     return card !== undefined;
   }).length;
 
