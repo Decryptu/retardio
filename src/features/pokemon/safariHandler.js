@@ -41,7 +41,7 @@ const CATCH_RATES = {
   common: 0.90,
   uncommon: 0.70,
   rare: 0.45,
-  legendary: 0.20,
+  legendary: 0.30,
 };
 
 // Rarity weights for safari encounters (same as booster system)
@@ -88,6 +88,17 @@ function getAllCardsByRarity() {
 }
 
 /**
+ * Safari becomes more targeted as the user's collection nears completion.
+ */
+function getMissingPreference(totalMissing) {
+  if (totalMissing <= 2) return 0.95;
+  if (totalMissing <= 5) return 0.85;
+  if (totalMissing <= 10) return 0.75;
+  if (totalMissing <= 25) return 0.65;
+  return 0.50;
+}
+
+/**
  * Select a rarity based on weighted probabilities
  */
 function selectSafariRarity(availableRarities) {
@@ -129,11 +140,13 @@ function runEncounter(userId) {
   let card;
   let isNew = false;
 
+  const totalMissing = Object.values(missingByRarity)
+    .reduce((sum, pool) => sum + pool.length, 0);
   const hasMissing = missingByRarity[rarity] && missingByRarity[rarity].length > 0;
-  const pickNew = hasMissing && Math.random() < 0.5;
+  const pickNew = hasMissing && Math.random() < getMissingPreference(totalMissing);
 
   if (pickNew) {
-    // Coin flip won — pick a card the user doesn't have
+    // Completion roll won: pick a card the user doesn't have.
     const pool = missingByRarity[rarity];
     card = pool[Math.floor(Math.random() * pool.length)];
     isNew = true;
