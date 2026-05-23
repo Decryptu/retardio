@@ -109,6 +109,46 @@
     },
     "price": 500
   },
+  "12": {
+    "id": 12,
+    "name": "Floraison Mystique",
+    "totalCards": 74,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "13": {
+    "id": 13,
+    "name": "Courants Ionisés",
+    "totalCards": 74,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "14": {
+    "id": 14,
+    "name": "Forge Draconique",
+    "totalCards": 74,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
+  "15": {
+    "id": 15,
+    "name": "Ombres Telluriques",
+    "totalCards": 74,
+    "cardsPerPack": 5,
+    "guarantees": {
+      "minRarity": "uncommon"
+    },
+    "price": 500
+  },
   "promo_1": {
     "id": "promo_1",
     "name": "Promo",
