@@ -54,6 +54,15 @@ function getPurchasableBoosters() {
 }
 
 /**
+ * Formate la progression d'un utilisateur sur un booster
+ */
+function getBoosterCompletionLabel(userId, boosterId) {
+  const { owned, total } = getBoosterCompletion(userId, boosterId);
+  const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
+  return `${owned}/${total} cartes (${percentage}%)`;
+}
+
+/**
  * Obtient les cartes promo achetables
  */
 function getPurchasableCards() {
@@ -496,9 +505,10 @@ async function showBoostersShop(interaction, ownerId, page = 0) {
 
   const boosterOptions = pageBoosters.map(booster => {
     const canAfford = userMoney >= booster.price;
+    const completion = getBoosterCompletionLabel(ownerId, booster.id);
     return {
       label: `${booster.name} - ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}`,
-      description: `${booster.totalCards} cartes • ${booster.cardsPerPack} cartes/pack${canAfford ? '' : ' (Fonds insuffisants)'}`,
+      description: `${completion} • ${booster.cardsPerPack} cartes/pack${canAfford ? '' : ' (Fonds insuffisants)'}`,
       value: `buy_booster_${booster.id}`,
       emoji: canAfford ? '📦' : '🔒'
     };
@@ -718,6 +728,7 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
   const totalPrice = booster.price * quantity;
   const canAfford = userMoney >= totalPrice;
   const maxAffordable = Math.floor(userMoney / booster.price);
+  const completion = getBoosterCompletionLabel(ownerId, boosterId);
 
   const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
   const files = [];
@@ -734,6 +745,7 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
       `**Prix unitaire:** ${booster.price.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}\n` +
       `**Cartes par pack:** ${booster.cardsPerPack}\n` +
       `**Cartes totales:** ${booster.totalCards}\n` +
+      `**Collection:** ${completion}\n` +
       `**Garantie:** ${booster.guarantees?.minRarity || 'Aucune'}\n\n` +
       `**Quantité:** ${quantity}\n` +
       `**Total:** ${totalPrice.toLocaleString('fr-FR')} ${CURRENCY_SYMBOL}` +
