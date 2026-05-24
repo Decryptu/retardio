@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { drawBoosterPack, getCardInfo } = require('../../services/cardGenerator');
-const { canOpenBooster, addCardsToUser, loadUserData, saveUserData, getBoosterInventory, removeBoosterFromInventory, getMoney } = require('../../services/userManager');
+const { canOpenBooster, addCardsToUser, loadUserData, saveUserData, getBoosterInventory, removeBoosterFromInventory, getMoney, getBoosterCompletion } = require('../../services/userManager');
 const rarities = require('../../../data/rarities.json');
 const { generateBoosterOpeningImage, generateMultiBoosterOpeningImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
@@ -15,6 +15,15 @@ const CURRENCY_SYMBOL = 'P';
  */
 function getOpenableBoosters() {
   return Object.values(boosters).filter(b => !b.isPromo && b.cardsPerPack > 0);
+}
+
+/**
+ * Formate la progression d'un utilisateur sur un booster
+ */
+function getBoosterCompletionLabel(userId, boosterId) {
+  const { owned, total } = getBoosterCompletion(userId, boosterId);
+  const percentage = total > 0 ? Math.round((owned / total) * 100) : 0;
+  return `${owned}/${total} cartes (${percentage}%)`;
 }
 
 /**
@@ -77,7 +86,7 @@ async function handleBoosterCommand(interaction) {
     const inInventory = inventory[String(booster.id)] || 0;
 
     const label = booster.name;
-    let descText = `${booster.totalCards} cartes`;
+    let descText = getBoosterCompletionLabel(userId, booster.id);
     let emoji = '📦';
 
     if (canOpen) {
@@ -527,7 +536,7 @@ async function handleBoosterButton(interaction) {
     for (const booster of openableBoosters) {
       const inInventory = inventory[String(booster.id)] || 0;
 
-      let descText = `${booster.totalCards} cartes`;
+      let descText = getBoosterCompletionLabel(ownerId, booster.id);
       let emoji = '📦';
 
       if (canOpen) {
