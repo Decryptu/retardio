@@ -7,6 +7,8 @@ const config = {
     guildId: process.env.GUILD_ID, // Pour les commandes de guilde (dev)
     birthdayChannelId: process.env.BIRTHDAY_CHANNEL_ID, // Canal pour les messages d'anniversaire
     openaiApiKey: process.env.API_KEY,
+    enableMemberIntent: process.env.ENABLE_MEMBER_INTENT === 'true',
+    logMessages: process.env.LOG_MESSAGES === 'true',
     triggers: {
         quoiChance: 0.5, // 50% de chance de répondre à "quoi"
         mockChance: 0.005, // 0.5% de chance de mocker

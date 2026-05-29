@@ -29,7 +29,13 @@ function buildCardIdsCache() {
     cardIdsCache[boosterId][rarity].push(card.id);
   });
 
-  console.log('✅ Cache des cardIds construit:', JSON.stringify(cardIdsCache, null, 2));
+  const boosterCount = Object.keys(cardIdsCache).length;
+  const cardCount = Object.values(cardIdsCache).reduce(
+    (total, raritiesByBooster) =>
+      total + Object.values(raritiesByBooster).reduce((sum, ids) => sum + ids.length, 0),
+    0
+  );
+  console.log(`✅ Cache des cardIds construit (${boosterCount} boosters, ${cardCount} cartes)`);
 }
 
 // Construire le cache au chargement du module

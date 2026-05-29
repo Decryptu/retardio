@@ -8,11 +8,6 @@ const {
 } = require("discord.js");
 const { getCardInfo } = require("../../services/cardGenerator");
 const { getTeam, hasTeamMember, addMoney } = require("../../services/userManager");
-const {
-  generateExpeditionStartImage,
-  generateExpeditionProgressImage,
-  generateExpeditionResultImage,
-} = require("../../services/imageGenerator");
 const config = require("../../config");
 const { ADMIN_WHITELIST } = require("./tradeHandler");
 
@@ -20,6 +15,10 @@ let activeExpedition = null;
 
 const EXPEDITION_DURATION = 15 * 60 * 1000; // 15 minutes
 const PROGRESS_INTERVAL = 60 * 1000; // Update every 60 seconds
+
+function imageGenerator() {
+  return require("../../services/imageGenerator");
+}
 
 function sanitizeJsonStringControlChars(jsonStr) {
   return jsonStr.replace(/"(?:[^"\\]|\\.)*"/g, (match) =>
@@ -160,7 +159,7 @@ async function startExpedition(client) {
   }
 
   const biome = selectBiome();
-  const startImage = await generateExpeditionStartImage(biome);
+  const startImage = await imageGenerator().generateExpeditionStartImage(biome);
   const attachment = new AttachmentBuilder(startImage, { name: "expedition.png" });
 
   const joinButton = new ButtonBuilder()
@@ -267,7 +266,7 @@ async function handleExpeditionJoin(interaction) {
   if (!alreadyJoined) {
     try {
       const channel = interaction.client.channels.cache.get(activeExpedition.channelId);
-      const message = await channel.messages.fetch(activeExpedition.messageId);
+      const message = await channel.messages.fetch({ message: activeExpedition.messageId, cache: false });
 
       const participantMentions = Array.from(activeExpedition.participants.keys())
         .map((id) => `<@${id}>`)
@@ -310,7 +309,7 @@ async function updateExpeditionProgress() {
   }
 
   try {
-    const progressImage = await generateExpeditionProgressImage(
+    const progressImage = await imageGenerator().generateExpeditionProgressImage(
       activeExpedition.biome,
       avatarData,
       progress,
@@ -319,7 +318,7 @@ async function updateExpeditionProgress() {
 
     const attachment = new AttachmentBuilder(progressImage, { name: "expedition.png" });
     const channel = activeExpedition.client.channels.cache.get(activeExpedition.channelId);
-    const message = await channel.messages.fetch(activeExpedition.messageId);
+    const message = await channel.messages.fetch({ message: activeExpedition.messageId, cache: false });
 
     const embed = EmbedBuilder.from(message.embeds[0])
       .setImage("attachment://expedition.png");
@@ -376,7 +375,7 @@ async function executeExpedition() {
       );
 
     try {
-      const message = await channel.messages.fetch(expedition.messageId);
+      const message = await channel.messages.fetch({ message: expedition.messageId, cache: false });
       await message.edit({ embeds: [embed], components: [] });
     } catch (error) {
       console.error("Erreur lors de la mise a jour du message d'expedition:", error);
@@ -543,7 +542,7 @@ EXEMPLE STRICT:
   }
 
   // Generate result image
-  const resultImageBuffer = await generateExpeditionResultImage(
+  const resultImageBuffer = await imageGenerator().generateExpeditionResultImage(
     expedition.biome,
     participantIds,
     result.expeditionLog,
@@ -566,7 +565,7 @@ EXEMPLE STRICT:
   const mentions = participantIds.map((id) => `<@${id}>`).join(" ");
 
   try {
-    const message = await channel.messages.fetch(expedition.messageId);
+    const message = await channel.messages.fetch({ message: expedition.messageId, cache: false });
     await message.edit({ components: [] });
   } catch (error) {
     console.error("Erreur lors de la suppression des boutons d'expedition:", error);

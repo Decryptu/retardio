@@ -8,7 +8,6 @@ const {
 } = require("discord.js");
 const { getCardInfo } = require("../../services/cardGenerator");
 const { getTeam, hasTeamMember, addCardToUser, addMoney } = require("../../services/userManager");
-const { generateRaidBossImage, generateRaidResultImage } = require("../../services/imageGenerator");
 const config = require("../../config");
 const cards = require("../../../data/cards.json");
 const { ADMIN_WHITELIST } = require("./tradeHandler");
@@ -16,6 +15,10 @@ const { ADMIN_WHITELIST } = require("./tradeHandler");
 let activeRaid = null;
 
 const RAID_DURATION = 5 * 60 * 1000;
+
+function imageGenerator() {
+  return require("../../services/imageGenerator");
+}
 
 function sanitizeJsonStringControlChars(jsonStr) {
   return jsonStr.replace(/"(?:[^"\\]|\\.)*"/g, (match) =>
@@ -83,7 +86,7 @@ async function startRaid(client) {
 
   const { card: bossCard, level } = selectRaidBoss();
 
-  const bossImageBuffer = await generateRaidBossImage(bossCard, level);
+  const bossImageBuffer = await imageGenerator().generateRaidBossImage(bossCard, level);
   const attachment = new AttachmentBuilder(bossImageBuffer, { name: "raid_boss.png" });
 
   const joinButton = new ButtonBuilder()
@@ -128,7 +131,6 @@ async function startRaid(client) {
     participants: new Map(),
     endTime,
     client,
-    imageBuffer: bossImageBuffer,
   };
 
   setTimeout(() => executeRaid(), RAID_DURATION);
@@ -181,7 +183,7 @@ async function handleRaidJoin(interaction) {
   if (!alreadyJoined) {
     try {
       const channel = interaction.client.channels.cache.get(activeRaid.channelId);
-      const message = await channel.messages.fetch(activeRaid.messageId);
+      const message = await channel.messages.fetch({ message: activeRaid.messageId, cache: false });
 
       const participantMentions = Array.from(activeRaid.participants.keys())
         .map((id) => `<@${id}>`)
@@ -247,7 +249,7 @@ async function executeRaid() {
       .setDescription(`Le **${raid.bossCard.name}** s'est enfui car personne n'a rejoint le raid.`);
 
     try {
-      const message = await channel.messages.fetch(raid.messageId);
+      const message = await channel.messages.fetch({ message: raid.messageId, cache: false });
       await message.edit({ embeds: [embed], components: [] });
     } catch (error) {
       console.error("Erreur lors de la mise a jour du message de raid:", error);
@@ -394,7 +396,7 @@ EXEMPLE STRICT:
     }
   }
 
-  const resultImageBuffer = await generateRaidResultImage(
+  const resultImageBuffer = await imageGenerator().generateRaidResultImage(
     raid.bossCard,
     raid.level,
     result.victory,
@@ -420,7 +422,7 @@ EXEMPLE STRICT:
   const mentions = participantIds.map((id) => `<@${id}>`).join(" ");
 
   try {
-    const message = await channel.messages.fetch(raid.messageId);
+    const message = await channel.messages.fetch({ message: raid.messageId, cache: false });
     await message.edit({ components: [] });
 
     await channel.send({

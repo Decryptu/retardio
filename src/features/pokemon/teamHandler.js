@@ -1,13 +1,16 @@
 const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, getTeam, setTeamSlot } = require('../../services/userManager');
-const { generateTeamImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
 
 const CARDS_PER_PAGE = 24; // 24 cards + 1 "empty slot" option = 25 max
 
 // Map pour stocker les sessions de modification d'equipe
 const activeTeamSessions = new Map();
+
+function imageGenerator() {
+  return require('../../services/imageGenerator');
+}
 
 /**
  * Obtient les boosters ou l'utilisateur possede des cartes
@@ -349,7 +352,7 @@ function createGlobalCardSelectComponents(cards, sessionId, slot, page, userId) 
  */
 async function generateMainTeamView(session, sessionId) {
   const team = getTeam(session.userId);
-  const teamImageBuffer = await generateTeamImage(session.userId, team);
+  const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
   const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
   const slotButtons = [];
@@ -411,7 +414,7 @@ async function handleTeamCommand(interaction) {
 
   if (!hasCards) {
     const team = getTeam(userId);
-    const teamImageBuffer = await generateTeamImage(userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
     const teamCount = team.filter(c => c !== null).length;
 
@@ -462,7 +465,7 @@ async function handleTeamButton(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -491,7 +494,7 @@ async function handleTeamButton(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -520,7 +523,7 @@ async function handleTeamButton(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -548,7 +551,7 @@ async function handleTeamButton(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -576,7 +579,7 @@ async function handleTeamButton(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -608,7 +611,7 @@ async function handleTeamButton(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -640,7 +643,7 @@ async function handleTeamButton(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -668,7 +671,7 @@ async function handleTeamButton(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -744,7 +747,7 @@ async function handleTeamSelectMenu(interaction) {
 
     // Keep team image visible
     const team = getTeam(session.userId);
-    const teamImageBuffer = await generateTeamImage(session.userId, team);
+    const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
     const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
     await interaction.update({
@@ -891,7 +894,7 @@ async function handleTeamSearchModal(interaction) {
   await interaction.deferUpdate();
 
   const team = getTeam(session.userId);
-  const teamImageBuffer = await generateTeamImage(session.userId, team);
+  const teamImageBuffer = await imageGenerator().generateTeamImage(session.userId, team);
   const attachment = new AttachmentBuilder(teamImageBuffer, { name: 'team.png' });
 
   if (isGlobal) {
