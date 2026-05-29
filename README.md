@@ -106,11 +106,13 @@ Combattez des boss Pokémon en équipe pour gagner des cartes rares !
 
 **Variables d'environnement:**
 
-- `DISCORD_TOKEN` - Token du bot
+- `TOKEN` - Token du bot Discord
 - `CLIENT_ID` - ID de l'application Discord
 - `GUILD_ID` - (Optionnel) ID du serveur pour commandes instantanées
 - `BIRTHDAY_CHANNEL_ID` - Canal pour les annonces d'anniversaires
 - `API_KEY` - Clé API OpenAI (pour les combats de raids)
+- `ENABLE_MEMBER_INTENT=true` - Optionnel, seulement si les outils IA doivent lister/rechercher tous les membres
+- `LOG_MESSAGES=true` - Optionnel, active les logs détaillés de chaque message
 
 ## Installation
 

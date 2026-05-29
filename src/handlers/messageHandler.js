@@ -13,6 +13,11 @@ const RESPONSE_BLACKLIST_CHANNELS = [
 	"1272543925286211606",
 ];
 
+const MESSAGE_SCAN_DEFAULT = 500;
+const MESSAGE_SCAN_MAX = 2000;
+const CHANNEL_HISTORY_LIMIT = 50;
+const SERVER_MEMBER_TOOL_LIMIT = 200;
+
 // Tools available to the bot when mentioned
 const TOOLS = [
 	{
@@ -33,7 +38,7 @@ const TOOLS = [
 				properties: {
 					username: { type: "string", description: "Filter by this username or display name (case-insensitive). Leave empty for all users." },
 					keyword: { type: "string", description: "Filter messages containing this word/phrase (case-insensitive). Leave empty for no filter." },
-					limit: { type: "number", description: "Max number of messages to scan (default 5000, max 10000). Higher values take longer." },
+					limit: { type: "number", description: `Max number of messages to scan (default ${MESSAGE_SCAN_DEFAULT}, max ${MESSAGE_SCAN_MAX}). Higher values take longer.` },
 				},
 				required: [],
 			},
@@ -49,7 +54,7 @@ const TOOLS = [
 				properties: {
 					username: { type: "string", description: "The username or display name to search for" },
 					keyword: { type: "string", description: "The word or phrase to count" },
-					limit: { type: "number", description: "Max number of messages to scan (default 5000, max 10000). Higher values take longer." },
+					limit: { type: "number", description: `Max number of messages to scan (default ${MESSAGE_SCAN_DEFAULT}, max ${MESSAGE_SCAN_MAX}). Higher values take longer.` },
 				},
 				required: ["username", "keyword"],
 			},
@@ -71,7 +76,7 @@ const TOOLS = [
 			parameters: {
 				type: "object",
 				properties: {
-					limit: { type: "number", description: "Max number of messages to scan (default 5000, max 10000)" },
+					limit: { type: "number", description: `Max number of messages to scan (default ${MESSAGE_SCAN_DEFAULT}, max ${MESSAGE_SCAN_MAX})` },
 					samples_per_user: { type: "number", description: "Number of sample messages to include per user (default 5, max 10)" },
 				},
 				required: [],
@@ -150,13 +155,14 @@ class MessageHandler {
 	}
 
 	// Fetch messages from a channel with pagination
-	async fetchMessages(channel, limit = 500) {
-		const max = Math.min(limit, 10000);
+	async fetchMessages(channel, limit = MESSAGE_SCAN_DEFAULT) {
+		const max = Math.min(Math.max(Number(limit) || MESSAGE_SCAN_DEFAULT, 1), MESSAGE_SCAN_MAX);
 		const all = [];
 		let lastId = null;
 		while (all.length < max) {
 			const batch = await channel.messages.fetch({
 				limit: Math.min(100, max - all.length),
+				cache: false,
 				...(lastId && { before: lastId }),
 			});
 			if (batch.size === 0) break;
@@ -167,43 +173,73 @@ class MessageHandler {
 	}
 
 	// Find a guild member by ID, mention, username or displayName
-	findMember(guild, name) {
+	async findMember(guild, name) {
 		// Handle Discord mention format <@123> or <@!123> or raw ID
 		const idMatch = name.match(/^<?@?!?(\d{17,20})>?$/);
 		if (idMatch) {
-			return guild.members.cache.get(idMatch[1]);
+			const cached = guild.members.cache.get(idMatch[1]);
+			if (cached) return cached;
+			try {
+				return await guild.members.fetch({ user: idMatch[1], cache: false });
+			} catch {
+				return null;
+			}
 		}
 		const lower = name.toLowerCase();
-		return guild.members.cache.find(
+		const cached = guild.members.cache.find(
 			(m) =>
 				m.user.username.toLowerCase() === lower ||
 				m.displayName.toLowerCase() === lower ||
 				m.user.username.toLowerCase().includes(lower) ||
 				m.displayName.toLowerCase().includes(lower),
 		);
+		if (cached) return cached;
+
+		try {
+			const matches = await guild.members.fetch({ query: name, limit: 10, time: 5000 });
+			return matches.find(
+				(m) =>
+					m.user.username.toLowerCase() === lower ||
+					m.displayName.toLowerCase() === lower,
+			) || matches.first() || null;
+		} catch {
+			return null;
+		}
 	}
 
 	// Execute a tool call and return the result as a string
 	async executeTool(name, args, message) {
 		const guild = message.guild;
 		const channel = message.channel;
-		await guild.members.fetch();
 
 		if (name === "get_server_members") {
-			const members = guild.members.cache
+			let memberCollection = guild.members.cache;
+			try {
+				memberCollection = await guild.members.fetch({ time: 5000 });
+			} catch (error) {
+				console.error("Erreur fetch membres:", error);
+			}
+
+			const members = memberCollection
 				.filter((m) => !m.user.bot)
 				.map((m) => `${m.displayName} (@${m.user.username})`)
-				.sort();
-			return JSON.stringify({ count: members.length, members });
+				.sort()
+				.slice(0, SERVER_MEMBER_TOOL_LIMIT);
+			return JSON.stringify({
+				count: memberCollection.filter((m) => !m.user.bot).size,
+				showing: members.length,
+				truncated: members.length >= SERVER_MEMBER_TOOL_LIMIT,
+				members,
+			});
 		}
 
 		if (name === "search_messages") {
-			const limit = args.limit || 5000;
+			const limit = args.limit || MESSAGE_SCAN_DEFAULT;
 			const msgs = await this.fetchMessages(channel, limit);
 			let filtered = msgs.filter((m) => !m.author.bot);
 
 			if (args.username) {
-				const member = this.findMember(guild, args.username);
+				const member = await this.findMember(guild, args.username);
 				if (member) {
 					filtered = filtered.filter((m) => m.author.id === member.user.id);
 				} else {
@@ -224,13 +260,13 @@ class MessageHandler {
 		}
 
 		if (name === "count_keyword") {
-			const limit = args.limit || 5000;
+			const limit = args.limit || MESSAGE_SCAN_DEFAULT;
 			const msgs = await this.fetchMessages(channel, limit);
 			const kw = args.keyword.toLowerCase();
 
 			let filtered = msgs.filter((m) => !m.author.bot);
 			if (args.username) {
-				const member = this.findMember(guild, args.username);
+				const member = await this.findMember(guild, args.username);
 				if (member) {
 					filtered = filtered.filter((m) => m.author.id === member.user.id);
 				} else {
@@ -255,7 +291,7 @@ class MessageHandler {
 		}
 
 		if (name === "get_user_activity_summary") {
-			const limit = args.limit || 5000;
+			const limit = args.limit || MESSAGE_SCAN_DEFAULT;
 			const samplesPerUser = Math.min(args.samples_per_user || 5, 10);
 			const msgs = await this.fetchMessages(channel, limit);
 			const humanMsgs = msgs.filter((m) => !m.author.bot && m.content);
@@ -358,13 +394,17 @@ class MessageHandler {
 		}
 
 		this.messageHistory.set(channelId, channelHistory);
+		if (this.messageHistory.size > CHANNEL_HISTORY_LIMIT) {
+			const oldestChannelId = this.messageHistory.keys().next().value;
+			this.messageHistory.delete(oldestChannelId);
+		}
 		return channelHistory;
 	}
 
 	// Fetch context around a message for replies (grabs recent channel messages)
 	async getReplyContext(message) {
 		try {
-			const messages = await message.channel.messages.fetch({ limit: 15, before: message.id });
+			const messages = await message.channel.messages.fetch({ limit: 15, before: message.id, cache: false });
 			const sorted = [...messages.values()].reverse();
 			return sorted
 				.map((msg) => `${msg.author.username}: ${msg.content}`)
@@ -400,7 +440,7 @@ class MessageHandler {
 		// Handle direct replies to the bot's messages
 		if (message.reference && !message.author.bot) {
 			try {
-				const repliedTo = await message.channel.messages.fetch(message.reference.messageId);
+				const repliedTo = await message.channel.messages.fetch({ message: message.reference.messageId, cache: false });
 				if (repliedTo.author.id === this.client.user.id) {
 					const replyContext = await this.getReplyContext(message);
 					const imageUrls = this.getImageUrls(message);
@@ -468,6 +508,12 @@ class MessageHandler {
 		// Handle "susane" or "susan"
 		if (contentLower.includes("susane") || contentLower.includes("susan")) {
 			message.channel.send("<:yakak:1374489364213796884>");
+			return;
+		}
+
+		// Handle "tu vas faire quoi" anywhere in a message
+		if (contentLower.includes("tu vas faire quoi")) {
+			message.channel.send("je vais te toucher la nuit <:larry:1334433349804232746>");
 			return;
 		}
 

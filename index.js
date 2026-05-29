@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, REST, Routes, MessageFlags } = require("discord.js");
+const { Client, GatewayIntentBits, REST, Routes, MessageFlags, Options } = require("discord.js");
 const config = require("./src/config");
 const MessageHandler = require("./src/handlers/messageHandler.js");
 const { commands, handleCommand, handleAutocomplete } = require("./src/handlers/commandHandler.js");
@@ -26,13 +26,40 @@ const {
 // Combine all commands
 const allCommands = [...commands, ...birthdayCommands, ...pokemonCommands, ...shopCommands];
 
-const client = new Client({
-	intents: [
+const intents = [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
-		GatewayIntentBits.GuildMembers,
-	],
+];
+
+if (config.enableMemberIntent) {
+	intents.push(GatewayIntentBits.GuildMembers);
+}
+
+const client = new Client({
+	intents,
+	makeCache: Options.cacheWithLimits({
+		...Options.DefaultMakeCacheSettings,
+		MessageManager: 30,
+		GuildMemberManager: 50,
+		UserManager: 100,
+		ReactionManager: 0,
+		ReactionUserManager: 0,
+		PresenceManager: 0,
+		VoiceStateManager: 0,
+		GuildScheduledEventManager: 0,
+	}),
+	sweepers: {
+		...Options.DefaultSweeperSettings,
+		messages: {
+			interval: 300,
+			lifetime: 900,
+		},
+	},
+	ws: {
+		large_threshold: 50,
+		version: 10,
+	},
 });
 
 // Initialize message handler
@@ -131,12 +158,13 @@ client.on("messageCreate", async (message) => {
 	// Only ignore messages from this bot, allow other bots
 	if (message.author.bot && message.author.id === client.user.id) return;
 
-	// Logger les messages reçus
-	console.log(
-		`[${new Date().toISOString()}] Canal #${message.channel.name} (${message.channelId})`,
-	);
-	console.log(`${message.author.username}: ${message.content}`);
-	console.log("-".repeat(50));
+	if (config.logMessages) {
+		console.log(
+			`[${new Date().toISOString()}] Canal #${message.channel.name} (${message.channelId})`,
+		);
+		console.log(`${message.author.username}: ${message.content}`);
+		console.log("-".repeat(50));
+	}
 
 	await messageHandler.handleMessage(message);
 

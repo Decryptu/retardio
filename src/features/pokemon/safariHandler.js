@@ -13,10 +13,6 @@ const {
   addCardToUser,
 } = require('../../services/userManager');
 const { getCardInfo } = require('../../services/cardGenerator');
-const {
-  generateSafariProgressImage,
-  generateSafariResultImage,
-} = require('../../services/imageGenerator');
 const cards = require('../../../data/cards.json');
 const rarities = require('../../../data/rarities.json');
 
@@ -26,6 +22,10 @@ const activeSafaris = new Map();
 const SAFARI_DURATION = 10 * 60 * 1000; // 10 minutes
 const TOTAL_ENCOUNTERS = 5;
 const ENCOUNTER_INTERVAL = SAFARI_DURATION / TOTAL_ENCOUNTERS; // 2min between encounters, last one at 10min
+
+function imageGenerator() {
+  return require('../../services/imageGenerator');
+}
 
 // Safari zones (thematic areas to explore)
 const SAFARI_ZONES = [
@@ -202,13 +202,13 @@ async function processEncounter(safari) {
   try {
     const channel = safari.client.channels.cache.get(safari.channelId);
     if (!channel) return;
-    const message = await channel.messages.fetch(safari.messageId);
+    const message = await channel.messages.fetch({ message: safari.messageId, cache: false });
 
     const elapsed = Date.now() - safari.startTime;
     const progress = Math.min(elapsed / SAFARI_DURATION, 1.0);
     const timeRemaining = Math.max(0, Math.ceil((SAFARI_DURATION - elapsed) / 60000));
 
-    const progressImage = await generateSafariProgressImage(
+    const progressImage = await imageGenerator().generateSafariProgressImage(
       safari.avatarURL,
       safari.username,
       progress,
@@ -280,7 +280,7 @@ async function endSafari(userId) {
     }
 
     // Generate result image
-    const resultImage = await generateSafariResultImage(
+    const resultImage = await imageGenerator().generateSafariResultImage(
       safari.avatarURL,
       safari.username,
       safari.encounters,
@@ -330,7 +330,7 @@ async function endSafari(userId) {
 
     // Edit original message to remove button
     try {
-      const message = await channel.messages.fetch(safari.messageId);
+      const message = await channel.messages.fetch({ message: safari.messageId, cache: false });
       await message.edit({ components: [] });
     } catch { /* message may be deleted */ }
 
@@ -395,7 +395,7 @@ async function handleSafariFromInventory(interaction, ownerId) {
   const username = interaction.user.username;
 
   // Generate initial image
-  const progressImage = await generateSafariProgressImage(
+  const progressImage = await imageGenerator().generateSafariProgressImage(
     avatarURL,
     username,
     0,

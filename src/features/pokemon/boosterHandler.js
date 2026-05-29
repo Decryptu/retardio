@@ -2,13 +2,16 @@ const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, 
 const { drawBoosterPack, getCardInfo } = require('../../services/cardGenerator');
 const { canOpenBooster, addCardsToUser, loadUserData, saveUserData, getBoosterInventory, removeBoosterFromInventory, getMoney, getBoosterCompletion } = require('../../services/userManager');
 const rarities = require('../../../data/rarities.json');
-const { generateBoosterOpeningImage, generateMultiBoosterOpeningImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
 const path = require('node:path');
 const fs = require('node:fs');
 
 const ASSETS_DIR = path.join(__dirname, '../../../assets');
 const CURRENCY_SYMBOL = 'P';
+
+function imageGenerator() {
+  return require('../../services/imageGenerator');
+}
 
 /**
  * Obtient les boosters ouvrables (non-promo)
@@ -285,7 +288,7 @@ async function openBooster(interaction, boosterId, ownerId) {
     const newCardIds = cardIds.filter(cardId => !ownedCardsBefore.has(String(cardId)));
 
     // Generer l'image
-    const imageBuffer = await generateBoosterOpeningImage(cardIds, isGodPack, newCardIds);
+    const imageBuffer = await imageGenerator().generateBoosterOpeningImage(cardIds, isGodPack, newCardIds);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'booster.png' });
 
     // Preparer la description des cartes
@@ -435,7 +438,7 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
     }
 
     // Generer l'image de la grille de cartes
-    const imageBuffer = await generateMultiBoosterOpeningImage(packsCardIds, godPackFlags, newCardIds);
+    const imageBuffer = await imageGenerator().generateMultiBoosterOpeningImage(packsCardIds, godPackFlags, newCardIds);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'multi_booster.png' });
 
     const embed = new EmbedBuilder()

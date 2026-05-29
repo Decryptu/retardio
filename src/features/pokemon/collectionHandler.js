@@ -1,13 +1,16 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, getBoosterCompletion } = require('../../services/userManager');
-const { generateCollectionImage, generateCardDetailImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
 const path = require('node:path');
 const fs = require('node:fs');
 
 const ASSETS_DIR = path.join(__dirname, '../../../assets');
 const CARDS_PER_PAGE = 25;
+
+function imageGenerator() {
+  return require('../../services/imageGenerator');
+}
 
 /**
  * Obtient les cartes possedees d'un utilisateur pour un booster, triees par quantite
@@ -253,7 +256,7 @@ async function handleCollectionCommand(interaction) {
   await interaction.deferReply();
 
   try {
-    const imageBuffer = await generateCollectionImage(userId, boosterId);
+    const imageBuffer = await imageGenerator().generateCollectionImage(userId, boosterId);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
     const { owned, total } = getBoosterCompletion(userId, boosterId);
@@ -310,7 +313,7 @@ async function handleCollectionSelectMenu(interaction) {
   try {
     const targetUser = await interaction.client.users.fetch(targetUserId);
 
-    const imageBuffer = await generateCollectionImage(targetUserId, selectedBoosterId);
+    const imageBuffer = await imageGenerator().generateCollectionImage(targetUserId, selectedBoosterId);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
     const { owned, total } = getBoosterCompletion(targetUserId, selectedBoosterId);
@@ -382,7 +385,7 @@ async function handleCardDetailSelectMenu(interaction) {
       });
     }
 
-    const imageBuffer = await generateCardDetailImage(cardId, quantity, boosterId);
+    const imageBuffer = await imageGenerator().generateCardDetailImage(cardId, quantity, boosterId);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'card_detail.png' });
 
     const embed = new EmbedBuilder()
@@ -441,7 +444,7 @@ async function handleCollectionButton(interaction) {
       const targetUser = await interaction.client.users.fetch(targetUserId);
       const allOwnedCards = getAllOwnedCards(targetUserId);
 
-      const imageBuffer = await generateCollectionImage(targetUserId, '1');
+      const imageBuffer = await imageGenerator().generateCollectionImage(targetUserId, '1');
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
       const embed = new EmbedBuilder()
@@ -484,7 +487,7 @@ async function handleCollectionButton(interaction) {
     try {
       const targetUser = await interaction.client.users.fetch(targetUserId);
 
-      const imageBuffer = await generateCollectionImage(targetUserId, boosterId);
+      const imageBuffer = await imageGenerator().generateCollectionImage(targetUserId, boosterId);
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
       const { owned, total } = getBoosterCompletion(targetUserId, boosterId);
@@ -537,7 +540,7 @@ async function handleCollectionButton(interaction) {
     try {
       const targetUser = await interaction.client.users.fetch(targetUserId);
 
-      const imageBuffer = await generateCollectionImage(targetUserId, boosterId);
+      const imageBuffer = await imageGenerator().generateCollectionImage(targetUserId, boosterId);
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
       const { owned, total } = getBoosterCompletion(targetUserId, boosterId);
@@ -618,7 +621,7 @@ async function handleCollectionSearchModal(interaction) {
 
     if (isGlobal) {
       // Recherche globale
-      const imageBuffer = await generateCollectionImage(targetUserId, '1');
+      const imageBuffer = await imageGenerator().generateCollectionImage(targetUserId, '1');
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
       const embed = new EmbedBuilder()
@@ -639,7 +642,7 @@ async function handleCollectionSearchModal(interaction) {
       });
     } else {
       // Recherche dans un booster specifique
-      const imageBuffer = await generateCollectionImage(targetUserId, boosterId);
+      const imageBuffer = await imageGenerator().generateCollectionImage(targetUserId, boosterId);
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'collection.png' });
 
       const { owned, total } = getBoosterCompletion(targetUserId, boosterId);

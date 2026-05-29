@@ -1,7 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { getCardInfo, getAllCardsFromBooster } = require('../../services/cardGenerator');
 const { loadUserData, removeCardFromUser, addCardsToUser, saveUserData, clearTeamSlotIfNotOwned } = require('../../services/userManager');
-const { generateTradeProposalImage, generateTradeCompletedImage } = require('../../services/imageGenerator');
 const boosters = require('../../../data/boosters.json');
 
 // Map pour stocker les echanges en cours
@@ -13,6 +12,10 @@ const ADMIN_WHITELIST = [
 ];
 
 const CARDS_PER_PAGE = 25;
+
+function imageGenerator() {
+  return require('../../services/imageGenerator');
+}
 
 /**
  * Trouve les opportunites d'echange entre deux utilisateurs
@@ -638,7 +641,7 @@ async function showTradeConfirmation(interaction, trade, tradeId) {
   const expirationTimestamp = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
 
   // Generate trade proposal image
-  const imageBuffer = await generateTradeProposalImage(
+  const imageBuffer = await imageGenerator().generateTradeProposalImage(
     giveCard,
     receiveCard,
     initiator.username,
@@ -1004,7 +1007,7 @@ async function handleTradeButton(interaction) {
     const receiveCard = getCardInfo(trade.receiveCardId);
 
     // Generate trade completed image
-    const imageBuffer = await generateTradeCompletedImage(
+    const imageBuffer = await imageGenerator().generateTradeCompletedImage(
       giveCard,
       receiveCard,
       initiator.username,
