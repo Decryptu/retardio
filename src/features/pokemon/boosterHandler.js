@@ -66,7 +66,7 @@ async function handleBoosterCommand(interaction) {
   // Afficher l'inventaire si non vide
   const inventoryLines = [];
   for (const [boosterId, quantity] of Object.entries(inventory)) {
-    if (quantity > 0 && boosters[boosterId] && !boosters[boosterId].isPromo) {
+    if (quantity > 0 && boosters[boosterId] && !boosters[boosterId].isPromo && boosters[boosterId].cardsPerPack > 0) {
       inventoryLines.push(`• **${boosters[boosterId].name}** x${quantity}`);
     }
   }
@@ -141,7 +141,7 @@ async function showBoosterPreview(interaction, boosterId, ownerId) {
   const inventory = getBoosterInventory(ownerId);
   const booster = boosters[boosterId];
 
-  if (!booster || booster.isPromo) {
+  if (!booster || booster.isPromo || booster.isWild || booster.cardsPerPack <= 0) {
     return interaction.update({
       content: '❌ Ce booster n\'est pas disponible.',
       embeds: [],
@@ -225,7 +225,7 @@ async function openBooster(interaction, boosterId, ownerId) {
   const inventory = getBoosterInventory(ownerId);
   const booster = boosters[boosterId];
 
-  if (!booster || booster.isPromo) {
+  if (!booster || booster.isPromo || booster.isWild || booster.cardsPerPack <= 0) {
     return interaction.update({
       content: '❌ Ce booster n\'est pas disponible.',
       embeds: [],
@@ -333,7 +333,7 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
   const inventory = getBoosterInventory(ownerId);
   const booster = boosters[boosterId];
 
-  if (!booster || booster.isPromo) {
+  if (!booster || booster.isPromo || booster.isWild || booster.cardsPerPack <= 0) {
     return interaction.update({
       content: '❌ Ce booster n\'est pas disponible.',
       embeds: [],
@@ -518,7 +518,7 @@ async function handleBoosterButton(interaction) {
 
     const inventoryLines = [];
     for (const [boosterId, quantity] of Object.entries(inventory)) {
-      if (quantity > 0 && boosters[boosterId] && !boosters[boosterId].isPromo) {
+      if (quantity > 0 && boosters[boosterId] && !boosters[boosterId].isPromo && boosters[boosterId].cardsPerPack > 0) {
         inventoryLines.push(`• **${boosters[boosterId].name}** x${quantity}`);
       }
     }

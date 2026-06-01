@@ -238,6 +238,14 @@ async function handleExpeditionJoin(interaction) {
     });
   }
 
+  const { hasActiveWild } = require('./wildHandler');
+  if (hasActiveWild(userId)) {
+    return interaction.reply({
+      content: "❌ Vous êtes en aventure Wild ! Terminez votre aventure avant de rejoindre une expédition.",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
   if (!hasTeamMember(userId)) {
     return interaction.reply({
       content:

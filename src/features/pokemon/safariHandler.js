@@ -60,8 +60,8 @@ function getMissingCardsByRarity(userId) {
   const missing = {};
 
   for (const [cardId, card] of Object.entries(cards)) {
-    // Skip promo cards
-    if (card.isPromo) continue;
+    // Skip special collections
+    if (card.isPromo || card.isWild) continue;
     // Skip cards user already owns
     if (userData.cards[cardId] && userData.cards[cardId] > 0) continue;
 
@@ -74,12 +74,12 @@ function getMissingCardsByRarity(userId) {
 }
 
 /**
- * Get ALL non-promo cards grouped by rarity (for fallback when user owns everything)
+ * Get ALL regular cards grouped by rarity (for fallback when user owns everything)
  */
 function getAllCardsByRarity() {
   const all = {};
   for (const [, card] of Object.entries(cards)) {
-    if (card.isPromo) continue;
+    if (card.isPromo || card.isWild) continue;
     const rarity = card.rarity;
     if (!all[rarity]) all[rarity] = [];
     all[rarity].push(card);
@@ -364,6 +364,15 @@ async function handleSafariFromInventory(interaction, ownerId) {
   if (activeSafaris.has(userId)) {
     return interaction.update({
       embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription('❌ Vous êtes déjà en safari ! Attendez la fin de votre safari actuel.')],
+      components: [],
+      files: []
+    });
+  }
+
+  const { hasActiveWild } = require('./wildHandler');
+  if (hasActiveWild(userId)) {
+    return interaction.update({
+      embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription('❌ Vous êtes déjà en aventure Wild ! Attendez la fin de votre aventure avant de partir en safari.')],
       components: [],
       files: []
     });

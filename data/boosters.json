@@ -156,5 +156,13 @@
     "cardsPerPack": 0,
     "isPromo": true,
     "guarantees": {}
+  },
+  "wild_1": {
+    "id": "wild_1",
+    "name": "Wild",
+    "totalCards": 25,
+    "cardsPerPack": 0,
+    "isWild": true,
+    "guarantees": {}
   }
 }

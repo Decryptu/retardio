@@ -23,5 +23,10 @@
     "name": "Promo",
     "color": "#FF69B4",
     "probability": 0
+  },
+  "wild": {
+    "name": "Wild",
+    "color": "#8E5CFF",
+    "probability": 0
   }
 }

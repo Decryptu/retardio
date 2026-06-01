@@ -137,13 +137,16 @@ function createCollectionComponents(targetUserId, boosterId, ownedCards, page = 
   const components = [];
 
   // Menu de selection de booster
-  const boosterOptions = Object.values(boosters).map(booster => ({
-    label: booster.name,
-    description: `${booster.totalCards} cartes${booster.isPromo ? ' (Promo)' : ''}`,
-    value: String(booster.id),
-    default: String(booster.id) === String(boosterId),
-    emoji: booster.isPromo ? '✨' : '📦'
-  }));
+  const boosterOptions = Object.values(boosters).map(booster => {
+    const collectionType = booster.isPromo ? ' (Promo)' : booster.isWild ? ' (Wild)' : '';
+    return {
+      label: booster.name,
+      description: `${booster.totalCards} cartes${collectionType}`,
+      value: String(booster.id),
+      default: String(booster.id) === String(boosterId),
+      emoji: booster.isPromo ? '✨' : booster.isWild ? '🔮' : '📦'
+    };
+  });
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(`collection_select_${targetUserId}`)

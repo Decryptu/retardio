@@ -12,7 +12,7 @@ const BORDER_RADIUS = 8; // Small border radius for card frames
 const GLOW_BLUR = 20; // Blur amount for glow effect
 
 // Rarities that get the glow effect (uncommon and above)
-const GLOW_RARITIES = ['uncommon', 'rare', 'epic', 'legendary', 'promo'];
+const GLOW_RARITIES = ['uncommon', 'rare', 'epic', 'legendary', 'promo', 'wild'];
 
 /**
  * Create a rounded rectangle path
@@ -2245,6 +2245,205 @@ async function generateSafariResultImage(avatarURL, username, encounters, cardsC
   return canvas.toBuffer('image/png');
 }
 
+async function generateWildProgressImage(avatarURL, username, progress, timeRemaining) {
+  const totalWidth = 800;
+  const totalHeight = 280;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  const bgImage = await loadBackgroundImage('collection', 'wild_1');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+    ctx.fillStyle = 'rgba(80, 20, 150, 0.45)';
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#160b2e');
+    gradient.addColorStop(0.5, '#40206f');
+    gradient.addColorStop(1, '#12071f');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+
+  ctx.fillStyle = '#B88CFF';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`Aventure Wild de ${username}`, totalWidth / 2, 32);
+
+  ctx.fillStyle = '#DDCCFF';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.fillText('Presence inconnue detectee...', totalWidth / 2, 54);
+
+  ctx.shadowColor = 'transparent';
+
+  const barX = 70;
+  const barY = 145;
+  const barWidth = totalWidth - 140;
+  const barHeight = 16;
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+  fillRoundedRect(ctx, barX, barY, barWidth, barHeight, 8);
+
+  const fillWidth = barWidth * progress;
+  if (fillWidth > 0) {
+    ctx.fillStyle = '#8E5CFF';
+    fillRoundedRect(ctx, barX, barY, Math.max(fillWidth, 16), barHeight, 8);
+  }
+
+  const markerY = barY + barHeight / 2;
+  const markers = [
+    { x: barX, label: 'Depart', reached: true },
+    { x: barX + barWidth / 2, label: 'Trace', reached: progress >= 0.5 },
+    { x: barX + barWidth, label: 'Capture', reached: progress >= 1 },
+  ];
+
+  for (const marker of markers) {
+    ctx.beginPath();
+    ctx.arc(marker.x, markerY, 10, 0, Math.PI * 2);
+    ctx.fillStyle = marker.reached ? '#8E5CFF' : 'rgba(255, 255, 255, 0.28)';
+    ctx.fill();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = marker.reached ? '#FFFFFF' : '#999999';
+    ctx.font = `10px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(marker.label, marker.x, markerY + 28);
+  }
+
+  const avatarRadius = 18;
+  const progressX = barX + barWidth * progress;
+  const avatarY = barY - 34;
+
+  try {
+    const avatarImg = await loadImage(avatarURL);
+    drawCircleAvatar(ctx, avatarImg, progressX, avatarY, avatarRadius);
+  } catch {
+    drawFallbackAvatar(ctx, progressX, avatarY, avatarRadius, username[0]);
+  }
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.fillRect(0, totalHeight - 40, totalWidth, 40);
+
+  const progressPct = Math.round(progress * 100);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 16px ${PIXEL_FONT}`;
+  ctx.textAlign = 'left';
+  ctx.fillText(`${progressPct}%`, 20, totalHeight - 15);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#DDCCFF';
+  ctx.font = `14px ${PIXEL_FONT}`;
+  ctx.fillText('Pokemon inconnu', totalWidth / 2, totalHeight - 15);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 16px ${PIXEL_FONT}`;
+  ctx.fillText(`${timeRemaining} min`, totalWidth - 20, totalHeight - 15);
+
+  return canvas.toBuffer('image/png');
+}
+
+async function generateWildResultImage(avatarURL, username, card, isNew) {
+  const totalWidth = 800;
+  const totalHeight = 600;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  const bgImage = await loadBackgroundImage('collection', 'wild_1');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, 0, totalHeight);
+    gradient.addColorStop(0, '#160b2e');
+    gradient.addColorStop(0.5, '#40206f');
+    gradient.addColorStop(1, '#12071f');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  ctx.fillStyle = 'rgba(30, 0, 70, 0.55)';
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `bold 38px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('CAPTURE WILD', totalWidth / 2, 55);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `18px ${PIXEL_FONT}`;
+  ctx.fillText(username, totalWidth / 2, 88);
+
+  ctx.shadowColor = 'transparent';
+
+  const avatarRadius = 22;
+  try {
+    const avatarImg = await loadImage(avatarURL);
+    drawCircleAvatar(ctx, avatarImg, 110, 62, avatarRadius);
+  } catch {
+    drawFallbackAvatar(ctx, 110, 62, avatarRadius, username[0]);
+  }
+
+  const cardX = (totalWidth - CARD_WIDTH) / 2;
+  const cardY = 120;
+
+  const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${card.id}.png`);
+  try {
+    const cardImage = await loadImage(cardImagePath);
+    drawCardGlow(ctx, cardX, cardY, CARD_WIDTH, CARD_HEIGHT, card.rarityColor);
+    ctx.drawImage(cardImage, cardX, cardY, CARD_WIDTH, CARD_HEIGHT);
+    ctx.strokeStyle = card.rarityColor;
+    ctx.lineWidth = 5;
+    strokeRoundedRect(ctx, cardX - 3, cardY - 3, CARD_WIDTH + 6, CARD_HEIGHT + 6, BORDER_RADIUS);
+  } catch (error) {
+    console.error(`Erreur lors du chargement de la carte ${card.id}:`, error);
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(cardX, cardY, CARD_WIDTH, CARD_HEIGHT);
+  }
+
+  const textY = cardY + CARD_HEIGHT + 45;
+
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(card.name, totalWidth / 2, textY);
+
+  ctx.fillStyle = card.rarityColor;
+  ctx.font = `18px ${PIXEL_FONT}`;
+  ctx.fillText(card.rarityName, totalWidth / 2, textY + 30);
+
+  if (isNew) {
+    ctx.fillStyle = '#FF3333';
+    ctx.font = `bold 18px ${PIXEL_FONT}`;
+    ctx.fillText('NOUVELLE CARTE', totalWidth / 2, textY + 62);
+  }
+
+  ctx.shadowColor = 'transparent';
+
+  return canvas.toBuffer('image/png');
+}
+
 module.exports = {
   generateBoosterOpeningImage,
   generateMultiBoosterOpeningImage,
@@ -2259,5 +2458,7 @@ module.exports = {
   generateTradeProposalImage,
   generateTradeCompletedImage,
   generateSafariProgressImage,
-  generateSafariResultImage
+  generateSafariResultImage,
+  generateWildProgressImage,
+  generateWildResultImage
 };

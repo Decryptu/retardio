@@ -257,8 +257,8 @@ function getAllCardsFromBooster(boosterId) {
 
   // Trier par ID (gère les IDs string comme "promo_1")
   allCards.sort((a, b) => {
-    const aNum = parseInt(a.id);
-    const bNum = parseInt(b.id);
+    const aNum = parseInt(String(a.id).split('_').pop(), 10);
+    const bNum = parseInt(String(b.id).split('_').pop(), 10);
     if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
       return aNum - bNum;
     }

@@ -5274,5 +5274,180 @@
 		"specialPrices": {
 			"680509544706867213": 500
 		}
+	},
+	"wild_1": {
+		"id": "wild_1",
+		"name": "Méga-Mysdibule",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_2": {
+		"id": "wild_2",
+		"name": "Méga-Pharamp",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_3": {
+		"id": "wild_3",
+		"name": "Méga-Dracolosse",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_4": {
+		"id": "wild_4",
+		"name": "Méga-Brutalibré",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_5": {
+		"id": "wild_5",
+		"name": "Méga-Empiflor",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_6": {
+		"id": "wild_6",
+		"name": "Méga-Tyranocif",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_7": {
+		"id": "wild_7",
+		"name": "Méga-Léviator",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_8": {
+		"id": "wild_8",
+		"name": "Méga-Métalosse",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_9": {
+		"id": "wild_9",
+		"name": "Méga-Florizarre",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_10": {
+		"id": "wild_10",
+		"name": "Méga-Dardargnan",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_11": {
+		"id": "wild_11",
+		"name": "Méga-Gardevoir",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_12": {
+		"id": "wild_12",
+		"name": "Méga-Altaria",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_13": {
+		"id": "wild_13",
+		"name": "Méga-Kangourex",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_14": {
+		"id": "wild_14",
+		"name": "Méga-Branette",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_15": {
+		"id": "wild_15",
+		"name": "Méga-Camérupt",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_16": {
+		"id": "wild_16",
+		"name": "Méga-Flagadoss",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_17": {
+		"id": "wild_17",
+		"name": "Méga-Absol",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_18": {
+		"id": "wild_18",
+		"name": "Méga-Drattak",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_19": {
+		"id": "wild_19",
+		"name": "Méga-Lucario",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_20": {
+		"id": "wild_20",
+		"name": "Méga-Mélodelfe",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_21": {
+		"id": "wild_21",
+		"name": "Méga-Staross",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_22": {
+		"id": "wild_22",
+		"name": "Méga-Momartik",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_23": {
+		"id": "wild_23",
+		"name": "Méga-Brutapode",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_24": {
+		"id": "wild_24",
+		"name": "Méga-Ohmassacre",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
+	},
+	"wild_25": {
+		"id": "wild_25",
+		"name": "Méga-Golgopathe",
+		"rarity": "wild",
+		"boosterPackId": "wild_1",
+		"isWild": true
 	}
 }
