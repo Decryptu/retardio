@@ -8,6 +8,7 @@ const { handleForceRaidCommand, handleRaidButton, checkRaidTrigger, hasActiveRai
 const { handleForceExpeditionCommand, handleExpeditionButton, checkExpeditionTrigger, hasActiveExpedition } = require('./expeditionHandler');
 const { handleFlipCommand } = require('./flipHandler');
 const { handleSafariButton, hasActiveSafari } = require('./safariHandler');
+const { handleWildButton, hasActiveWild } = require('./wildHandler');
 
 /**
  * Gere toutes les commandes Pokemon
@@ -81,6 +82,8 @@ async function handlePokemonInteraction(interaction) {
       await handleExpeditionButton(interaction);
     } else if (interaction.customId.startsWith('safari_')) {
       await handleSafariButton(interaction);
+    } else if (interaction.customId.startsWith('wild_')) {
+      await handleWildButton(interaction);
     }
   } else if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith('search_team_')) {
@@ -101,5 +104,6 @@ module.exports = {
   hasActiveRaid,
   checkExpeditionTrigger,
   hasActiveExpedition,
-  hasActiveSafari
+  hasActiveSafari,
+  hasActiveWild
 };

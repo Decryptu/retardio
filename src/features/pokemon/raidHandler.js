@@ -48,13 +48,22 @@ function selectRaidBoss() {
   }
 
   const eligibleCards = Object.values(cards).filter((card) => {
-    if (card.isPromo || String(card.id).includes("promo")) return false;
+    if (
+      card.isPromo ||
+      card.isWild ||
+      String(card.id).includes("promo") ||
+      String(card.id).includes("wild")
+    ) return false;
     return card.rarity === targetRarity;
   });
 
   if (eligibleCards.length === 0) {
     const fallbackCards = Object.values(cards).filter(
-      (card) => !card.isPromo && !String(card.id).includes("promo")
+      (card) =>
+        !card.isPromo &&
+        !card.isWild &&
+        !String(card.id).includes("promo") &&
+        !String(card.id).includes("wild")
     );
     const randomCard = fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
     return { card: getCardInfo(randomCard.id), level: 50 };
@@ -154,6 +163,14 @@ async function handleRaidJoin(interaction) {
   if (hasActiveSafari(userId)) {
     return interaction.reply({
       content: "❌ Vous êtes en safari ! Terminez votre safari avant de rejoindre un raid.",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  const { hasActiveWild } = require('./wildHandler');
+  if (hasActiveWild(userId)) {
+    return interaction.reply({
+      content: "❌ Vous êtes en aventure Wild ! Terminez votre aventure avant de rejoindre un raid.",
       flags: MessageFlags.Ephemeral,
     });
   }

@@ -7,5 +7,14 @@
     "emoji": "🎫",
     "category": "items",
     "maxStack": 5
+  },
+  "mystic_ticket": {
+    "id": "mystic_ticket",
+    "name": "Ticket Mystique",
+    "description": "Un ticket pour partir en aventure mystique et capturer une carte Wild garantie !",
+    "price": 1000,
+    "emoji": "🎟️",
+    "category": "items",
+    "maxStack": 5
   }
 }

@@ -50,7 +50,7 @@ async function verifyInteractionOwner(interaction, ownerId) {
  * Obtient les boosters achetables (non-promo)
  */
 function getPurchasableBoosters() {
-  return Object.values(boosters).filter(b => !b.isPromo && b.price);
+  return Object.values(boosters).filter(b => !b.isPromo && !b.isWild && b.price);
 }
 
 /**
@@ -195,7 +195,7 @@ async function showInventoryMain(interaction, ownerId, isReply = false) {
 
   const boosterLines = [];
   for (const [boosterId, quantity] of Object.entries(boosterInventory)) {
-    if (quantity > 0 && boosters[boosterId]) {
+    if (quantity > 0 && boosters[boosterId] && boosters[boosterId].cardsPerPack > 0) {
       boosterLines.push(`📦 **${boosters[boosterId].name}** x${quantity}`);
     }
   }
@@ -286,7 +286,7 @@ async function showInventoryBoosters(interaction, ownerId) {
 
   const ownedBoosters = [];
   for (const [boosterId, quantity] of Object.entries(boosterInventory)) {
-    if (quantity > 0 && boosters[boosterId]) {
+    if (quantity > 0 && boosters[boosterId] && boosters[boosterId].cardsPerPack > 0) {
       ownedBoosters.push({ ...boosters[boosterId], quantity, boosterId });
     }
   }
@@ -717,7 +717,7 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
   const userMoney = getMoney(ownerId);
   const booster = boosters[boosterId];
 
-  if (!booster || booster.isPromo) {
+  if (!booster || booster.isPromo || booster.isWild || booster.cardsPerPack <= 0) {
     return interaction.update({
       content: '❌ Ce booster n\'est pas disponible.',
       embeds: [],
@@ -932,7 +932,7 @@ async function purchaseBooster(interaction, boosterId, ownerId, quantity = 1) {
   const userMoney = getMoney(ownerId);
   const booster = boosters[boosterId];
 
-  if (!booster || booster.isPromo) {
+  if (!booster || booster.isPromo || booster.isWild || booster.cardsPerPack <= 0) {
     return interaction.update({
       content: '❌ Ce booster n\'est pas disponible à l\'achat.',
       embeds: [],
@@ -1273,7 +1273,7 @@ async function purchaseItem(interaction, itemId, ownerId) {
 
   const row = new ActionRowBuilder();
 
-  if (itemId === 'safari_ticket') {
+  if (itemId === 'safari_ticket' || itemId === 'mystic_ticket') {
     row.addComponents(
       new ButtonBuilder()
         .setCustomId(`inv_confirm_use_${itemId}_${ownerId}`)
@@ -1317,6 +1317,9 @@ async function useItem(interaction, itemId, ownerId) {
   if (itemId === 'safari_ticket') {
     const { handleSafariFromInventory } = require('../pokemon/safariHandler');
     await handleSafariFromInventory(interaction, ownerId);
+  } else if (itemId === 'mystic_ticket') {
+    const { handleWildFromInventory } = require('../pokemon/wildHandler');
+    await handleWildFromInventory(interaction, ownerId);
   } else {
     await interaction.update({
       embeds: [new EmbedBuilder().setColor('#E74C3C').setDescription(`❌ Cet objet ne peut pas être utilisé pour le moment.`)],
