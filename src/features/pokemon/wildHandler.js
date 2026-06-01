@@ -34,6 +34,20 @@ function createWildCancelRow(userId) {
   return new ActionRowBuilder().addComponents(cancelButton);
 }
 
+async function removeWildProgressMessage(channel, messageId) {
+  try {
+    const message = await channel.messages.fetch({ message: messageId, cache: false });
+    await message.delete();
+  } catch (deleteError) {
+    try {
+      const message = await channel.messages.fetch({ message: messageId, cache: false });
+      await message.edit({ components: [] });
+    } catch {
+      console.error('Erreur lors de la suppression du message Wild:', deleteError);
+    }
+  }
+}
+
 function getWildCards() {
   return Object.values(cards).filter((card) => card.isWild && String(card.boosterPackId) === WILD_BOOSTER_ID);
 }
@@ -141,16 +155,13 @@ async function endWildAdventure(userId) {
       )
       .setImage('attachment://wild_result.png');
 
-    try {
-      const message = await channel.messages.fetch({ message: adventure.messageId, cache: false });
-      await message.edit({ components: [] });
-    } catch { /* message may be deleted */ }
-
     await channel.send({
       content: `<@${userId}> Votre aventure Wild est terminée !`,
       embeds: [resultEmbed],
       files: [attachment],
     });
+
+    await removeWildProgressMessage(channel, adventure.messageId);
   } catch (error) {
     console.error('Erreur lors de la fin de l\'aventure Wild:', error);
     activeWildAdventures.delete(userId);
@@ -169,14 +180,11 @@ async function cancelWildAdventure(userId) {
     const channel = adventure.client.channels.cache.get(adventure.channelId);
     if (!channel) return true;
 
-    try {
-      const message = await channel.messages.fetch({ message: adventure.messageId, cache: false });
-      await message.edit({ components: [] });
-    } catch { /* message may be deleted */ }
-
     await channel.send({
       content: `<@${userId}> Vous avez quitté l'aventure Wild. Le Pokémon mystère s'est évanoui dans la brume...`,
     });
+
+    await removeWildProgressMessage(channel, adventure.messageId);
   } catch (error) {
     console.error('Erreur lors de l\'annulation de l\'aventure Wild:', error);
   }
