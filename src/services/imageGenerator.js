@@ -78,6 +78,12 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
+function clampText(text, maxLength) {
+  const value = String(text || '');
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength - 3)}...`;
+}
+
 /**
  * Draw glow effect behind a card (only for uncommon+)
  */
@@ -2444,6 +2450,191 @@ async function generateWildResultImage(avatarURL, username, card, isNew) {
   return canvas.toBuffer('image/png');
 }
 
+async function generateWorldBossImage(bossCard, hp, maxHp, participants, endTime, lastDamageLines = [], status = null) {
+  const totalWidth = 1200;
+  const totalHeight = 720;
+
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
+
+  const bgImage = await loadBackgroundImage('raid');
+  if (bgImage) {
+    drawCenteredCrop(ctx, bgImage, totalWidth, totalHeight);
+  } else {
+    const gradient = ctx.createLinearGradient(0, 0, totalWidth, totalHeight);
+    gradient.addColorStop(0, '#141022');
+    gradient.addColorStop(0.5, '#26133f');
+    gradient.addColorStop(1, '#07070d');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, totalWidth, totalHeight);
+  }
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+  ctx.shadowColor = '#000000';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = status === 'VICTOIRE' ? '#2ECC71' : status === 'DEFAITE' ? '#E74C3C' : '#B88CFF';
+  ctx.font = `bold 42px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(status || 'WORLD BOSS', totalWidth / 2, 58);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 24px ${PIXEL_FONT}`;
+  ctx.fillText(bossCard.name, totalWidth / 2, 92);
+
+  ctx.shadowColor = 'transparent';
+
+  const bossCardW = 270;
+  const bossCardH = Math.round(bossCardW * (CARD_HEIGHT / CARD_WIDTH));
+  const bossX = totalWidth - bossCardW - 60;
+  const bossY = 145;
+
+  const bossImagePath = path.join(ASSETS_DIR, 'cards', `card_${bossCard.id}.png`);
+  try {
+    const bossImage = await loadImage(bossImagePath);
+    drawCardGlow(ctx, bossX, bossY, bossCardW, bossCardH, bossCard.rarityColor);
+    ctx.drawImage(bossImage, bossX, bossY, bossCardW, bossCardH);
+    ctx.strokeStyle = bossCard.rarityColor;
+    ctx.lineWidth = 5;
+    strokeRoundedRect(ctx, bossX - 3, bossY - 3, bossCardW + 6, bossCardH + 6, BORDER_RADIUS);
+  } catch (error) {
+    console.error(`Erreur lors du chargement du World Boss ${bossCard.id}:`, error);
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(bossX, bossY, bossCardW, bossCardH);
+  }
+
+  const hpBarX = totalWidth - 410;
+  const hpBarY = bossY + bossCardH + 35;
+  const hpBarW = 350;
+  const hpBarH = 24;
+  const hpRatio = maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0;
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+  fillRoundedRect(ctx, hpBarX, hpBarY, hpBarW, hpBarH, 10);
+
+  ctx.fillStyle = hpRatio > 0.55 ? '#2ECC71' : hpRatio > 0.25 ? '#F1C40F' : '#E74C3C';
+  fillRoundedRect(ctx, hpBarX, hpBarY, Math.max(hpBarH, hpBarW * hpRatio), hpBarH, 10);
+
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  strokeRoundedRect(ctx, hpBarX, hpBarY, hpBarW, hpBarH, 10);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 18px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${Math.max(0, hp).toLocaleString('fr-FR')} / ${maxHp.toLocaleString('fr-FR')} HP`, hpBarX + hpBarW / 2, hpBarY + 48);
+
+  const secondsRemaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+  const minutes = Math.floor(secondsRemaining / 60);
+  const seconds = String(secondsRemaining % 60).padStart(2, '0');
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = `16px ${PIXEL_FONT}`;
+  ctx.fillText(status ? 'Termine' : `${minutes}:${seconds}`, hpBarX + hpBarW / 2, hpBarY + 75);
+
+  const panelX = 40;
+  const panelY = 125;
+  const panelW = 690;
+  const panelH = 560;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.54)';
+  fillRoundedRect(ctx, panelX, panelY, panelW, panelH, 10);
+  ctx.strokeStyle = '#5D3EA8';
+  ctx.lineWidth = 2;
+  strokeRoundedRect(ctx, panelX, panelY, panelW, panelH, 10);
+
+  ctx.fillStyle = '#B88CFF';
+  ctx.font = `bold 22px ${PIXEL_FONT}`;
+  ctx.textAlign = 'left';
+  ctx.fillText(`Participants (${participants.length})`, panelX + 22, panelY + 36);
+
+  const visibleParticipants = participants.slice(0, 7);
+  const rowHeight = 72;
+  const cardW = 46;
+  const cardH = Math.round(cardW * (CARD_HEIGHT / CARD_WIDTH));
+  let rowY = panelY + 62;
+
+  for (const participant of visibleParticipants) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    fillRoundedRect(ctx, panelX + 14, rowY, panelW - 28, rowHeight - 8, 8);
+
+    try {
+      const avatarImg = await loadImage(participant.avatarURL);
+      drawCircleAvatar(ctx, avatarImg, panelX + 46, rowY + 31, 23);
+    } catch {
+      drawFallbackAvatar(ctx, panelX + 46, rowY + 31, 23, participant.username[0] || '?');
+    }
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `bold 15px ${PIXEL_FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(clampText(participant.username, 16), panelX + 78, rowY + 26);
+
+    ctx.fillStyle = '#FFD700';
+    ctx.font = `12px ${PIXEL_FONT}`;
+    ctx.fillText(`${participant.totalDamage.toLocaleString('fr-FR')} degats`, panelX + 78, rowY + 47);
+
+    for (let i = 0; i < 3; i++) {
+      const card = participant.teamCards[i];
+      const cardX = panelX + 360 + i * (cardW + 14);
+      const cardY = rowY + 5;
+      if (card) {
+        const cardImagePath = path.join(ASSETS_DIR, 'cards', `card_${card.id}.png`);
+        try {
+          const cardImage = await loadImage(cardImagePath);
+          ctx.drawImage(cardImage, cardX, cardY, cardW, cardH);
+          ctx.strokeStyle = card.rarityColor;
+          ctx.lineWidth = 2;
+          strokeRoundedRect(ctx, cardX, cardY, cardW, cardH, BORDER_RADIUS);
+        } catch {
+          ctx.fillStyle = '#333333';
+          ctx.fillRect(cardX, cardY, cardW, cardH);
+        }
+      } else {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        fillRoundedRect(ctx, cardX, cardY, cardW, cardH, BORDER_RADIUS);
+      }
+    }
+
+    rowY += rowHeight;
+  }
+
+  if (participants.length > visibleParticipants.length) {
+    ctx.fillStyle = '#CCCCCC';
+    ctx.font = `14px ${PIXEL_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`+${participants.length - visibleParticipants.length} autres participants`, panelX + panelW / 2, panelY + panelH - 20);
+  }
+
+  const logX = totalWidth - 410;
+  const logY = hpBarY + 105;
+  const logW = 350;
+  const logH = 120;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
+  fillRoundedRect(ctx, logX, logY, logW, logH, 8);
+  ctx.strokeStyle = '#5D3EA8';
+  ctx.lineWidth = 2;
+  strokeRoundedRect(ctx, logX, logY, logW, logH, 8);
+
+  ctx.fillStyle = '#B88CFF';
+  ctx.font = `bold 15px ${PIXEL_FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Derniers degats', logX + logW / 2, logY + 27);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `12px ${PIXEL_FONT}`;
+  let damageY = logY + 52;
+  const damageLines = lastDamageLines.length ? lastDamageLines : ['En attente du prochain tick...'];
+  for (const line of damageLines.slice(0, 4)) {
+    ctx.fillText(clampText(line, 34), logX + logW / 2, damageY);
+    damageY += 22;
+  }
+
+  return canvas.toBuffer('image/png');
+}
+
 module.exports = {
   generateBoosterOpeningImage,
   generateMultiBoosterOpeningImage,
@@ -2460,5 +2651,6 @@ module.exports = {
   generateSafariProgressImage,
   generateSafariResultImage,
   generateWildProgressImage,
-  generateWildResultImage
+  generateWildResultImage,
+  generateWorldBossImage
 };

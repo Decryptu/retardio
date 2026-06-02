@@ -16,6 +16,7 @@ const {
 	hasActiveRaid,
 	checkExpeditionTrigger,
 	hasActiveExpedition,
+	hasActiveWorldBoss,
 } = require("./src/features/pokemon");
 const {
 	shopCommands,
@@ -100,7 +101,7 @@ async function registerCommands() {
 client.on("interactionCreate", async (interaction) => {
 	const cmdName = interaction.commandName;
 	const isBirthdayCmd = cmdName?.startsWith("anniversaire");
-	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster", "team", "forceraid", "forceexpedition", "flip"].includes(cmdName);
+	const isPokemonCmd = ["booster", "collection", "echange", "giftbooster", "team", "forceraid", "forceexpedition", "forceevent", "flip"].includes(cmdName);
 	const isShopCmd = ["boutique", "solde", "inventaire"].includes(cmdName);
 
 	if (interaction.isAutocomplete()) {
@@ -170,7 +171,7 @@ client.on("messageCreate", async (message) => {
 
 	// Verifier si un raid ou une expedition doit etre declenche (sur chaque message)
 	if (!message.author.bot) {
-		if (!hasActiveRaid() && !hasActiveExpedition()) {
+		if (!hasActiveRaid() && !hasActiveExpedition() && !hasActiveWorldBoss()) {
 			const raidTriggered = await checkRaidTrigger(client);
 			if (!raidTriggered) {
 				await checkExpeditionTrigger(client);
