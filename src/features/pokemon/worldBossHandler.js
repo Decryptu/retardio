@@ -8,7 +8,7 @@ const {
   MessageFlags,
 } = require('discord.js');
 const { getCardInfo } = require('../../services/cardGenerator');
-const { getTeam, hasTeamMember } = require('../../services/userManager');
+const { getTeam, hasTeamMember, addCardToUser } = require('../../services/userManager');
 const config = require('../../config');
 const cards = require('../../../data/cards.json');
 const boosters = require('../../../data/boosters.json');
@@ -511,7 +511,14 @@ async function finishWorldBoss(victory) {
   );
   const attachment = new AttachmentBuilder(resultImage, { name: 'world_boss_result.png' });
 
-  const mentions = Array.from(worldBoss.participants.keys()).map((id) => `<@${id}>`).join(' ');
+  const participantIds = Array.from(worldBoss.participants.keys());
+  if (victory) {
+    for (const participantId of participantIds) {
+      addCardToUser(participantId, worldBoss.bossCard.id);
+    }
+  }
+
+  const mentions = participantIds.map((id) => `<@${id}>`).join(' ');
   const topDamage = participantViews.slice(0, 5)
     .map((p, index) => `${index + 1}. **${p.username}** — ${p.totalDamage.toLocaleString('fr-FR')} dégâts`)
     .join('\n') || 'Aucun participant.';
@@ -523,6 +530,7 @@ async function finishWorldBoss(victory) {
       `**Boss:** ${worldBoss.bossCard.name}\n` +
       `**HP restant:** ${Math.max(0, worldBoss.hp).toLocaleString('fr-FR')} / ${worldBoss.maxHp.toLocaleString('fr-FR')}\n` +
       `**Participants:** ${worldBoss.participants.size}\n\n` +
+      (victory ? `**Récompense:** ${worldBoss.bossCard.name} pour chaque participant\n\n` : '') +
       `**Top dégâts:**\n${topDamage}`
     )
     .setImage('attachment://world_boss_result.png');
@@ -536,7 +544,7 @@ async function finishWorldBoss(victory) {
 
   await channel.send({
     content: victory
-      ? `${mentions}\nVictoire ! Le World Boss est tombé !`
+      ? `${mentions}\nVictoire ! Le World Boss est tombé ! Vous recevez **${worldBoss.bossCard.name}**.`
       : `${mentions}\nDéfaite... Le World Boss s'est enfui.`,
     embeds: [embed],
     files: [attachment],

@@ -2488,9 +2488,10 @@ async function generateWorldBossImage(bossCard, hp, maxHp, participants, endTime
 
   ctx.shadowColor = 'transparent';
 
+  const bossColumnCenterX = totalWidth - 195;
   const bossCardW = 270;
   const bossCardH = Math.round(bossCardW * (CARD_HEIGHT / CARD_WIDTH));
-  const bossX = totalWidth - bossCardW - 60;
+  const bossX = bossColumnCenterX - (bossCardW / 2);
   const bossY = 145;
 
   const bossImagePath = path.join(ASSETS_DIR, 'cards', `card_${bossCard.id}.png`);
@@ -2507,9 +2508,9 @@ async function generateWorldBossImage(bossCard, hp, maxHp, participants, endTime
     ctx.fillRect(bossX, bossY, bossCardW, bossCardH);
   }
 
-  const hpBarX = totalWidth - 410;
-  const hpBarY = bossY + bossCardH + 35;
   const hpBarW = 350;
+  const hpBarX = bossColumnCenterX - (hpBarW / 2);
+  const hpBarY = bossY + bossCardH + 35;
   const hpBarH = 24;
   const hpRatio = maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0;
 
@@ -2608,9 +2609,9 @@ async function generateWorldBossImage(bossCard, hp, maxHp, participants, endTime
     ctx.fillText(`+${participants.length - visibleParticipants.length} autres participants`, panelX + panelW / 2, panelY + panelH - 20);
   }
 
-  const logX = totalWidth - 410;
-  const logY = hpBarY + 105;
   const logW = 350;
+  const logX = bossColumnCenterX - (logW / 2);
+  const logY = hpBarY + 105;
   const logH = 120;
   ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
   fillRoundedRect(ctx, logX, logY, logW, logH, 8);
