@@ -725,9 +725,10 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
     });
   }
 
+  const maxAffordable = Math.floor(userMoney / booster.price);
+  quantity = Math.max(1, Math.min(Math.max(1, maxAffordable), Number(quantity) || 1));
   const totalPrice = booster.price * quantity;
   const canAfford = userMoney >= totalPrice;
-  const maxAffordable = Math.floor(userMoney / booster.price);
   const completion = getBoosterCompletionLabel(ownerId, boosterId);
 
   const boosterImagePath = path.join(ASSETS_DIR, 'boosters', `booster_${boosterId}.png`);
@@ -764,8 +765,13 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
   // Quantity buttons
   const quantityRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
+      .setCustomId(`shop_qty_minus10_${boosterId}_${ownerId}_${quantity}`)
+      .setLabel('-10')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(quantity <= 1),
+    new ButtonBuilder()
       .setCustomId(`shop_qty_minus_${boosterId}_${ownerId}_${quantity}`)
-      .setLabel('-')
+      .setLabel('-1')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(quantity <= 1),
     new ButtonBuilder()
@@ -775,7 +781,12 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
       .setDisabled(true),
     new ButtonBuilder()
       .setCustomId(`shop_qty_plus_${boosterId}_${ownerId}_${quantity}`)
-      .setLabel('+')
+      .setLabel('+1')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(quantity >= maxAffordable || maxAffordable === 0),
+    new ButtonBuilder()
+      .setCustomId(`shop_qty_plus10_${boosterId}_${ownerId}_${quantity}`)
+      .setLabel('+10')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(quantity >= maxAffordable || maxAffordable === 0)
   );
@@ -791,6 +802,11 @@ async function showBoosterPurchaseConfirm(interaction, boosterId, ownerId, quant
       if (canAfford) btn.setEmoji('💰');
       return btn;
     })(),
+    new ButtonBuilder()
+      .setCustomId(`shop_qty_max_${boosterId}_${ownerId}_${quantity}`)
+      .setLabel('Max')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(maxAffordable === 0 || quantity >= maxAffordable),
     new ButtonBuilder()
       .setCustomId(`shop_category_boosters_${ownerId}`)
       .setLabel('Retour')
@@ -1490,8 +1506,25 @@ async function handleShopInteraction(interaction) {
       const parts = customId.split('_');
       const action = parts[2];
       const boosterId = parts[3];
-      const currentQty = parseInt(parts[5]);
-      const newQty = action === 'plus' ? currentQty + 1 : currentQty - 1;
+      const currentQty = parseInt(parts[5]) || 1;
+      const booster = boosters[boosterId];
+      const maxAffordable = booster?.price ? Math.floor(getMoney(ownerId) / booster.price) : 1;
+      const maxQty = Math.max(1, maxAffordable);
+      let newQty = currentQty;
+
+      if (action === 'plus') {
+        newQty += 1;
+      } else if (action === 'plus10') {
+        newQty += 10;
+      } else if (action === 'minus') {
+        newQty -= 1;
+      } else if (action === 'minus10') {
+        newQty -= 10;
+      } else if (action === 'max') {
+        newQty = maxQty;
+      }
+
+      newQty = Math.max(1, Math.min(maxQty, newQty));
       await showBoosterPurchaseConfirm(interaction, boosterId, ownerId, newQty);
     } else if (customId.includes('_confirm_booster_')) {
       // Format: shop_confirm_booster_{boosterId}_{ownerId}_{quantity}
