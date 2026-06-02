@@ -359,7 +359,7 @@ async function openBooster(interaction, boosterId, ownerId) {
 /**
  * Ouvre plusieurs boosters d'un coup
  */
-async function openMultipleBoosters(interaction, boosterId, ownerId) {
+async function openMultipleBoosters(interaction, boosterId, ownerId, requestedCount = null) {
   const inventory = getBoosterInventory(ownerId);
   const booster = boosters[boosterId];
 
@@ -371,7 +371,11 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
     });
   }
 
-  const count = inventory[String(boosterId)] || 0;
+  const inventoryCount = inventory[String(boosterId)] || 0;
+  const count = requestedCount === null
+    ? inventoryCount
+    : Math.min(inventoryCount, Math.max(1, Number(requestedCount) || 1));
+
   if (count < 1) {
     return interaction.update({
       content: '❌ Vous n\'avez pas de booster disponible !',
@@ -393,6 +397,7 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
     const packsCardIds = [];
     const godPackFlags = [];
     let godPackCount = 0;
+    let openedCount = 0;
 
     // Ouvrir tous les boosters
     for (let i = 0; i < count; i++) {
@@ -404,6 +409,15 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
       godPackFlags.push(isGodPack);
       allCardIds.push(...cardIds);
       if (isGodPack) godPackCount++;
+      openedCount++;
+    }
+
+    if (openedCount < 1) {
+      return interaction.editReply({
+        content: '❌ Erreur lors de la consommation des boosters.',
+        embeds: [],
+        components: []
+      });
     }
 
     // Ajouter toutes les cartes au joueur
@@ -413,7 +427,7 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
       userData.cards[id] = (userData.cards[id] || 0) + 1;
     });
     userData.stats.totalCards += allCardIds.length;
-    userData.stats.totalBoosters += count;
+    userData.stats.totalBoosters += openedCount;
     saveUserData(ownerId, userData);
 
     // Determiner les nouvelles cartes
@@ -437,7 +451,7 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
     if (godPackCount > 0) {
       description += `✨ **${godPackCount} GOD PACK${godPackCount > 1 ? 'S' : ''} !**\n\n`;
     }
-    description += `📦 **${count} boosters** ouverts — **${allCardIds.length} cartes** obtenues\n`;
+    description += `📦 **${openedCount} boosters** ouverts — **${allCardIds.length} cartes** obtenues\n`;
     description += `🆕 **${newCardIds.length}** nouvelle${newCardIds.length > 1 ? 's' : ''} carte${newCardIds.length > 1 ? 's' : ''}\n\n`;
 
     for (const rarity of rarityOrder) {
@@ -473,7 +487,7 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
 
     const embed = new EmbedBuilder()
       .setColor(godPackCount > 0 ? '#FF00FF' : '#FFD700')
-      .setTitle(`${booster.name} — Ouverture x${count}`)
+      .setTitle(`${booster.name} — Ouverture x${openedCount}`)
       .setDescription(description)
       .setImage('attachment://multi_booster.png')
       .setFooter({ text: 'Achetez plus de boosters dans la /boutique !' });
@@ -674,13 +688,20 @@ async function handleBoosterSelectMenu(interaction) {
 async function handleBoosterButton(interaction) {
   const customId = interaction.customId;
   const parts = customId.split('_');
-  const ownerId = parts[parts.length - 1];
+  const ownerId = customId.startsWith('booster_confirm_openpurchased_')
+    ? parts[4]
+    : parts[parts.length - 1];
 
   if (!await verifyOwner(interaction, ownerId)) {
     return;
   }
 
-  if (customId.startsWith('booster_confirm_openinventory_')) {
+  if (customId.startsWith('booster_confirm_openpurchased_')) {
+    // Format: booster_confirm_openpurchased_boosterId_ownerId_quantity
+    const boosterId = parts[3];
+    const quantity = parseInt(parts[5]) || 1;
+    await openMultipleBoosters(interaction, boosterId, ownerId, quantity);
+  } else if (customId.startsWith('booster_confirm_openinventory_')) {
     await openAllInventoryBoosters(interaction, ownerId);
   } else if (customId.includes('_confirm_openall_')) {
     // Format: booster_confirm_openall_boosterId_ownerId
