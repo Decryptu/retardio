@@ -992,8 +992,10 @@ async function purchaseBooster(interaction, boosterId, ownerId, quantity = 1) {
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`booster_confirm_open_${boosterId}_${ownerId}`)
-      .setLabel('Ouvrir un booster')
+      .setCustomId(quantity > 1
+        ? `booster_confirm_openpurchased_${boosterId}_${ownerId}_${quantity}`
+        : `booster_confirm_open_${boosterId}_${ownerId}`)
+      .setLabel(quantity > 1 ? `Ouvrir les ${quantity} boosters` : 'Ouvrir le booster')
       .setStyle(ButtonStyle.Success)
       .setEmoji('🎴'),
     new ButtonBuilder()
