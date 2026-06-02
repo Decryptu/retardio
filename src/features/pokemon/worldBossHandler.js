@@ -428,7 +428,7 @@ async function startWorldBoss(client, bossCard) {
       `**HP:** ${maxHp.toLocaleString('fr-FR')} / ${maxHp.toLocaleString('fr-FR')}\n` +
       `**Durée max:** 60 minutes\n` +
       `**Fin:** <t:${endTimestamp}:R>\n\n` +
-      `Rejoignez avec votre équipe actuelle. Vous pouvez modifier `/team` puis rejoindre à nouveau pour mettre à jour votre équipe.`
+      `Rejoignez avec votre équipe actuelle. Vous pouvez modifier \`/team\` puis rejoindre à nouveau pour mettre à jour votre équipe.`
     )
     .setImage('attachment://world_boss.png');
 
