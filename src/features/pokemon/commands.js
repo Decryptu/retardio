@@ -59,7 +59,11 @@ const pokemonCommands = [
 
   new SlashCommandBuilder()
     .setName('forceexpedition')
-    .setDescription('[ADMIN] Declencher une expedition aleatoire')
+    .setDescription('[ADMIN] Declencher une expedition aleatoire'),
+
+  new SlashCommandBuilder()
+    .setName('forceevent')
+    .setDescription('[ADMIN] Declencher un World Boss manuel')
 ];
 
 module.exports = { pokemonCommands };

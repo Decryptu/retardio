@@ -9,6 +9,7 @@ const { handleForceExpeditionCommand, handleExpeditionButton, checkExpeditionTri
 const { handleFlipCommand } = require('./flipHandler');
 const { handleSafariButton, hasActiveSafari } = require('./safariHandler');
 const { handleWildButton, hasActiveWild } = require('./wildHandler');
+const { handleForceEventCommand, handleWorldBossSelectMenu, handleWorldBossButton, handleWorldBossSearchModal, hasActiveWorldBoss } = require('./worldBossHandler');
 
 /**
  * Gere toutes les commandes Pokemon
@@ -30,6 +31,8 @@ async function handlePokemonCommand(interaction) {
     await handleForceRaidCommand(interaction);
   } else if (commandName === 'forceexpedition') {
     await handleForceExpeditionCommand(interaction);
+  } else if (commandName === 'forceevent') {
+    await handleForceEventCommand(interaction);
   } else if (commandName === 'flip') {
     await handleFlipCommand(interaction);
   }
@@ -50,6 +53,8 @@ async function handlePokemonInteraction(interaction) {
       await handleBoosterSelectMenu(interaction);
     } else if (interaction.customId.startsWith('team_select_')) {
       await handleTeamSelectMenu(interaction);
+    } else if (interaction.customId.startsWith('worldboss_')) {
+      await handleWorldBossSelectMenu(interaction);
     }
   } else if (interaction.isButton()) {
     if (interaction.customId.startsWith('search_')) {
@@ -84,6 +89,8 @@ async function handlePokemonInteraction(interaction) {
       await handleSafariButton(interaction);
     } else if (interaction.customId.startsWith('wild_')) {
       await handleWildButton(interaction);
+    } else if (interaction.customId.startsWith('worldboss_')) {
+      await handleWorldBossButton(interaction);
     }
   } else if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith('search_team_')) {
@@ -92,6 +99,8 @@ async function handlePokemonInteraction(interaction) {
       await handleTradeSearchModal(interaction);
     } else if (interaction.customId.startsWith('search_collection_')) {
       await handleCollectionSearchModal(interaction);
+    } else if (interaction.customId.startsWith('search_worldboss_')) {
+      await handleWorldBossSearchModal(interaction);
     }
   }
 }
@@ -105,5 +114,6 @@ module.exports = {
   checkExpeditionTrigger,
   hasActiveExpedition,
   hasActiveSafari,
-  hasActiveWild
+  hasActiveWild,
+  hasActiveWorldBoss
 };

@@ -76,6 +76,7 @@ function selectRaidBoss() {
 async function startRaid(client) {
   // Lazy require to avoid circular dependency
   const { hasActiveExpedition } = require("./expeditionHandler");
+  const { hasActiveWorldBoss } = require("./worldBossHandler");
 
   if (activeRaid) {
     console.log("Un raid est deja en cours");
@@ -84,6 +85,11 @@ async function startRaid(client) {
 
   if (hasActiveExpedition()) {
     console.log("Une expedition est en cours, raid annule");
+    return null;
+  }
+
+  if (hasActiveWorldBoss()) {
+    console.log("Un World Boss est en cours, raid annule");
     return null;
   }
 
@@ -476,6 +482,7 @@ async function handleForceRaidCommand(interaction) {
   }
 
   const { hasActiveExpedition } = require("./expeditionHandler");
+  const { hasActiveWorldBoss } = require("./worldBossHandler");
 
   if (activeRaid) {
     return interaction.reply({
@@ -491,6 +498,13 @@ async function handleForceRaidCommand(interaction) {
     });
   }
 
+  if (hasActiveWorldBoss()) {
+    return interaction.reply({
+      content: "❌ Un World Boss est en cours ! Attendez qu'il se termine.",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
   await interaction.reply({
     content: "⚔️ Declenchement d'un raid...",
     flags: MessageFlags.Ephemeral,
@@ -501,6 +515,9 @@ async function handleForceRaidCommand(interaction) {
 
 async function checkRaidTrigger(client) {
   if (activeRaid) return false;
+
+  const { hasActiveWorldBoss } = require("./worldBossHandler");
+  if (hasActiveWorldBoss()) return false;
 
   const chance = config.triggers.raidChance || 0.0005;
   if (Math.random() < chance) {
