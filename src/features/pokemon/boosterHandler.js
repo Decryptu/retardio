@@ -21,6 +21,26 @@ function getOpenableBoosters() {
 }
 
 /**
+ * Obtient les boosters ouvrables en inventaire.
+ */
+function getOpenableInventoryEntries(userId) {
+  const inventory = getBoosterInventory(userId);
+  return Object.entries(inventory)
+    .filter(([boosterId, quantity]) => (
+      quantity > 0 &&
+      boosters[boosterId] &&
+      !boosters[boosterId].isPromo &&
+      !boosters[boosterId].isWild &&
+      boosters[boosterId].cardsPerPack > 0
+    ))
+    .map(([boosterId, quantity]) => ({
+      boosterId,
+      quantity,
+      booster: boosters[boosterId]
+    }));
+}
+
+/**
  * Formate la progression d'un utilisateur sur un booster
  */
 function getBoosterCompletionLabel(userId, boosterId) {
@@ -64,12 +84,9 @@ async function handleBoosterCommand(interaction) {
   }
 
   // Afficher l'inventaire si non vide
-  const inventoryLines = [];
-  for (const [boosterId, quantity] of Object.entries(inventory)) {
-    if (quantity > 0 && boosters[boosterId] && !boosters[boosterId].isPromo && boosters[boosterId].cardsPerPack > 0) {
-      inventoryLines.push(`• **${boosters[boosterId].name}** x${quantity}`);
-    }
-  }
+  const inventoryEntries = getOpenableInventoryEntries(userId);
+  const inventoryLines = inventoryEntries.map(({ booster, quantity }) => `• **${booster.name}** x${quantity}`);
+  const totalInventoryBoosters = inventoryEntries.reduce((total, entry) => total + entry.quantity, 0);
 
   if (inventoryLines.length > 0) {
     description += `📦 **Boosters en inventaire:**\n${inventoryLines.join('\n')}\n\n`;
@@ -121,11 +138,24 @@ async function handleBoosterCommand(interaction) {
 
   const row = new ActionRowBuilder().addComponents(selectMenu);
 
+  const buttons = [];
+
+  if (totalInventoryBoosters > 0) {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(`booster_confirm_openinventory_${userId}`)
+        .setLabel(`Ouvrir tout l'inventaire (${totalInventoryBoosters})`)
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji('📦')
+    );
+  }
+
   const closeButton = new ButtonBuilder()
     .setCustomId(`close_${userId}`)
     .setLabel('X')
     .setStyle(ButtonStyle.Danger);
-  const closeRow = new ActionRowBuilder().addComponents(closeButton);
+  buttons.push(closeButton);
+  const closeRow = new ActionRowBuilder().addComponents(buttons);
 
   await interaction.reply({
     embeds: [embed],
@@ -465,6 +495,164 @@ async function openMultipleBoosters(interaction, boosterId, ownerId) {
 }
 
 /**
+ * Ouvre tous les boosters ouvrables de l'inventaire.
+ */
+async function openAllInventoryBoosters(interaction, ownerId) {
+  const inventoryEntries = getOpenableInventoryEntries(ownerId);
+  const totalToOpen = inventoryEntries.reduce((total, entry) => total + entry.quantity, 0);
+
+  if (totalToOpen < 1) {
+    return interaction.update({
+      content: '❌ Vous n\'avez aucun booster en inventaire à ouvrir.',
+      embeds: [],
+      components: []
+    });
+  }
+
+  await interaction.deferUpdate();
+
+  try {
+    const userDataBefore = loadUserData(ownerId);
+    const ownedCardsBefore = new Set(
+      Object.keys(userDataBefore.cards).filter(id => userDataBefore.cards[id] > 0)
+    );
+
+    const allCardIds = [];
+    const packsCardIds = [];
+    const godPackFlags = [];
+    const openedByBooster = {};
+    let openedCount = 0;
+    let godPackCount = 0;
+
+    for (const { boosterId, quantity, booster } of inventoryEntries) {
+      for (let i = 0; i < quantity; i++) {
+        const removed = removeBoosterFromInventory(ownerId, boosterId);
+        if (!removed) break;
+
+        const { cards: cardIds, isGodPack } = drawBoosterPack(boosterId);
+        packsCardIds.push(cardIds);
+        godPackFlags.push(isGodPack);
+        allCardIds.push(...cardIds);
+        openedCount++;
+        if (isGodPack) godPackCount++;
+
+        if (!openedByBooster[boosterId]) {
+          openedByBooster[boosterId] = {
+            name: booster.name,
+            packs: 0,
+            cards: 0
+          };
+        }
+        openedByBooster[boosterId].packs += 1;
+        openedByBooster[boosterId].cards += cardIds.length;
+      }
+    }
+
+    if (openedCount < 1) {
+      return interaction.editReply({
+        content: '❌ Erreur lors de la consommation des boosters.',
+        embeds: [],
+        components: []
+      });
+    }
+
+    const userData = loadUserData(ownerId);
+    allCardIds.forEach(cardId => {
+      const id = String(cardId);
+      userData.cards[id] = (userData.cards[id] || 0) + 1;
+    });
+    userData.stats.totalCards += allCardIds.length;
+    userData.stats.totalBoosters += openedCount;
+    saveUserData(ownerId, userData);
+
+    const newCardIds = [...new Set(allCardIds.filter(cardId => !ownedCardsBefore.has(String(cardId))))];
+
+    const rarityOrder = ['legendary', 'rare', 'uncommon', 'common', 'promo'];
+    const cardsByRarity = {};
+
+    allCardIds.forEach(cardId => {
+      const cardInfo = getCardInfo(cardId);
+      if (!cardInfo) return;
+      const rarity = cardInfo.rarity;
+      if (!cardsByRarity[rarity]) cardsByRarity[rarity] = {};
+      const key = String(cardId);
+      cardsByRarity[rarity][key] = (cardsByRarity[rarity][key] || 0) + 1;
+    });
+
+    let description = '';
+    if (godPackCount > 0) {
+      description += `✨ **${godPackCount} GOD PACK${godPackCount > 1 ? 'S' : ''} !**\n\n`;
+    }
+    description += `📦 **${openedCount} boosters** ouverts — **${allCardIds.length} cartes** obtenues\n`;
+    description += `🆕 **${newCardIds.length}** nouvelle${newCardIds.length > 1 ? 's' : ''} carte${newCardIds.length > 1 ? 's' : ''}\n\n`;
+
+    const boosterLines = Object.values(openedByBooster).map(entry =>
+      `• **${entry.name}** x${entry.packs} — ${entry.cards} cartes`
+    );
+    description += `__Boosters ouverts__\n${boosterLines.join('\n')}\n\n`;
+
+    for (const rarity of rarityOrder) {
+      const cardsInRarity = cardsByRarity[rarity];
+      if (!cardsInRarity) continue;
+
+      const rarityData = rarities[rarity];
+      const rarityName = rarityData?.name || rarity;
+
+      const entries = Object.entries(cardsInRarity)
+        .map(([cardId, qty]) => {
+          const info = getCardInfo(cardId);
+          const isNew = !ownedCardsBefore.has(String(cardId));
+          return { name: info?.name || cardId, qty, isNew };
+        })
+        .sort((a, b) => b.qty - a.qty);
+
+      const lines = entries.map(e =>
+        `${e.isNew ? '🆕 ' : ''}**${e.name}**${e.qty > 1 ? ` x${e.qty}` : ''}`
+      );
+
+      description += `__${rarityName}__\n${lines.join('\n')}\n\n`;
+    }
+
+    const files = [];
+    const shouldRenderImage = openedCount <= 12;
+    if (shouldRenderImage) {
+      const imageBuffer = await imageGenerator().generateMultiBoosterOpeningImage(packsCardIds, godPackFlags, newCardIds);
+      files.push(new AttachmentBuilder(imageBuffer, { name: 'multi_booster.png' }));
+    } else {
+      description += 'Image détaillée ignorée au-delà de 12 boosters pour éviter une image trop lourde.\n';
+    }
+
+    if (description.length > 4096) {
+      description = description.substring(0, 4090) + '\n...';
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(godPackCount > 0 ? '#FF00FF' : '#FFD700')
+      .setTitle(`Inventaire ouvert — x${openedCount}`)
+      .setDescription(description)
+      .setFooter({ text: 'Achetez plus de boosters dans la /boutique !' });
+
+    if (shouldRenderImage) {
+      embed.setImage('attachment://multi_booster.png');
+    }
+
+    await interaction.editReply({
+      embeds: [embed],
+      components: [],
+      files
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de l\'ouverture de tout l\'inventaire:', error);
+    await interaction.editReply({
+      content: '❌ Une erreur est survenue lors de l\'ouverture des boosters.',
+      embeds: [],
+      components: []
+    });
+  }
+}
+
+/**
  * Gere la selection de booster a ouvrir
  */
 async function handleBoosterSelectMenu(interaction) {
@@ -492,7 +680,9 @@ async function handleBoosterButton(interaction) {
     return;
   }
 
-  if (customId.includes('_confirm_openall_')) {
+  if (customId.startsWith('booster_confirm_openinventory_')) {
+    await openAllInventoryBoosters(interaction, ownerId);
+  } else if (customId.includes('_confirm_openall_')) {
     // Format: booster_confirm_openall_boosterId_ownerId
     const boosterId = parts[3];
     await openMultipleBoosters(interaction, boosterId, ownerId);
@@ -516,12 +706,9 @@ async function handleBoosterButton(interaction) {
       description += '⏰ Booster quotidien deja ouvert aujourd\'hui.\n\n';
     }
 
-    const inventoryLines = [];
-    for (const [boosterId, quantity] of Object.entries(inventory)) {
-      if (quantity > 0 && boosters[boosterId] && !boosters[boosterId].isPromo && boosters[boosterId].cardsPerPack > 0) {
-        inventoryLines.push(`• **${boosters[boosterId].name}** x${quantity}`);
-      }
-    }
+    const inventoryEntries = getOpenableInventoryEntries(ownerId);
+    const inventoryLines = inventoryEntries.map(({ booster, quantity }) => `• **${booster.name}** x${quantity}`);
+    const totalInventoryBoosters = inventoryEntries.reduce((total, entry) => total + entry.quantity, 0);
 
     if (inventoryLines.length > 0) {
       description += `📦 **Boosters en inventaire:**\n${inventoryLines.join('\n')}\n\n`;
@@ -570,11 +757,24 @@ async function handleBoosterButton(interaction) {
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
 
+    const buttons = [];
+
+    if (totalInventoryBoosters > 0) {
+      buttons.push(
+        new ButtonBuilder()
+          .setCustomId(`booster_confirm_openinventory_${ownerId}`)
+          .setLabel(`Ouvrir tout l'inventaire (${totalInventoryBoosters})`)
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('📦')
+      );
+    }
+
     const closeBtn = new ButtonBuilder()
       .setCustomId(`close_${ownerId}`)
       .setLabel('X')
       .setStyle(ButtonStyle.Danger);
-    const closeRow = new ActionRowBuilder().addComponents(closeBtn);
+    buttons.push(closeBtn);
+    const closeRow = new ActionRowBuilder().addComponents(buttons);
 
     await interaction.update({
       embeds: [embed],
